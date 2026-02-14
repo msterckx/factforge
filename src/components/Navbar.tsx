@@ -7,11 +7,6 @@ export default function Navbar() {
         <Link href="/" className="text-2xl font-bold tracking-tight hover:text-amber-400 transition-colors">
           FactForge
         </Link>
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-sm text-slate-300 hover:text-white transition-colors">
-            Categories
-          </Link>
-        </div>
       </div>
     </nav>
   );
