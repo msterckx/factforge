@@ -10,6 +10,7 @@ export default async function QuickQuizPage() {
       questionText: questions.questionText,
       answer: questions.answer,
       imagePath: questions.imagePath,
+      didYouKnow: questions.didYouKnow,
     })
     .from(questions)
     .orderBy(questions.id);

@@ -16,6 +16,7 @@ interface QuestionData {
   answer: string;
   categoryId: number;
   imagePath: string | null;
+  didYouKnow: string | null;
 }
 
 interface QuestionFormProps {
@@ -104,6 +105,20 @@ export default function QuestionForm({ categories, question }: QuestionFormProps
           required
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
           placeholder="Enter the correct answer..."
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="didYouKnow" className="block text-sm font-medium text-slate-700 mb-1">
+          Did You Know? (optional)
+        </label>
+        <textarea
+          id="didYouKnow"
+          name="didYouKnow"
+          defaultValue={question?.didYouKnow || ""}
+          rows={3}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-vertical"
+          placeholder="Fun fact shown after the user answers..."
         />
       </div>
 

@@ -39,6 +39,7 @@ export async function createQuestion(formData: FormData) {
       questionText: parsed.data.questionText,
       answer: parsed.data.answer,
       categoryId: parsed.data.categoryId,
+      didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
     })
     .run();
@@ -103,6 +104,7 @@ export async function updateQuestion(id: number, formData: FormData) {
       questionText: parsed.data.questionText,
       answer: parsed.data.answer,
       categoryId: parsed.data.categoryId,
+      didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
       updatedAt: new Date().toISOString(),
     })

@@ -1,0 +1,1 @@
+ALTER TABLE `questions` ADD `did_you_know` text;

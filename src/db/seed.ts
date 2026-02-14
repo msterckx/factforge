@@ -40,70 +40,83 @@ async function seed() {
       questionText: "What is the highest mountain in the world?",
       answer: "Mount Everest",
       categoryId: catMap["geography"],
+      didYouKnow: "Mount Everest stands at 8,848.86 meters above sea level and grows a few millimeters every year due to tectonic movement. It lies on the border between Nepal and Tibet.",
     },
     {
       questionText: "What is the longest river in the world?",
       answer: "The Nile",
       categoryId: catMap["geography"],
+      didYouKnow: "The Nile stretches approximately 6,650 km through 11 countries. Ancient Egyptians depended on its annual flooding to fertilize their farmland, making it the cradle of one of the world's earliest civilizations.",
     },
     {
       questionText: "What is the smallest country in the world?",
       answer: "Vatican City",
       categoryId: catMap["geography"],
+      didYouKnow: "Vatican City covers just 0.44 square kilometers and has a population of about 800. Despite its tiny size, it has its own postal service, radio station, and even a small railway station.",
     },
     // History
     {
       questionText: "In what year did World War II end?",
       answer: "1945",
       categoryId: catMap["history"],
+      didYouKnow: "WWII ended with Japan's formal surrender on September 2, 1945, aboard the USS Missouri in Tokyo Bay. The war involved over 70 million military personnel and resulted in an estimated 70-85 million total deaths.",
     },
     {
       questionText: "Who was the first president of the United States?",
       answer: "George Washington",
       categoryId: catMap["history"],
+      didYouKnow: "George Washington was unanimously elected by the Electoral College and refused a salary of $25,000 per year (though Congress eventually insisted). He also famously refused to serve a third term, setting a tradition that lasted until FDR.",
     },
     {
       questionText: "In what year did the Berlin Wall fall?",
       answer: "1989",
       categoryId: catMap["history"],
+      didYouKnow: "The Berlin Wall stood for 28 years. Its fall on November 9, 1989 was partly triggered by a mistaken announcement by an East German official, who said border crossings were open \"immediately, without delay.\"",
     },
     // Television
     {
       questionText: "What is the name of the coffee shop in Friends?",
       answer: "Central Perk",
       categoryId: catMap["television"],
+      didYouKnow: "The orange couch at Central Perk was found in the basement of the Warner Bros. studio. The show's creators originally wanted the characters to hang out at a diner, but changed it to a coffeehouse to reflect 1990s culture.",
     },
     {
       questionText: "Who played Walter White in Breaking Bad?",
       answer: "Bryan Cranston",
       categoryId: catMap["television"],
+      didYouKnow: "Bryan Cranston was mostly known for his comedic role as Hal in Malcolm in the Middle before Breaking Bad. The show's creator Vince Gilligan had to convince AMC executives to cast him, as they wanted a more traditionally dramatic actor.",
     },
     // Science
     {
       questionText: "What is the chemical symbol for gold?",
       answer: "Au",
       categoryId: catMap["science"],
+      didYouKnow: "The symbol Au comes from the Latin word \"aurum,\" meaning \"shining dawn.\" Gold is so malleable that a single ounce can be stretched into a wire 80 km long, or hammered into a sheet thin enough to be transparent.",
     },
     {
       questionText: "What planet is known as the Red Planet?",
       answer: "Mars",
       categoryId: catMap["science"],
+      didYouKnow: "Mars appears red because its surface is rich in iron oxide (rust). It has the tallest volcano in the solar system \u2014 Olympus Mons, at nearly 22 km high, about 2.5 times the height of Mount Everest.",
     },
     {
       questionText: "What is the speed of light in km/s (approximately)?",
       answer: "300000",
       categoryId: catMap["science"],
+      didYouKnow: "Light travels at exactly 299,792.458 km/s in a vacuum. At that speed, it takes sunlight about 8 minutes and 20 seconds to reach Earth, and over 4 years to reach the nearest star, Proxima Centauri.",
     },
     // Sports
     {
       questionText: "In which sport would you perform a slam dunk?",
       answer: "Basketball",
       categoryId: catMap["sports"],
+      didYouKnow: "The slam dunk was actually banned in college basketball from 1967 to 1976, largely because of Lew Alcindor (later Kareem Abdul-Jabbar), who dominated with the move at UCLA.",
     },
     {
       questionText: "How many players are on a soccer team on the field?",
       answer: "11",
       categoryId: catMap["sports"],
+      didYouKnow: "The 11-a-side format became standard in 1897. The earliest known games had up to 30 players per side! A soccer ball travels faster than any player \u2014 the fastest recorded shot reached 211 km/h.",
     },
   ];
 

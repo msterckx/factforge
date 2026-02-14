@@ -9,6 +9,7 @@ interface Question {
   questionText: string;
   answer: string;
   imagePath: string | null;
+  didYouKnow: string | null;
 }
 
 interface AnswerCheckerProps {
@@ -116,6 +117,14 @@ export default function AnswerChecker({ questions, categoryName }: AnswerChecker
           <p className="text-amber-800">
             The answer is: <span className="font-bold">{question.answer}</span>
           </p>
+        </div>
+      )}
+
+      {/* Did You Know */}
+      {(feedback === "correct" || feedback === "revealed") && question.didYouKnow && (
+        <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+          <p className="text-sm font-semibold text-indigo-700 mb-1">Did you know?</p>
+          <p className="text-sm text-indigo-600">{question.didYouKnow}</p>
         </div>
       )}
 
