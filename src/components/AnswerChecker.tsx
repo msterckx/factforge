@@ -90,7 +90,11 @@ export default function AnswerChecker({ questions, categoryName }: AnswerChecker
             src={question.imagePath}
             alt="Question image"
             fill
-            className="object-contain"
+            className={`object-contain transition-[filter] duration-700 ${
+              feedback === "correct" || feedback === "revealed"
+                ? "blur-0"
+                : "blur-md"
+            }`}
             sizes="(max-width: 672px) 100vw, 672px"
           />
         </div>
