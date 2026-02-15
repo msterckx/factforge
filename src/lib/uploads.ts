@@ -2,9 +2,14 @@ import { writeFile, unlink, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "questions");
+const DATA_DIR = process.env.DATABASE_DIR || process.cwd();
+const UPLOAD_DIR = path.join(DATA_DIR, "uploads", "questions");
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+export function getUploadDir(): string {
+  return UPLOAD_DIR;
+}
 
 export async function saveUploadedImage(file: File): Promise<string> {
   if (!ALLOWED_TYPES.includes(file.type)) {
@@ -30,7 +35,9 @@ export async function saveUploadedImage(file: File): Promise<string> {
 export async function deleteImage(imagePath: string): Promise<void> {
   if (!imagePath) return;
 
-  const fullPath = path.join(process.cwd(), "public", imagePath);
+  // Extract filename from path like /uploads/questions/uuid.jpg
+  const filename = path.basename(imagePath);
+  const fullPath = path.join(UPLOAD_DIR, filename);
 
   // Security: ensure path is within uploads directory
   const resolved = path.resolve(fullPath);
