@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import QuestionForm from "@/components/QuestionForm";
