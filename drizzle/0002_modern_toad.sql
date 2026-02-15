@@ -1,0 +1,1 @@
+ALTER TABLE `questions` ADD `difficulty` text DEFAULT 'easy' NOT NULL;

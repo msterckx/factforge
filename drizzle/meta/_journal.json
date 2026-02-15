@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1771098200851,
+      "tag": "0000_normal_spirit",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1771104155720,
+      "tag": "0001_loose_tiger_shark",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1771143972921,
+      "tag": "0002_modern_toad",
+      "breakpoints": true
+    }
+  ]
+}
