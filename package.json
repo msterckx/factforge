@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "npx tsx src/db/setup.ts && next dev --turbopack",
     "db:setup": "npx tsx src/db/setup.ts",
     "build": "npx tsx src/db/setup.ts && next build",
-    "start": "next start",
+    "start": "npx tsx src/db/setup.ts && next start",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
