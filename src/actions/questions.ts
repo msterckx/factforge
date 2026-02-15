@@ -68,6 +68,7 @@ export async function updateQuestion(id: number, formData: FormData) {
     questionText: formData.get("questionText"),
     answer: formData.get("answer"),
     categoryId: formData.get("categoryId"),
+    difficulty: formData.get("difficulty"),
   });
 
   if (!parsed.success) {
