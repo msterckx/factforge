@@ -18,6 +18,7 @@ export async function GET() {
       categoryId: questions.categoryId,
       categoryName: categories.name,
       imagePath: questions.imagePath,
+      difficulty: questions.difficulty,
     })
     .from(questions)
     .leftJoin(categories, eq(questions.categoryId, categories.id))

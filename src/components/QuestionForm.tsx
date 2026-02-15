@@ -17,6 +17,7 @@ interface QuestionData {
   categoryId: number;
   imagePath: string | null;
   didYouKnow: string | null;
+  difficulty: "easy" | "intermediate" | "difficult";
 }
 
 interface QuestionFormProps {
@@ -75,6 +76,22 @@ export default function QuestionForm({ categories, question }: QuestionFormProps
               {cat.name}
             </option>
           ))}
+        </select>
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="difficulty" className="block text-sm font-medium text-slate-700 mb-1">
+          Difficulty
+        </label>
+        <select
+          id="difficulty"
+          name="difficulty"
+          defaultValue={question?.difficulty || "easy"}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+        >
+          <option value="easy">Easy</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="difficult">Difficult</option>
         </select>
       </div>
 

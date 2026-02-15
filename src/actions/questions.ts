@@ -11,6 +11,7 @@ const questionSchema = z.object({
   questionText: z.string().min(3, "Question must be at least 3 characters"),
   answer: z.string().min(1, "Answer is required"),
   categoryId: z.coerce.number().int().positive("Category is required"),
+  difficulty: z.enum(["easy", "intermediate", "difficult"]),
 });
 
 export async function createQuestion(formData: FormData) {
@@ -18,6 +19,7 @@ export async function createQuestion(formData: FormData) {
     questionText: formData.get("questionText"),
     answer: formData.get("answer"),
     categoryId: formData.get("categoryId"),
+    difficulty: formData.get("difficulty"),
   });
 
   if (!parsed.success) {
@@ -39,6 +41,7 @@ export async function createQuestion(formData: FormData) {
       questionText: parsed.data.questionText,
       answer: parsed.data.answer,
       categoryId: parsed.data.categoryId,
+      difficulty: parsed.data.difficulty,
       didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
     })
@@ -104,6 +107,7 @@ export async function updateQuestion(id: number, formData: FormData) {
       questionText: parsed.data.questionText,
       answer: parsed.data.answer,
       categoryId: parsed.data.categoryId,
+      difficulty: parsed.data.difficulty,
       didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
       updatedAt: new Date().toISOString(),

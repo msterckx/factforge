@@ -29,6 +29,7 @@ export default async function CategoryPage({ params }: Props) {
       answer: questions.answer,
       imagePath: questions.imagePath,
       didYouKnow: questions.didYouKnow,
+      difficulty: questions.difficulty,
     })
     .from(questions)
     .where(eq(questions.categoryId, category.id))

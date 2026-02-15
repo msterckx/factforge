@@ -10,7 +10,14 @@ interface Question {
   answer: string;
   imagePath: string | null;
   didYouKnow: string | null;
+  difficulty: "easy" | "intermediate" | "difficult";
 }
+
+const difficultyStyles = {
+  easy: "bg-green-100 text-green-700",
+  intermediate: "bg-yellow-100 text-yellow-700",
+  difficult: "bg-red-100 text-red-700",
+};
 
 interface AnswerCheckerProps {
   questions: Question[];
@@ -60,7 +67,12 @@ export default function AnswerChecker({ questions, categoryName }: AnswerChecker
         <span className="text-sm text-slate-500">
           Question {currentIndex + 1} of {total}
         </span>
-        <span className="text-sm font-medium text-slate-700">{categoryName}</span>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyStyles[question.difficulty]}`}>
+            {question.difficulty}
+          </span>
+          <span className="text-sm font-medium text-slate-700">{categoryName}</span>
+        </div>
       </div>
 
       {/* Progress bar */}

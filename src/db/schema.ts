@@ -17,6 +17,7 @@ export const questions = sqliteTable("questions", {
   categoryId: integer("category_id")
     .notNull()
     .references(() => categories.id, { onDelete: "cascade" }),
+  difficulty: text("difficulty", { enum: ["easy", "intermediate", "difficult"] }).notNull().default("easy"),
   didYouKnow: text("did_you_know"),
   imagePath: text("image_path"),
   createdAt: text("created_at")

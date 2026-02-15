@@ -12,7 +12,14 @@ interface Question {
   categoryId: number;
   categoryName: string;
   imagePath: string | null;
+  difficulty: "easy" | "intermediate" | "difficult";
 }
+
+const difficultyBadge = {
+  easy: "bg-green-100 text-green-700",
+  intermediate: "bg-yellow-100 text-yellow-700",
+  difficult: "bg-red-100 text-red-700",
+};
 
 interface Category {
   id: number;
@@ -103,6 +110,7 @@ export default function AdminQuestionsPage() {
               <th className="text-left px-4 py-3 font-medium text-slate-600 w-12">Img</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Question</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Answer</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600">Difficulty</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
               <th className="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
             </tr>
@@ -110,7 +118,7 @@ export default function AdminQuestionsPage() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-slate-400">
+                <td colSpan={6} className="text-center py-8 text-slate-400">
                   No questions yet.{" "}
                   <Link href="/admin/questions/new" className="text-amber-500 hover:underline">
                     Add one
@@ -141,6 +149,11 @@ export default function AdminQuestionsPage() {
                     {q.questionText}
                   </td>
                   <td className="px-4 py-3 text-slate-500 max-w-[150px] truncate">{q.answer}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyBadge[q.difficulty]}`}>
+                      {q.difficulty}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-slate-500">{q.categoryName}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
