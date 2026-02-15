@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "npx tsx src/db/setup.ts && next dev --turbopack",
     "db:setup": "npx tsx src/db/setup.ts",
-    "build": "npx tsx src/db/setup.ts && next build",
-    "start": "npx tsx src/db/setup.ts && next start",
+    "build": "next build",
+    "start": "npx tsx src/db/setup.ts && next start -p ${PORT:-3000}",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
