@@ -26,16 +26,24 @@ interface Category {
   name: string;
 }
 
+const PAGE_SIZE = 10;
+
 export default function AdminQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filterCategory, setFilterCategory] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterCategory]);
 
   async function loadData() {
     const res = await fetch("/api/admin/questions");
@@ -63,6 +71,11 @@ export default function AdminQuestionsPage() {
     ? questions.filter((q) => q.categoryId === filterCategory)
     : questions;
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * PAGE_SIZE;
+  const paged = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -76,7 +89,7 @@ export default function AdminQuestionsPage() {
       </div>
 
       {/* Category filter */}
-      <div className="mb-4">
+      <div className="mb-4 flex items-center gap-4">
         <select
           value={filterCategory || ""}
           onChange={(e) => setFilterCategory(e.target.value ? Number(e.target.value) : null)}
@@ -89,6 +102,9 @@ export default function AdminQuestionsPage() {
             </option>
           ))}
         </select>
+        <span className="text-sm text-slate-500">
+          {filtered.length} question{filtered.length !== 1 ? "s" : ""}
+        </span>
       </div>
 
       {message && (
@@ -116,7 +132,7 @@ export default function AdminQuestionsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {paged.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center py-8 text-slate-400">
                   No questions yet.{" "}
@@ -126,7 +142,7 @@ export default function AdminQuestionsPage() {
                 </td>
               </tr>
             ) : (
-              filtered.map((q) => (
+              paged.map((q) => (
                 <tr key={q.id} className="border-b border-slate-100 last:border-0">
                   <td className="px-4 py-3">
                     {q.imagePath ? (
@@ -178,6 +194,69 @@ export default function AdminQuestionsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <span className="text-sm text-slate-500">
+            Showing {startIndex + 1}–{Math.min(startIndex + PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={safePage === 1}
+              className="px-2 py-1 text-sm rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              First
+            </button>
+            <button
+              onClick={() => setCurrentPage(safePage - 1)}
+              disabled={safePage === 1}
+              className="px-2 py-1 text-sm rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .reduce<(number | "...")[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === "..." ? (
+                  <span key={`ellipsis-${i}`} className="px-1 text-sm text-slate-400">...</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item as number)}
+                    className={`px-3 py-1 text-sm rounded border ${
+                      safePage === item
+                        ? "bg-amber-500 text-white border-amber-500"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setCurrentPage(safePage + 1)}
+              disabled={safePage === totalPages}
+              className="px-2 py-1 text-sm rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={safePage === totalPages}
+              className="px-2 py-1 text-sm rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Last
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
