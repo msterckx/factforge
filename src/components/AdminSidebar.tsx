@@ -8,6 +8,7 @@ const navItems = [
   { label: "Dashboard", href: "/admin" },
   { label: "Categories", href: "/admin/categories" },
   { label: "Questions", href: "/admin/questions" },
+  { label: "Generate Questions", href: "/admin/questions/generate" },
 ];
 
 export default function AdminSidebar() {
@@ -24,7 +25,9 @@ export default function AdminSidebar() {
             const isActive =
               item.href === "/admin"
                 ? pathname === "/admin"
-                : pathname.startsWith(item.href);
+                : item.href === "/admin/questions"
+                  ? pathname === "/admin/questions" || (pathname.startsWith("/admin/questions/") && !pathname.startsWith("/admin/questions/generate"))
+                  : pathname.startsWith(item.href);
 
             return (
               <Link
