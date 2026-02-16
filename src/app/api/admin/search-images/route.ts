@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
-// IMAGE_SEARCH_PROVIDER: "unsplash" (default) or "pexels"
+// IMAGE_SEARCH_PROVIDER: "unsplash" (default), "pexels", or "pixabay"
 const provider = (process.env.IMAGE_SEARCH_PROVIDER || "unsplash").toLowerCase();
 
 interface SearchImage {
@@ -84,6 +84,43 @@ async function searchPexels(query: string): Promise<SearchImage[]> {
   }));
 }
 
+// --- Pixabay ---
+
+interface PixabayHit {
+  id: number;
+  previewURL: string;
+  largeImageURL: string;
+  tags: string;
+  user: string;
+}
+
+async function searchPixabay(query: string): Promise<SearchImage[]> {
+  const apiKey = process.env.PIXABAY_API_KEY;
+  if (!apiKey) throw new Error("Pixabay API key not configured (PIXABAY_API_KEY)");
+
+  const url = new URL("https://pixabay.com/api/");
+  url.searchParams.set("key", apiKey);
+  url.searchParams.set("q", query);
+  url.searchParams.set("per_page", "9");
+  url.searchParams.set("orientation", "horizontal");
+  url.searchParams.set("image_type", "photo");
+  url.searchParams.set("safesearch", "true");
+
+  const res = await fetch(url.toString());
+
+  if (!res.ok) throw new Error("Pixabay API request failed");
+
+  const data = await res.json();
+  return (data.hits as PixabayHit[]).map((hit) => ({
+    id: String(hit.id),
+    thumbUrl: hit.previewURL,
+    regularUrl: hit.largeImageURL,
+    alt: hit.tags || "Photo",
+    photographer: hit.user,
+    downloadLocation: "",
+  }));
+}
+
 // --- Route handler ---
 
 export async function POST(request: NextRequest) {
@@ -98,9 +135,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const images = provider === "pexels"
-      ? await searchPexels(query)
-      : await searchUnsplash(query);
+    const searchFn = provider === "pexels"
+      ? searchPexels
+      : provider === "pixabay"
+        ? searchPixabay
+        : searchUnsplash;
+    const images = await searchFn(query);
 
     if (images.length === 0) {
       return NextResponse.json({ images: [], message: "No images found" });
