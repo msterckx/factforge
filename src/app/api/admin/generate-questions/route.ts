@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { categories } from "@/db/schema";
+import { categories, questions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -28,8 +28,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const questions = await generateQuestions(category.name, Math.min(count, 10));
-    return NextResponse.json({ questions });
+    // Fetch existing questions in this category to avoid duplicates
+    const existing = db
+      .select({ questionText: questions.questionText, answer: questions.answer })
+      .from(questions)
+      .where(eq(questions.categoryId, categoryId))
+      .all();
+
+    const generated = await generateQuestions(category.name, Math.min(count, 10), existing);
+    return NextResponse.json({ questions: generated });
   } catch (error) {
     console.error("OpenAI generation error:", error);
     return NextResponse.json(
