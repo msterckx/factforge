@@ -13,8 +13,13 @@ export interface GeneratedQuestion {
 
 export async function generateQuestions(
   categoryName: string,
-  count: number = 5
+  count: number = 5,
+  existingQuestions: { questionText: string; answer: string }[] = []
 ): Promise<GeneratedQuestion[]> {
+  const existingList = existingQuestions.length > 0
+    ? `\n\nIMPORTANT: The following questions already exist in the database. Do NOT generate any questions that are the same or very similar to these (same topic/answer):\n${existingQuestions.map((q) => `- Q: "${q.questionText}" A: "${q.answer}"`).join("\n")}`
+    : "";
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     response_format: { type: "json_object" },
@@ -29,7 +34,7 @@ Each question object must have:
 - "difficulty": one of "easy", "intermediate", or "difficult"
 - "didYouKnow": a fun fact related to the answer (2-3 sentences, engaging and educational)
 
-Mix difficulties across the batch. Avoid overly obscure questions for "easy". Ensure answers are definitively correct.`,
+Mix difficulties across the batch. Avoid overly obscure questions for "easy". Ensure answers are definitively correct.${existingList}`,
       },
       {
         role: "user",
