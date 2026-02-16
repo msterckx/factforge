@@ -220,7 +220,7 @@ export default function AIQuestionGenerator({
                 <input
                   type="checkbox"
                   checked={selected.has(i)}
-                  onChange={() => toggleSelect(i)}
+                  onChange={(e) => { e.stopPropagation(); toggleSelect(i); }}
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
                 />
                 <div className="flex-1 space-y-2">
