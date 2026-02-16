@@ -28,12 +28,16 @@ export async function createQuestion(formData: FormData) {
 
   let imagePath: string | null = null;
   const imageFile = formData.get("image") as File | null;
+  const searchedImagePath = formData.get("searchedImagePath") as string | null;
+
   if (imageFile && imageFile.size > 0) {
     try {
       imagePath = await saveUploadedImage(imageFile);
     } catch (err) {
       return { error: (err as Error).message };
     }
+  } else if (searchedImagePath) {
+    imagePath = searchedImagePath;
   }
 
   db.insert(questions)
@@ -84,15 +88,16 @@ export async function updateQuestion(id: number, formData: FormData) {
 
   const removeImage = formData.get("removeImage") === "true";
   const imageFile = formData.get("image") as File | null;
+  const searchedImagePath = formData.get("searchedImagePath") as string | null;
 
-  if (removeImage && (!imageFile || imageFile.size === 0)) {
+  if (removeImage && (!imageFile || imageFile.size === 0) && !searchedImagePath) {
     // Remove existing image
     if (existing.imagePath) {
       await deleteImage(existing.imagePath);
     }
     imagePath = null;
   } else if (imageFile && imageFile.size > 0) {
-    // Replace with new image
+    // Replace with uploaded file
     if (existing.imagePath) {
       await deleteImage(existing.imagePath);
     }
@@ -101,6 +106,12 @@ export async function updateQuestion(id: number, formData: FormData) {
     } catch (err) {
       return { error: (err as Error).message };
     }
+  } else if (searchedImagePath) {
+    // Replace with image from search (already saved on disk)
+    if (existing.imagePath) {
+      await deleteImage(existing.imagePath);
+    }
+    imagePath = searchedImagePath;
   }
 
   db.update(questions)
@@ -124,6 +135,44 @@ export async function updateQuestion(id: number, formData: FormData) {
   const newCat = db.select({ slug: categories.slug }).from(categories).where(eq(categories.id, parsed.data.categoryId)).get();
   if (oldCat) revalidatePath(`/category/${oldCat.slug}`);
   if (newCat) revalidatePath(`/category/${newCat.slug}`);
+
+  return { success: true };
+}
+
+export async function createQuestionFromAI(data: {
+  questionText: string;
+  answer: string;
+  categoryId: number;
+  difficulty: "easy" | "intermediate" | "difficult";
+  didYouKnow: string | null;
+}) {
+  const parsed = questionSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  db.insert(questions)
+    .values({
+      questionText: parsed.data.questionText,
+      answer: parsed.data.answer,
+      categoryId: parsed.data.categoryId,
+      difficulty: parsed.data.difficulty,
+      didYouKnow: data.didYouKnow?.trim() || null,
+      imagePath: null,
+    })
+    .run();
+
+  revalidatePath("/admin/questions");
+  revalidatePath("/");
+
+  const category = db
+    .select({ slug: categories.slug })
+    .from(categories)
+    .where(eq(categories.id, parsed.data.categoryId))
+    .get();
+  if (category) {
+    revalidatePath(`/category/${category.slug}`);
+  }
 
   return { success: true };
 }

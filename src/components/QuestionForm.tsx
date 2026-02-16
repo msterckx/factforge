@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createQuestion, updateQuestion } from "@/actions/questions";
 import ImageUpload from "@/components/ImageUpload";
+import ImageSearch from "@/components/ImageSearch";
 
 interface Category {
   id: number;
@@ -30,12 +31,21 @@ export default function QuestionForm({ categories, question }: QuestionFormProps
   const router = useRouter();
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [searchedImagePath, setSearchedImagePath] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
 
     const formData = new FormData(e.currentTarget);
+
+    // If an image was selected from search (and no file was uploaded), pass it
+    if (searchedImagePath) {
+      const imageFile = formData.get("image") as File | null;
+      if (!imageFile || imageFile.size === 0) {
+        formData.set("searchedImagePath", searchedImagePath);
+      }
+    }
 
     startTransition(async () => {
       const result = isEdit
@@ -50,6 +60,13 @@ export default function QuestionForm({ categories, question }: QuestionFormProps
       }
     });
   }
+
+  function handleImageSearchSelected(imagePath: string) {
+    setSearchedImagePath(imagePath);
+  }
+
+  // Determine the current image to show in ImageUpload
+  const currentImage = searchedImagePath || question?.imagePath || null;
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -141,10 +158,36 @@ export default function QuestionForm({ categories, question }: QuestionFormProps
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Image (optional)
+          Upload Image
         </label>
-        <ImageUpload currentImage={question?.imagePath} />
+        <ImageUpload currentImage={currentImage} />
       </div>
+
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Or Search for an Image
+        </label>
+        <ImageSearch onImageSelected={handleImageSearchSelected} />
+        {searchedImagePath && (
+          <div className="mt-2 flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+            <svg className="h-4 w-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm text-green-700">Image selected. You can now save the question.</span>
+            <button
+              type="button"
+              onClick={() => setSearchedImagePath(null)}
+              className="ml-auto text-xs text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+
+      {searchedImagePath && (
+        <input type="hidden" name="searchedImagePath" value={searchedImagePath} />
+      )}
 
       <div className="flex gap-3">
         <button
