@@ -22,6 +22,13 @@
       "when": 1771143972921,
       "tag": "0002_modern_toad",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1771352043413,
+      "tag": "0003_flaky_klaw",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { questions, categories } from "@/db/schema";
+import { questions, categories, subcategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
@@ -25,6 +25,7 @@ export async function GET() {
       questionText: questions.questionText,
       answer: questions.answer,
       category: categories.name,
+      subcategory: subcategories.name,
       difficulty: questions.difficulty,
       didYouKnow: questions.didYouKnow,
       imagePath: questions.imagePath,
@@ -33,6 +34,7 @@ export async function GET() {
     })
     .from(questions)
     .leftJoin(categories, eq(questions.categoryId, categories.id))
+    .leftJoin(subcategories, eq(questions.subcategoryId, subcategories.id))
     .orderBy(questions.id)
     .all();
 
@@ -41,6 +43,7 @@ export async function GET() {
     "Question",
     "Answer",
     "Category",
+    "Subcategory",
     "Difficulty",
     "Did You Know",
     "Image Path",
@@ -56,6 +59,7 @@ export async function GET() {
         escapeCsvField(row.questionText),
         escapeCsvField(row.answer),
         escapeCsvField(row.category),
+        escapeCsvField(row.subcategory),
         escapeCsvField(row.difficulty),
         escapeCsvField(row.didYouKnow),
         escapeCsvField(row.imagePath),

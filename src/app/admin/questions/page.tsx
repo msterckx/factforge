@@ -11,6 +11,8 @@ interface Question {
   answer: string;
   categoryId: number;
   categoryName: string;
+  subcategoryId: number | null;
+  subcategoryName: string | null;
   imagePath: string | null;
   difficulty: "easy" | "intermediate" | "difficult";
 }
@@ -128,13 +130,14 @@ export default function AdminQuestionsPage() {
               <th className="text-left px-4 py-3 font-medium text-slate-600">Answer</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Difficulty</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600">Subcategory</th>
               <th className="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
             </tr>
           </thead>
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-slate-400">
+                <td colSpan={7} className="text-center py-8 text-slate-400">
                   No questions yet.{" "}
                   <Link href="/admin/questions/new" className="text-amber-500 hover:underline">
                     Add one
@@ -171,6 +174,7 @@ export default function AdminQuestionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{q.categoryName}</td>
+                  <td className="px-4 py-3 text-slate-400 text-xs">{q.subcategoryName || "—"}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
                       <Link

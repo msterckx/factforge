@@ -8,11 +8,18 @@ interface Category {
   name: string;
 }
 
+interface Subcategory {
+  id: number;
+  name: string;
+}
+
 interface GeneratedQuestion {
   questionText: string;
   answer: string;
   difficulty: "easy" | "intermediate" | "difficult";
   didYouKnow: string;
+  subcategory?: string;
+  suggestedSubcategoryId?: number | null;
 }
 
 const difficultyBadge = {
@@ -29,6 +36,8 @@ export default function AIQuestionGenerator({
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [count, setCount] = useState(5);
   const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [questionSubcategoryIds, setQuestionSubcategoryIds] = useState<(number | null)[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -40,6 +49,8 @@ export default function AIQuestionGenerator({
     setError("");
     setMessage("");
     setQuestions([]);
+    setSubcategories([]);
+    setQuestionSubcategoryIds([]);
     setSelected(new Set());
     setLoading(true);
 
@@ -57,6 +68,10 @@ export default function AIQuestionGenerator({
       }
 
       setQuestions(data.questions);
+      setSubcategories(data.subcategories || []);
+      setQuestionSubcategoryIds(
+        data.questions.map((q: GeneratedQuestion) => q.suggestedSubcategoryId ?? null)
+      );
       // Select all by default
       setSelected(new Set(data.questions.map((_: GeneratedQuestion, i: number) => i)));
     } catch {
@@ -83,6 +98,14 @@ export default function AIQuestionGenerator({
     }
   }
 
+  function updateSubcategoryForQuestion(index: number, subcategoryId: number | null) {
+    setQuestionSubcategoryIds((prev) => {
+      const next = [...prev];
+      next[index] = subcategoryId;
+      return next;
+    });
+  }
+
   async function handleSave() {
     if (!categoryId || selected.size === 0) return;
     setError("");
@@ -96,6 +119,7 @@ export default function AIQuestionGenerator({
           questionText: q.questionText,
           answer: q.answer,
           categoryId: categoryId as number,
+          subcategoryId: questionSubcategoryIds[index] || null,
           difficulty: q.difficulty,
           didYouKnow: q.didYouKnow,
         });
@@ -104,6 +128,8 @@ export default function AIQuestionGenerator({
 
       setMessage(`Saved ${saved} question${saved !== 1 ? "s" : ""} successfully.`);
       setQuestions([]);
+      setSubcategories([]);
+      setQuestionSubcategoryIds([]);
       setSelected(new Set());
     });
   }
@@ -224,10 +250,28 @@ export default function AIQuestionGenerator({
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
                 />
                 <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyBadge[q.difficulty]}`}>
                       {q.difficulty}
                     </span>
+                    {subcategories.length > 0 && (
+                      <select
+                        value={questionSubcategoryIds[i] ?? ""}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          updateSubcategoryForQuestion(i, e.target.value ? Number(e.target.value) : null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs px-2 py-0.5 border border-slate-200 rounded-full bg-slate-50 text-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                      >
+                        <option value="">No subcategory</option>
+                        {subcategories.map((sub) => (
+                          <option key={sub.id} value={sub.id}>
+                            {sub.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <p className="text-slate-800 font-medium">{q.questionText}</p>
                   <p className="text-sm text-slate-600">

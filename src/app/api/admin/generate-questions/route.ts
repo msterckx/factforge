@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { categories, questions } from "@/db/schema";
+import { categories, questions, subcategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -35,8 +35,29 @@ export async function POST(request: NextRequest) {
       .where(eq(questions.categoryId, categoryId))
       .all();
 
-    const generated = await generateQuestions(category.name, Math.min(count, 10), existing);
-    return NextResponse.json({ questions: generated });
+    // Fetch subcategories for this category
+    const subs = db
+      .select({ id: subcategories.id, name: subcategories.name })
+      .from(subcategories)
+      .where(eq(subcategories.categoryId, categoryId))
+      .orderBy(subcategories.name)
+      .all();
+
+    const subcategoryNames = subs.map((s) => s.name);
+
+    const generated = await generateQuestions(category.name, Math.min(count, 10), existing, subcategoryNames);
+
+    // Map subcategory names to IDs for the frontend
+    const subMap = new Map(subs.map((s) => [s.name.toLowerCase(), s.id]));
+    const questionsWithSubIds = generated.map((q) => ({
+      ...q,
+      suggestedSubcategoryId: q.subcategory ? subMap.get(q.subcategory.toLowerCase()) || null : null,
+    }));
+
+    return NextResponse.json({
+      questions: questionsWithSubIds,
+      subcategories: subs,
+    });
   } catch (error) {
     console.error("OpenAI generation error:", error);
     return NextResponse.json(

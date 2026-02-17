@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createQuestion, updateQuestion } from "@/actions/questions";
 import ImageUpload from "@/components/ImageUpload";
@@ -11,11 +11,18 @@ interface Category {
   name: string;
 }
 
+interface Subcategory {
+  id: number;
+  name: string;
+  categoryId: number;
+}
+
 interface QuestionData {
   id: number;
   questionText: string;
   answer: string;
   categoryId: number;
+  subcategoryId: number | null;
   imagePath: string | null;
   didYouKnow: string | null;
   difficulty: "easy" | "intermediate" | "difficult";
@@ -23,15 +30,22 @@ interface QuestionData {
 
 interface QuestionFormProps {
   categories: Category[];
+  subcategories: Subcategory[];
   question?: QuestionData;
 }
 
-export default function QuestionForm({ categories, question }: QuestionFormProps) {
+export default function QuestionForm({ categories, subcategories, question }: QuestionFormProps) {
   const isEdit = !!question;
   const router = useRouter();
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const [searchedImagePath, setSearchedImagePath] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | "">(question?.categoryId || "");
+
+  const filteredSubcategories = useMemo(
+    () => subcategories.filter((s) => s.categoryId === selectedCategoryId),
+    [subcategories, selectedCategoryId]
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -83,7 +97,8 @@ export default function QuestionForm({ categories, question }: QuestionFormProps
         <select
           id="categoryId"
           name="categoryId"
-          defaultValue={question?.categoryId || ""}
+          value={selectedCategoryId}
+          onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : "")}
           required
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
         >
@@ -95,6 +110,27 @@ export default function QuestionForm({ categories, question }: QuestionFormProps
           ))}
         </select>
       </div>
+
+      {filteredSubcategories.length > 0 && (
+        <div className="mb-4">
+          <label htmlFor="subcategoryId" className="block text-sm font-medium text-slate-700 mb-1">
+            Subcategory <span className="text-slate-400 font-normal">(optional)</span>
+          </label>
+          <select
+            id="subcategoryId"
+            name="subcategoryId"
+            defaultValue={question?.subcategoryId || ""}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+          >
+            <option value="">None</option>
+            {filteredSubcategories.map((sub) => (
+              <option key={sub.id} value={sub.id}>
+                {sub.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mb-4">
         <label htmlFor="difficulty" className="block text-sm font-medium text-slate-700 mb-1">
