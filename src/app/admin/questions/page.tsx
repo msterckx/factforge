@@ -121,8 +121,8 @@ export default function AdminQuestionsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table className="w-full text-sm min-w-[800px]">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-slate-600 w-12">Img</th>
