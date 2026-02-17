@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { checkAnswer } from "@/lib/utils";
 import Image from "next/image";
 
@@ -11,6 +11,12 @@ interface Question {
   imagePath: string | null;
   didYouKnow: string | null;
   difficulty: "easy" | "intermediate" | "difficult";
+  subcategoryId?: number | null;
+}
+
+interface Subcategory {
+  id: number;
+  name: string;
 }
 
 const difficultyStyles = {
@@ -22,18 +28,32 @@ const difficultyStyles = {
 interface AnswerCheckerProps {
   questions: Question[];
   categoryName: string;
+  subcategories?: Subcategory[];
 }
 
 type FeedbackState = "idle" | "correct" | "incorrect" | "revealed";
 
-export default function AnswerChecker({ questions, categoryName }: AnswerCheckerProps) {
+export default function AnswerChecker({ questions, categoryName, subcategories = [] }: AnswerCheckerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const question = questions[currentIndex];
-  const total = questions.length;
+  const filtered = useMemo(() => {
+    if (!selectedSubcategoryId) return questions;
+    return questions.filter((q) => q.subcategoryId === selectedSubcategoryId);
+  }, [questions, selectedSubcategoryId]);
+
+  const question = filtered[currentIndex];
+  const total = filtered.length;
+
+  // Reset index when filter changes
+  useEffect(() => {
+    setCurrentIndex(0);
+    setUserAnswer("");
+    setFeedback("idle");
+  }, [selectedSubcategoryId]);
 
   useEffect(() => {
     setUserAnswer("");
@@ -62,127 +82,164 @@ export default function AnswerChecker({ questions, categoryName }: AnswerChecker
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Progress */}
-      <div className="flex items-center justify-between mb-6">
-        <span className="text-sm text-slate-500">
-          Question {currentIndex + 1} of {total}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyStyles[question.difficulty]}`}>
-            {question.difficulty}
-          </span>
-          <span className="text-sm font-medium text-slate-700">{categoryName}</span>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8">
-        <div
-          className="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
-          style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
-        />
-      </div>
-
-      {/* Image */}
-      {question.imagePath && (
-        <div className="relative w-full aspect-video mb-6 rounded-lg overflow-hidden bg-slate-100">
-          <Image
-            src={question.imagePath}
-            alt="Question image"
-            fill
-            className="object-contain transition-[filter] duration-700"
-            style={{
-              filter: feedback === "correct" || feedback === "revealed"
-                ? "blur(0px)"
-                : "blur(12px)",
-            }}
-            sizes="(max-width: 672px) 100vw, 672px"
-          />
-        </div>
-      )}
-
-      {/* Question */}
-      <h2 className="text-xl font-semibold text-slate-800 mb-6">{question.questionText}</h2>
-
-      {/* Answer input */}
-      <div className="mb-4">
-        <input
-          ref={inputRef}
-          type="text"
-          value={userAnswer}
-          onChange={(e) => setUserAnswer(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type your answer..."
-          disabled={feedback === "correct" || feedback === "revealed"}
-          className="w-full px-4 py-3 border border-slate-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
-        />
-      </div>
-
-      {/* Feedback */}
-      {feedback === "correct" && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-700 font-medium">Correct!</p>
-        </div>
-      )}
-      {feedback === "incorrect" && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 font-medium">Incorrect. Try again or show the answer.</p>
-        </div>
-      )}
-      {feedback === "revealed" && (
-        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-amber-800">
-            The answer is: <span className="font-bold">{question.answer}</span>
-          </p>
-        </div>
-      )}
-
-      {/* Did You Know */}
-      {(feedback === "correct" || feedback === "revealed") && question.didYouKnow && (
-        <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-          <p className="text-sm font-semibold text-indigo-700 mb-1">Did you know?</p>
-          <p className="text-sm text-indigo-600">{question.didYouKnow}</p>
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex gap-3 mb-8">
-        {feedback !== "correct" && feedback !== "revealed" && (
-          <>
+      {/* Subcategory filter */}
+      {subcategories.length > 0 && (
+        <div className="mb-6 flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setSelectedSubcategoryId(null)}
+            className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+              selectedSubcategoryId === null
+                ? "bg-amber-500 text-white border-amber-500"
+                : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"
+            }`}
+          >
+            All
+          </button>
+          {subcategories.map((sub) => (
             <button
-              onClick={handleCheck}
-              disabled={!userAnswer.trim()}
-              className="px-6 py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              key={sub.id}
+              onClick={() => setSelectedSubcategoryId(sub.id)}
+              className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+                selectedSubcategoryId === sub.id
+                  ? "bg-amber-500 text-white border-amber-500"
+                  : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"
+              }`}
             >
-              Check Answer
+              {sub.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {total === 0 ? (
+        <p className="text-slate-400 text-center py-12">
+          No questions in this subcategory yet.
+        </p>
+      ) : (
+        <>
+          {/* Progress */}
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-sm text-slate-500">
+              Question {currentIndex + 1} of {total}
+            </span>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyStyles[question.difficulty]}`}>
+                {question.difficulty}
+              </span>
+              <span className="text-sm font-medium text-slate-700">{categoryName}</span>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8">
+            <div
+              className="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
+            />
+          </div>
+
+          {/* Image */}
+          {question.imagePath && (
+            <div className="relative w-full aspect-video mb-6 rounded-lg overflow-hidden bg-slate-100">
+              <Image
+                src={question.imagePath}
+                alt="Question image"
+                fill
+                className="object-contain transition-[filter] duration-700"
+                style={{
+                  filter: feedback === "correct" || feedback === "revealed"
+                    ? "blur(0px)"
+                    : "blur(12px)",
+                }}
+                sizes="(max-width: 672px) 100vw, 672px"
+              />
+            </div>
+          )}
+
+          {/* Question */}
+          <h2 className="text-xl font-semibold text-slate-800 mb-6">{question.questionText}</h2>
+
+          {/* Answer input */}
+          <div className="mb-4">
+            <input
+              ref={inputRef}
+              type="text"
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your answer..."
+              disabled={feedback === "correct" || feedback === "revealed"}
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+            />
+          </div>
+
+          {/* Feedback */}
+          {feedback === "correct" && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-700 font-medium">Correct!</p>
+            </div>
+          )}
+          {feedback === "incorrect" && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 font-medium">Incorrect. Try again or show the answer.</p>
+            </div>
+          )}
+          {feedback === "revealed" && (
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-800">
+                The answer is: <span className="font-bold">{question.answer}</span>
+              </p>
+            </div>
+          )}
+
+          {/* Did You Know */}
+          {(feedback === "correct" || feedback === "revealed") && question.didYouKnow && (
+            <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+              <p className="text-sm font-semibold text-indigo-700 mb-1">Did you know?</p>
+              <p className="text-sm text-indigo-600">{question.didYouKnow}</p>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex gap-3 mb-8">
+            {feedback !== "correct" && feedback !== "revealed" && (
+              <>
+                <button
+                  onClick={handleCheck}
+                  disabled={!userAnswer.trim()}
+                  className="px-6 py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Check Answer
+                </button>
+                <button
+                  onClick={handleShow}
+                  className="px-6 py-2.5 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
+                >
+                  Show Answer
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+            <button
+              onClick={() => setCurrentIndex((i) => i - 1)}
+              disabled={currentIndex === 0}
+              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Previous
             </button>
             <button
-              onClick={handleShow}
-              className="px-6 py-2.5 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
+              onClick={() => setCurrentIndex((i) => i + 1)}
+              disabled={currentIndex === total - 1}
+              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Show Answer
+              Next
             </button>
-          </>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex justify-between items-center pt-4 border-t border-slate-200">
-        <button
-          onClick={() => setCurrentIndex((i) => i - 1)}
-          disabled={currentIndex === 0}
-          className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Previous
-        </button>
-        <button
-          onClick={() => setCurrentIndex((i) => i + 1)}
-          disabled={currentIndex === total - 1}
-          className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Next
-        </button>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
