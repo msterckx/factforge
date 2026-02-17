@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { db } from "@/db";
-import { questions, categories } from "@/db/schema";
+import { questions, categories, subcategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import QuestionForm from "@/components/QuestionForm";
@@ -30,10 +30,20 @@ export default async function EditQuestionPage({ params }: Props) {
     .orderBy(categories.name)
     .all();
 
+  const allSubcategories = db
+    .select({
+      id: subcategories.id,
+      name: subcategories.name,
+      categoryId: subcategories.categoryId,
+    })
+    .from(subcategories)
+    .orderBy(subcategories.name)
+    .all();
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Edit Question</h1>
-      <QuestionForm categories={allCategories} question={question} />
+      <QuestionForm categories={allCategories} subcategories={allSubcategories} question={question} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { questions, categories } from "@/db/schema";
+import { questions, categories, subcategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
@@ -17,11 +17,14 @@ export async function GET() {
       answer: questions.answer,
       categoryId: questions.categoryId,
       categoryName: categories.name,
+      subcategoryId: questions.subcategoryId,
+      subcategoryName: subcategories.name,
       imagePath: questions.imagePath,
       difficulty: questions.difficulty,
     })
     .from(questions)
     .leftJoin(categories, eq(questions.categoryId, categories.id))
+    .leftJoin(subcategories, eq(questions.subcategoryId, subcategories.id))
     .orderBy(questions.id)
     .all();
 

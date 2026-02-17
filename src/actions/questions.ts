@@ -11,14 +11,17 @@ const questionSchema = z.object({
   questionText: z.string().min(3, "Question must be at least 3 characters"),
   answer: z.string().min(1, "Answer is required"),
   categoryId: z.coerce.number().int().positive("Category is required"),
+  subcategoryId: z.coerce.number().int().positive().nullable().optional(),
   difficulty: z.enum(["easy", "intermediate", "difficult"]),
 });
 
 export async function createQuestion(formData: FormData) {
+  const rawSubcategoryId = formData.get("subcategoryId");
   const parsed = questionSchema.safeParse({
     questionText: formData.get("questionText"),
     answer: formData.get("answer"),
     categoryId: formData.get("categoryId"),
+    subcategoryId: rawSubcategoryId && rawSubcategoryId !== "" ? Number(rawSubcategoryId) : null,
     difficulty: formData.get("difficulty"),
   });
 
@@ -45,6 +48,7 @@ export async function createQuestion(formData: FormData) {
       questionText: parsed.data.questionText,
       answer: parsed.data.answer,
       categoryId: parsed.data.categoryId,
+      subcategoryId: parsed.data.subcategoryId || null,
       difficulty: parsed.data.difficulty,
       didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
@@ -68,10 +72,12 @@ export async function createQuestion(formData: FormData) {
 }
 
 export async function updateQuestion(id: number, formData: FormData) {
+  const rawSubcategoryId = formData.get("subcategoryId");
   const parsed = questionSchema.safeParse({
     questionText: formData.get("questionText"),
     answer: formData.get("answer"),
     categoryId: formData.get("categoryId"),
+    subcategoryId: rawSubcategoryId && rawSubcategoryId !== "" ? Number(rawSubcategoryId) : null,
     difficulty: formData.get("difficulty"),
   });
 
@@ -119,6 +125,7 @@ export async function updateQuestion(id: number, formData: FormData) {
       questionText: parsed.data.questionText,
       answer: parsed.data.answer,
       categoryId: parsed.data.categoryId,
+      subcategoryId: parsed.data.subcategoryId || null,
       difficulty: parsed.data.difficulty,
       didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
@@ -143,6 +150,7 @@ export async function createQuestionFromAI(data: {
   questionText: string;
   answer: string;
   categoryId: number;
+  subcategoryId?: number | null;
   difficulty: "easy" | "intermediate" | "difficult";
   didYouKnow: string | null;
 }) {
@@ -156,6 +164,7 @@ export async function createQuestionFromAI(data: {
       questionText: parsed.data.questionText,
       answer: parsed.data.answer,
       categoryId: parsed.data.categoryId,
+      subcategoryId: data.subcategoryId || null,
       difficulty: parsed.data.difficulty,
       didYouKnow: data.didYouKnow?.trim() || null,
       imagePath: null,
