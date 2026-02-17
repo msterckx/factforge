@@ -121,8 +121,8 @@ export default function AdminQuestionsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-        <table className="w-full text-sm min-w-[800px]">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-slate-600 w-12">Img</th>
@@ -130,14 +130,13 @@ export default function AdminQuestionsPage() {
               <th className="text-left px-4 py-3 font-medium text-slate-600">Answer</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Difficulty</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600">Subcategory</th>
               <th className="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
             </tr>
           </thead>
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-slate-400">
+                <td colSpan={6} className="text-center py-8 text-slate-400">
                   No questions yet.{" "}
                   <Link href="/admin/questions/new" className="text-amber-500 hover:underline">
                     Add one
@@ -174,7 +173,6 @@ export default function AdminQuestionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{q.categoryName}</td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">{q.subcategoryName || "—"}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
                       <Link
