@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { db } from "@/db";
-import { categories, questions } from "@/db/schema";
+import { categories, questions, subcategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -32,10 +32,20 @@ export default async function CategoryPage({ params }: Props) {
       imagePath: questions.imagePath,
       didYouKnow: questions.didYouKnow,
       difficulty: questions.difficulty,
+      subcategoryId: questions.subcategoryId,
     })
     .from(questions)
     .where(eq(questions.categoryId, category.id))
     .orderBy(questions.id);
+
+  const categorySubcategories = await db
+    .select({
+      id: subcategories.id,
+      name: subcategories.name,
+    })
+    .from(subcategories)
+    .where(eq(subcategories.categoryId, category.id))
+    .orderBy(subcategories.name);
 
   return (
     <div>
@@ -56,6 +66,7 @@ export default async function CategoryPage({ params }: Props) {
         <AnswerChecker
           questions={categoryQuestions}
           categoryName={category.name}
+          subcategories={categorySubcategories}
         />
       )}
     </div>
