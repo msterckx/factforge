@@ -55,3 +55,38 @@ Mix difficulties across the batch. Avoid overly obscure questions for "easy". En
   const parsed = JSON.parse(content);
   return parsed.questions as GeneratedQuestion[];
 }
+
+export async function classifySubcategories(
+  questions: { id: number; questionText: string; answer: string }[],
+  categoryName: string,
+  subcategoryNames: string[]
+): Promise<{ id: number; subcategory: string }[]> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are a trivia question classifier. Given a list of trivia questions in the category "${categoryName}", assign each question to the most fitting subcategory.
+
+Available subcategories: ${subcategoryNames.map((n) => `"${n}"`).join(", ")}
+
+Return JSON with a "results" array. Each object must have:
+- "id": the question ID (number)
+- "subcategory": the best matching subcategory name (must be one of the available subcategories)
+
+Choose the single most relevant subcategory for each question.`,
+      },
+      {
+        role: "user",
+        content: JSON.stringify(questions.map((q) => ({ id: q.id, question: q.questionText, answer: q.answer }))),
+      },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error("No response from OpenAI");
+
+  const parsed = JSON.parse(content);
+  return parsed.results as { id: number; subcategory: string }[];
+}

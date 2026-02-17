@@ -37,6 +37,7 @@ export default function AdminQuestionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [autoSubLoading, setAutoSubLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -57,6 +58,24 @@ export default function AdminQuestionsPage() {
   function showMessage(type: "success" | "error", text: string) {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
+  }
+
+  async function handleAutoSubcategories() {
+    setAutoSubLoading(true);
+    try {
+      const res = await fetch("/api/admin/auto-subcategories", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        showMessage("error", data.error || "Failed to auto-assign subcategories.");
+      } else {
+        showMessage("success", data.message);
+        await loadData();
+      }
+    } catch {
+      showMessage("error", "Failed to connect to the server.");
+    } finally {
+      setAutoSubLoading(false);
+    }
   }
 
   async function handleDelete(id: number) {
@@ -82,12 +101,21 @@ export default function AdminQuestionsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Manage Questions</h1>
-        <Link
-          href="/admin/questions/new"
-          className="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors"
-        >
-          Add Question
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={handleAutoSubcategories}
+            disabled={isPending || autoSubLoading}
+            className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {autoSubLoading ? "Assigning..." : "Auto-assign Subcategories"}
+          </button>
+          <Link
+            href="/admin/questions/new"
+            className="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors"
+          >
+            Add Question
+          </Link>
+        </div>
       </div>
 
       {/* Category filter */}
