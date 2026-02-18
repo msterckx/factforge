@@ -34,6 +34,7 @@ export default function AdminQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filterCategory, setFilterCategory] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -46,7 +47,7 @@ export default function AdminQuestionsPage() {
   // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterCategory]);
+  }, [filterCategory, searchQuery]);
 
   async function loadData() {
     const res = await fetch("/api/admin/questions");
@@ -88,9 +89,17 @@ export default function AdminQuestionsPage() {
     });
   }
 
-  const filtered = filterCategory
-    ? questions.filter((q) => q.categoryId === filterCategory)
-    : questions;
+  const filtered = questions.filter((q) => {
+    if (filterCategory && q.categoryId !== filterCategory) return false;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        q.questionText.toLowerCase().includes(query) ||
+        q.answer.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -118,8 +127,15 @@ export default function AdminQuestionsPage() {
         </div>
       </div>
 
-      {/* Category filter */}
+      {/* Filters */}
       <div className="mb-4 flex items-center gap-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search questions or answers..."
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 w-64"
+        />
         <select
           value={filterCategory || ""}
           onChange={(e) => setFilterCategory(e.target.value ? Number(e.target.value) : null)}
