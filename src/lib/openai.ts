@@ -16,7 +16,8 @@ export async function generateQuestions(
   categoryName: string,
   count: number = 5,
   existingQuestions: { questionText: string; answer: string }[] = [],
-  subcategoryNames: string[] = []
+  subcategoryNames: string[] = [],
+  topic?: string
 ): Promise<GeneratedQuestion[]> {
   const existingList = existingQuestions.length > 0
     ? `\n\nIMPORTANT: The following questions already exist in the database. Do NOT generate any questions that are the same or very similar to these (same topic/answer):\n${existingQuestions.map((q) => `- Q: "${q.questionText}" A: "${q.answer}"`).join("\n")}`
@@ -24,6 +25,10 @@ export async function generateQuestions(
 
   const subcategoryInstruction = subcategoryNames.length > 0
     ? `\n- "subcategory": one of the following subcategories that best fits the question: ${subcategoryNames.map((n) => `"${n}"`).join(", ")}. Pick the most relevant one for each question.`
+    : "";
+
+  const topicInstruction = topic
+    ? ` Focus specifically on the topic: "${topic}".`
     : "";
 
   const response = await openai.chat.completions.create({
@@ -44,7 +49,7 @@ Mix difficulties across the batch. Avoid overly obscure questions for "easy". En
       },
       {
         role: "user",
-        content: `Generate ${count} trivia questions in the category "${categoryName}".`,
+        content: `Generate ${count} trivia questions in the category "${categoryName}".${topicInstruction}`,
       },
     ],
   });
