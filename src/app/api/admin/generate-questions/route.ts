@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { categoryId, count = 5 } = await request.json();
+  const { categoryId, count = 5, topic } = await request.json();
 
   if (!categoryId) {
     return NextResponse.json({ error: "Category is required" }, { status: 400 });
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const subcategoryNames = subs.map((s) => s.name);
 
-    const generated = await generateQuestions(category.name, Math.min(count, 10), existing, subcategoryNames);
+    const generated = await generateQuestions(category.name, Math.min(count, 10), existing, subcategoryNames, topic);
 
     // Map subcategory names to IDs for the frontend
     const subMap = new Map(subs.map((s) => [s.name.toLowerCase(), s.id]));

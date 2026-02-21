@@ -35,6 +35,7 @@ export default function AIQuestionGenerator({
 }) {
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [count, setCount] = useState(5);
+  const [topic, setTopic] = useState("");
   const [questions, setQuestions] = useState<GeneratedQuestion[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [questionSubcategoryIds, setQuestionSubcategoryIds] = useState<(number | null)[]>([]);
@@ -58,7 +59,7 @@ export default function AIQuestionGenerator({
       const res = await fetch("/api/admin/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categoryId, count }),
+        body: JSON.stringify({ categoryId, count, topic: topic.trim() || undefined }),
       });
       const data = await res.json();
 
@@ -171,6 +172,18 @@ export default function AIQuestionGenerator({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Topic <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="e.g. World War II, space exploration..."
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
           </div>
           <button
             onClick={handleGenerate}
