@@ -1,4 +1,4 @@
-# FactForge - Implementation Plan
+# House of Trivia - Implementation Plan
 
 ## Technology Stack
 
