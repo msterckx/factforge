@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FactForge",
+  title: "House of Trivia",
   description: "Test your knowledge across multiple categories",
 };
 
