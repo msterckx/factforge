@@ -43,9 +43,9 @@ yarn-error.log*
 next-env.d.ts
 
 # database
-factforge.db
-factforge.db-shm
-factforge.db-wal
+houseoftrivia.db
+houseoftrivia.db-shm
+houseoftrivia.db-wal
 
 # uploaded images
 public/uploads/questions/*
