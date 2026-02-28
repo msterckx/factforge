@@ -4,13 +4,13 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import path from "path";
 import fs from "fs";
 
-console.log("=== House of Trivia Database Setup ===");
+console.log("=== Game of Trivia Database Setup ===");
 console.log(`  NODE_ENV:      ${process.env.NODE_ENV || "(not set)"}`);
 console.log(`  DATABASE_DIR:  ${process.env.DATABASE_DIR || "(not set, using cwd)"}`);
 console.log(`  cwd:           ${process.cwd()}`);
 
 const dbDir = process.env.DATABASE_DIR || process.cwd();
-const dbPath = path.join(dbDir, "houseoftrivia.db");
+const dbPath = path.join(dbDir, "gameoftrivia.db");
 const migrationsFolder = path.join(process.cwd(), "drizzle");
 
 console.log(`  DB path:       ${dbPath}`);

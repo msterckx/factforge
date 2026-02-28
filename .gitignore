@@ -43,9 +43,9 @@ yarn-error.log*
 next-env.d.ts
 
 # database
-houseoftrivia.db
-houseoftrivia.db-shm
-houseoftrivia.db-wal
+gameoftrivia.db
+gameoftrivia.db-shm
+gameoftrivia.db-wal
 
 # uploaded images
 public/uploads/questions/*

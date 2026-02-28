@@ -1,4 +1,4 @@
-# House of Trivia - Implementation Plan
+# Game of Trivia - Implementation Plan
 
 ## Technology Stack
 

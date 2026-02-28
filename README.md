@@ -1,1 +1,1 @@
-# houseoftrivia
+# gameoftrivia

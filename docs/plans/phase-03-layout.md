@@ -8,13 +8,13 @@
 ## Tasks
 
 - [ ] Create `src/components/Navbar.tsx`
-  - House of Trivia logo/brand text linking to home (`/`)
+  - Game of Trivia logo/brand text linking to home (`/`)
   - Clean, minimal top navigation bar
   - Styled with Tailwind (dark background, white text, or similar)
 
 - [ ] Update `src/app/layout.tsx` (root layout)
   - Include Navbar component
-  - Set page metadata: `title: "House of Trivia"`, description
+  - Set page metadata: `title: "Game of Trivia"`, description
   - Apply global font (e.g., Inter via next/font)
   - Wrap children in a main container with sensible max-width and padding
 
