@@ -29,9 +29,9 @@ export default async function HomePage() {
           Welcome to
         </p>
         <h1 className="text-4xl font-extrabold text-slate-800 mb-2">
-          Fact<span className="text-amber-500">Forge</span>
+          Game<span className="text-amber-500"> of Trivia</span>
         </h1>
-        <p className="text-slate-500 text-lg">Where Knowledge Meets Challenge.</p>
+        <p className="text-slate-500 text-lg">Challenge Your Knowledge.</p>
       </div>
 
       {/* Stats Bar */}
