@@ -58,7 +58,7 @@
 | `src/db/seed.ts` | Created |
 | `package.json` | Modified (added db scripts) |
 | `drizzle/` | Generated migration files |
-| `houseoftrivia.db` | Created (SQLite database file) |
+| `gameoftrivia.db` | Created (SQLite database file) |
 
 ## Done When
 - Migration runs without errors

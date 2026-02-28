@@ -33,7 +33,7 @@
 
 - [ ] Update `.gitignore` to include:
   ```
-  houseoftrivia.db
+  gameoftrivia.db
   .env.local
   public/uploads/questions/*
   !public/uploads/questions/.gitkeep
@@ -46,7 +46,7 @@
     schema: "./src/db/schema.ts",
     out: "./drizzle",
     dialect: "sqlite",
-    dbCredentials: { url: "./houseoftrivia.db" },
+    dbCredentials: { url: "./gameoftrivia.db" },
   });
   ```
 

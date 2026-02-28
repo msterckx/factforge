@@ -4,7 +4,7 @@ import * as schema from "./schema";
 import path from "path";
 
 const dbDir = process.env.DATABASE_DIR || process.cwd();
-const dbPath = path.join(dbDir, "houseoftrivia.db");
+const dbPath = path.join(dbDir, "gameoftrivia.db");
 const sqlite = new Database(dbPath);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
