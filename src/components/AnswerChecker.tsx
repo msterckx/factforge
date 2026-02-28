@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { checkAnswer } from "@/lib/utils";
 import Image from "next/image";
+import type { Dictionary } from "@/i18n/en";
 
 interface Question {
   id: number;
@@ -29,11 +30,12 @@ interface AnswerCheckerProps {
   questions: Question[];
   categoryName: string;
   subcategories?: Subcategory[];
+  dict: Dictionary;
 }
 
 type FeedbackState = "idle" | "correct" | "incorrect" | "revealed";
 
-export default function AnswerChecker({ questions, categoryName, subcategories = [] }: AnswerCheckerProps) {
+export default function AnswerChecker({ questions, categoryName, subcategories = [], dict }: AnswerCheckerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
@@ -93,7 +95,7 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
                 : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"
             }`}
           >
-            All
+            {dict.quiz.all}
           </button>
           {subcategories.map((sub) => (
             <button
@@ -113,14 +115,16 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
 
       {total === 0 ? (
         <p className="text-slate-400 text-center py-12">
-          No questions in this subcategory yet.
+          {dict.quiz.noQuestionsInSubcategory}
         </p>
       ) : (
         <>
           {/* Progress */}
           <div className="flex items-center justify-between mb-6">
             <span className="text-sm text-slate-500">
-              Question {currentIndex + 1} of {total}
+              {dict.quiz.questionOf
+                .replace("{current}", String(currentIndex + 1))
+                .replace("{total}", String(total))}
             </span>
             <div className="flex items-center gap-2">
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyStyles[question.difficulty]}`}>
@@ -167,7 +171,7 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type your answer..."
+              placeholder={dict.quiz.typeYourAnswer}
               disabled={feedback === "correct" || feedback === "revealed"}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
             />
@@ -176,18 +180,18 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
           {/* Feedback */}
           {feedback === "correct" && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-green-700 font-medium">Correct!</p>
+              <p className="text-green-700 font-medium">{dict.quiz.correct}</p>
             </div>
           )}
           {feedback === "incorrect" && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 font-medium">Incorrect. Try again or show the answer.</p>
+              <p className="text-red-700 font-medium">{dict.quiz.incorrect}</p>
             </div>
           )}
           {feedback === "revealed" && (
             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-amber-800">
-                The answer is: <span className="font-bold">{question.answer}</span>
+                {dict.quiz.theAnswerIs} <span className="font-bold">{question.answer}</span>
               </p>
             </div>
           )}
@@ -195,7 +199,7 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
           {/* Did You Know */}
           {(feedback === "correct" || feedback === "revealed") && question.didYouKnow && (
             <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-              <p className="text-sm font-semibold text-indigo-700 mb-1">Did you know?</p>
+              <p className="text-sm font-semibold text-indigo-700 mb-1">{dict.quiz.didYouKnow}</p>
               <p className="text-sm text-indigo-600">{question.didYouKnow}</p>
             </div>
           )}
@@ -209,13 +213,13 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
                   disabled={!userAnswer.trim()}
                   className="px-6 py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Check Answer
+                  {dict.quiz.checkAnswer}
                 </button>
                 <button
                   onClick={handleShow}
                   className="px-6 py-2.5 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
                 >
-                  Show Answer
+                  {dict.quiz.showAnswer}
                 </button>
               </>
             )}
@@ -228,14 +232,14 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
               disabled={currentIndex === 0}
               className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Previous
+              {dict.quiz.previous}
             </button>
             <button
               onClick={() => setCurrentIndex((i) => i + 1)}
               disabled={currentIndex === total - 1}
               className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Next
+              {dict.quiz.next}
             </button>
           </div>
         </>

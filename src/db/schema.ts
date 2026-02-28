@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const categories = sqliteTable("categories", {
@@ -41,3 +41,32 @@ export const questions = sqliteTable("questions", {
     .notNull()
     .default(sql`(datetime('now'))`),
 });
+
+export const questionTranslations = sqliteTable(
+  "question_translations",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    language: text("language", { enum: ["nl"] }).notNull(),
+    questionText: text("question_text").notNull(),
+    answer: text("answer").notNull(),
+    didYouKnow: text("did_you_know"),
+    isAutoTranslated: integer("is_auto_translated", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    uniqQuestionLang: uniqueIndex("question_translations_question_id_language_unique").on(
+      table.questionId,
+      table.language
+    ),
+  })
+);

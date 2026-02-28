@@ -15,6 +15,7 @@ interface Question {
   subcategoryName: string | null;
   imagePath: string | null;
   difficulty: "easy" | "intermediate" | "difficult";
+  hasNlTranslation: boolean;
 }
 
 const difficultyBadge = {
@@ -39,6 +40,8 @@ export default function AdminQuestionsPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
   const [autoSubLoading, setAutoSubLoading] = useState(false);
+  const [translating, setTranslating] = useState<Set<number>>(new Set());
+  const [bulkTranslating, setBulkTranslating] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -58,7 +61,7 @@ export default function AdminQuestionsPage() {
 
   function showMessage(type: "success" | "error", text: string) {
     setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
+    setTimeout(() => setMessage(null), 4000);
   }
 
   async function handleAutoSubcategories() {
@@ -89,6 +92,55 @@ export default function AdminQuestionsPage() {
     });
   }
 
+  async function handleTranslate(id: number) {
+    setTranslating((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch("/api/admin/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId: id, language: "nl" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showMessage("error", data.error || "Translation failed.");
+      } else {
+        showMessage("success", "Question translated to Dutch.");
+        await loadData();
+      }
+    } catch {
+      showMessage("error", "Failed to connect to server.");
+    } finally {
+      setTranslating((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
+
+  async function handleBulkTranslate() {
+    if (!confirm("Auto-translate all untranslated questions to Dutch? This will use OpenAI credits.")) return;
+    setBulkTranslating(true);
+    try {
+      const res = await fetch("/api/admin/translate-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: "nl" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showMessage("error", data.error || "Bulk translation failed.");
+      } else {
+        showMessage("success", data.message);
+        await loadData();
+      }
+    } catch {
+      showMessage("error", "Failed to connect to server.");
+    } finally {
+      setBulkTranslating(false);
+    }
+  }
+
   const filtered = questions.filter((q) => {
     if (filterCategory && q.categoryId !== filterCategory) return false;
     if (searchQuery) {
@@ -111,6 +163,13 @@ export default function AdminQuestionsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Manage Questions</h1>
         <div className="flex gap-2">
+          <button
+            onClick={handleBulkTranslate}
+            disabled={bulkTranslating || isPending}
+            className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {bulkTranslating ? "Translating..." : "Auto-translate all to NL"}
+          </button>
           <button
             onClick={handleAutoSubcategories}
             disabled={isPending || autoSubLoading}
@@ -174,13 +233,14 @@ export default function AdminQuestionsPage() {
               <th className="text-left px-4 py-3 font-medium text-slate-600">Answer</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Difficulty</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600">NL</th>
               <th className="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
             </tr>
           </thead>
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-slate-400">
+                <td colSpan={7} className="text-center py-8 text-slate-400">
                   No questions yet.{" "}
                   <Link href="/admin/questions/new" className="text-amber-500 hover:underline">
                     Add one
@@ -217,6 +277,21 @@ export default function AdminQuestionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{q.categoryName}</td>
+                  <td className="px-4 py-3">
+                    {q.hasNlTranslation ? (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                        ✓ NL
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleTranslate(q.id)}
+                        disabled={translating.has(q.id)}
+                        className="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {translating.has(q.id) ? "..." : "Translate"}
+                      </button>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex gap-2 justify-end">
                       <Link

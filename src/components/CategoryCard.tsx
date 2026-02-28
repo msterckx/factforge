@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Lang } from "@/i18n";
 
 const categoryIcons: Record<string, string> = {
   geography: "\u{1F30D}",
@@ -19,14 +20,16 @@ interface CategoryCardProps {
   name: string;
   slug: string;
   questionCount: number;
+  lang: Lang;
+  dict: { question: string; questions: string };
 }
 
-export default function CategoryCard({ name, slug, questionCount }: CategoryCardProps) {
+export default function CategoryCard({ name, slug, questionCount, lang, dict }: CategoryCardProps) {
   const icon = categoryIcons[slug] || "\u{2753}";
 
   return (
     <Link
-      href={`/category/${slug}`}
+      href={`/${lang}/category/${slug}`}
       className="flex items-center gap-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-4 border border-slate-200 hover:border-amber-400 group"
     >
       <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-2xl shrink-0 group-hover:bg-amber-100 transition-colors">
@@ -37,7 +40,7 @@ export default function CategoryCard({ name, slug, questionCount }: CategoryCard
           {name}
         </h2>
         <p className="text-xs text-slate-400">
-          {questionCount} {questionCount === 1 ? "question" : "questions"}
+          {questionCount} {questionCount === 1 ? dict.question : dict.questions}
         </p>
       </div>
     </Link>
