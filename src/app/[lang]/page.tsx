@@ -69,14 +69,14 @@ export default async function HomePage({ params }: Props) {
         <p className="text-xs uppercase tracking-widest text-amber-600 font-semibold mb-2">
           {dict.home.welcomeTo}
         </p>
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-2">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800 mb-2">
           Game<span className="text-amber-500"> of Trivia</span>
         </h1>
         <p className="text-slate-500 text-lg">{dict.home.subtitle}</p>
       </div>
 
       {/* Stats Bar */}
-      <div className="flex justify-center gap-6 mb-10">
+      <div className="flex justify-center gap-4 mb-10 flex-wrap">
         <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm border border-slate-200">
           <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
           <span className="text-sm font-semibold text-slate-700">{totalQuestions.value}</span>

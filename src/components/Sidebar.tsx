@@ -14,7 +14,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-52 shrink-0">
+    <aside className="w-52 shrink-0 hidden md:block">
       <nav className="bg-white rounded-xl shadow-md border border-slate-200 p-4 sticky top-8">
         <ul className="flex flex-col gap-1">
           {menuItems.map((item) => {
