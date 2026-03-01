@@ -168,7 +168,7 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
               onKeyDown={handleKeyDown}
               placeholder={dict.quiz.typeYourAnswer}
               disabled={feedback === "correct" || feedback === "revealed"}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
+              className="w-full px-4 py-3.5 border border-slate-300 rounded-lg text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
             />
           </div>
 
@@ -200,19 +200,19 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
           )}
 
           {/* Action buttons */}
-          <div className="flex gap-3 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 mb-8">
             {feedback !== "correct" && feedback !== "revealed" && (
               <>
                 <button
                   onClick={handleCheck}
                   disabled={!userAnswer.trim()}
-                  className="px-6 py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {dict.quiz.checkAnswer}
                 </button>
                 <button
                   onClick={handleShow}
-                  className="px-6 py-2.5 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
+                  className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
                 >
                   {dict.quiz.showAnswer}
                 </button>
@@ -225,14 +225,14 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
             <button
               onClick={() => setCurrentIndex((i) => i - 1)}
               disabled={currentIndex === 0}
-              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {dict.quiz.previous}
             </button>
             <button
               onClick={() => setCurrentIndex((i) => i + 1)}
               disabled={currentIndex === total - 1}
-              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {dict.quiz.next}
             </button>
