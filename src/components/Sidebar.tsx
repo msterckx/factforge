@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const menuItems = [
-  { label: "Home", href: "/" },
-  { label: "QuickQuiz", href: "/quickquiz" },
-];
-
 export default function Sidebar() {
   const pathname = usePathname();
+  // Derive lang from first path segment, e.g. "/en/..." → "en"
+  const lang = pathname.split("/")[1] || "en";
+
+  const menuItems = [
+    { label: lang === "nl" ? "Home" : "Home", href: `/${lang}` },
+    { label: lang === "nl" ? "Snelle Quiz" : "QuickQuiz", href: `/${lang}/quickquiz` },
+  ];
 
   return (
     <aside className="w-52 shrink-0">
@@ -17,8 +19,8 @@ export default function Sidebar() {
         <ul className="flex flex-col gap-1">
           {menuItems.map((item) => {
             const isActive =
-              item.href === "/"
-                ? pathname === "/"
+              item.href === `/${lang}`
+                ? pathname === `/${lang}` || pathname === `/${lang}/`
                 : pathname.startsWith(item.href);
 
             return (

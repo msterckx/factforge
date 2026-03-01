@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { questions, categories, subcategories } from "@/db/schema";
+import { questions, categories, subcategories, questionTranslations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
@@ -34,8 +34,22 @@ export async function GET() {
     .orderBy(categories.name)
     .all();
 
+  const translatedIds = new Set(
+    db
+      .select({ questionId: questionTranslations.questionId })
+      .from(questionTranslations)
+      .where(eq(questionTranslations.language, "nl"))
+      .all()
+      .map((r) => r.questionId)
+  );
+
+  const questionsWithStatus = allQuestions.map((q) => ({
+    ...q,
+    hasNlTranslation: translatedIds.has(q.id),
+  }));
+
   return NextResponse.json({
-    questions: allQuestions,
+    questions: questionsWithStatus,
     categories: allCategories,
   });
 }

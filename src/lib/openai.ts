@@ -61,6 +61,61 @@ Mix difficulties across the batch. Avoid overly obscure questions for "easy". En
   return parsed.questions as GeneratedQuestion[];
 }
 
+export interface TranslatedQuestionFields {
+  questionText: string;
+  answer: string;
+  didYouKnow: string | null;
+}
+
+export async function translateQuestion(
+  fields: { questionText: string; answer: string; didYouKnow: string | null },
+  targetLanguage: "nl"
+): Promise<TranslatedQuestionFields> {
+  const languageNames: Record<string, string> = { nl: "Dutch" };
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are a professional translator specializing in trivia content.
+Translate the provided trivia question fields from English to ${languageNames[targetLanguage]}.
+
+Rules:
+- Preserve the meaning exactly — do not add, remove, or change any facts.
+- Keep proper nouns (names of people, places, brands) in their original form unless a well-known ${languageNames[targetLanguage]} equivalent exists.
+- Keep the answer concise and factual — match the style of the original.
+- The "didYouKnow" field should read naturally in ${languageNames[targetLanguage]}.
+- Return null for "didYouKnow" if the input is null or empty.
+
+Return a JSON object with exactly these fields:
+- "questionText": translated question
+- "answer": translated answer
+- "didYouKnow": translated fun fact or null`,
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          questionText: fields.questionText,
+          answer: fields.answer,
+          didYouKnow: fields.didYouKnow,
+        }),
+      },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error("No response from OpenAI");
+
+  const parsed = JSON.parse(content);
+  return {
+    questionText: parsed.questionText,
+    answer: parsed.answer,
+    didYouKnow: parsed.didYouKnow || null,
+  };
+}
+
 export async function classifySubcategories(
   questions: { id: number; questionText: string; answer: string }[],
   categoryName: string,
