@@ -24,7 +24,6 @@ interface QuestionData {
   categoryId: number;
   subcategoryId: number | null;
   imagePath: string | null;
-  imageIsHint: boolean;
   didYouKnow: string | null;
   difficulty: "easy" | "intermediate" | "difficult";
 }
@@ -42,7 +41,6 @@ export default function QuestionForm({ categories, subcategories, question }: Qu
   const [isPending, startTransition] = useTransition();
   const [searchedImagePath, setSearchedImagePath] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | "">(question?.categoryId || "");
-  const [imageIsHint, setImageIsHint] = useState<boolean>(question?.imageIsHint ?? true);
 
   const filteredSubcategories = useMemo(
     () => subcategories.filter((s) => s.categoryId === selectedCategoryId),
@@ -200,27 +198,6 @@ export default function QuestionForm({ categories, subcategories, question }: Qu
         </label>
         <ImageUpload currentImage={currentImage} />
       </div>
-
-      {(currentImage) && (
-        <div className="mb-4">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              name="imageIsHint"
-              value="true"
-              checked={imageIsHint}
-              onChange={(e) => setImageIsHint(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400"
-            />
-            <span className="text-sm font-medium text-slate-700">
-              This image is a hint to the answer
-            </span>
-          </label>
-          <p className="text-xs text-slate-400 mt-1 ml-6">
-            Hint images are blurred until the player answers. Decorative images are always visible.
-          </p>
-        </div>
-      )}
 
       <div className="mb-6">
         <label className="block text-sm font-medium text-slate-700 mb-1">

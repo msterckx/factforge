@@ -25,7 +25,6 @@ export default async function QuickQuizPage({ params }: Props) {
         questionText: questions.questionText,
         answer: questions.answer,
         imagePath: questions.imagePath,
-        imageIsHint: questions.imageIsHint,
         didYouKnow: questions.didYouKnow,
         difficulty: questions.difficulty,
       })
@@ -38,7 +37,6 @@ export default async function QuickQuizPage({ params }: Props) {
         questionText: questions.questionText,
         answer: questions.answer,
         imagePath: questions.imagePath,
-        imageIsHint: questions.imageIsHint,
         didYouKnow: questions.didYouKnow,
         difficulty: questions.difficulty,
         translatedText: questionTranslations.questionText,
@@ -61,7 +59,6 @@ export default async function QuickQuizPage({ params }: Props) {
       answer: row.translatedAnswer ?? row.answer,
       didYouKnow: row.translatedDidYouKnow ?? row.didYouKnow,
       imagePath: row.imagePath,
-      imageIsHint: row.imageIsHint,
       difficulty: row.difficulty,
     }));
   }

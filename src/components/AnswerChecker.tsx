@@ -10,7 +10,6 @@ interface Question {
   questionText: string;
   answer: string;
   imagePath: string | null;
-  imageIsHint: boolean;
   didYouKnow: string | null;
   difficulty: "easy" | "intermediate" | "difficult";
   subcategoryId?: number | null;
@@ -150,12 +149,7 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
                 src={question.imagePath}
                 alt="Question image"
                 fill
-                className="object-contain transition-[filter] duration-700"
-                style={{
-                  filter: question.imageIsHint && feedback !== "correct" && feedback !== "revealed"
-                    ? "blur(12px)"
-                    : "blur(0px)",
-                }}
+                className="object-contain"
                 sizes="(max-width: 672px) 100vw, 672px"
               />
             </div>
