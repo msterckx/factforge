@@ -1,4 +1,54 @@
-export const en = {
+export interface Dictionary {
+  nav: {
+    brand: string;
+  };
+  home: {
+    welcomeTo: string;
+    subtitle: string;
+    questionsAvailable: string;
+    categories: string;
+    chooseCategory: string;
+    pickCategory: string;
+    noCategories: string;
+    startQuiz: string;
+    quickQuizTitle: string;
+    quickQuizSubtitle: string;
+  };
+  quickquiz: {
+    title: string;
+    subtitle: string;
+    noQuestions: string;
+    allCategories: string;
+  };
+  category: {
+    backToCategories: string;
+    noQuestions: string;
+  };
+  quiz: {
+    questionOf: string;
+    all: string;
+    noQuestionsInSubcategory: string;
+    typeYourAnswer: string;
+    correct: string;
+    incorrect: string;
+    theAnswerIs: string;
+    didYouKnow: string;
+    checkAnswer: string;
+    showAnswer: string;
+    previous: string;
+    next: string;
+  };
+  categoryCard: {
+    question: string;
+    questions: string;
+  };
+  sidebar: {
+    home: string;
+    quickQuiz: string;
+  };
+}
+
+export const en: Dictionary = {
   nav: {
     brand: "Game of Trivia",
   },
@@ -46,6 +96,4 @@ export const en = {
     home: "Home",
     quickQuiz: "QuickQuiz",
   },
-} as const;
-
-export type Dictionary = typeof en;
+};
