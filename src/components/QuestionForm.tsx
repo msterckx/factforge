@@ -42,7 +42,7 @@ export default function QuestionForm({ categories, subcategories, question }: Qu
   const [isPending, startTransition] = useTransition();
   const [searchedImagePath, setSearchedImagePath] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | "">(question?.categoryId || "");
-  const [imageIsHint, setImageIsHint] = useState<boolean>(question?.imageIsHint ?? false);
+  const [imageIsHint, setImageIsHint] = useState<boolean>(question?.imageIsHint ?? true);
 
   const filteredSubcategories = useMemo(
     () => subcategories.filter((s) => s.categoryId === selectedCategoryId),

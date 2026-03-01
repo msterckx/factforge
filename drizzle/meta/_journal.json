@@ -50,6 +50,13 @@
       "when": 1772360263097,
       "tag": "0006_dark_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1772361807009,
+      "tag": "0007_lumpy_supreme_intelligence",
+      "breakpoints": true
     }
   ]
 }
