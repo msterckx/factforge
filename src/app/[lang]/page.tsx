@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { db } from "@/db";
-import { categories, questions } from "@/db/schema";
-import { eq, count } from "drizzle-orm";
+import { categories, questions, categoryTranslations } from "@/db/schema";
+import { eq, count, and } from "drizzle-orm";
 import CategoryCard from "@/components/CategoryCard";
 import Link from "next/link";
 import { isValidLang, getDictionary, type Lang } from "@/i18n";
@@ -17,17 +17,48 @@ export default async function HomePage({ params }: Props) {
   if (!isValidLang(lang)) notFound();
   const dict = await getDictionary(lang as Lang);
 
-  const results = await db
-    .select({
-      id: categories.id,
-      name: categories.name,
-      slug: categories.slug,
-      questionCount: count(questions.id),
-    })
-    .from(categories)
-    .leftJoin(questions, eq(categories.id, questions.categoryId))
-    .groupBy(categories.id)
-    .orderBy(categories.name);
+  let results;
+
+  if (lang === "en") {
+    results = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        questionCount: count(questions.id),
+      })
+      .from(categories)
+      .leftJoin(questions, eq(categories.id, questions.categoryId))
+      .groupBy(categories.id)
+      .orderBy(categories.name);
+  } else {
+    const rows = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        questionCount: count(questions.id),
+        translatedName: categoryTranslations.name,
+      })
+      .from(categories)
+      .leftJoin(questions, eq(categories.id, questions.categoryId))
+      .leftJoin(
+        categoryTranslations,
+        and(
+          eq(categoryTranslations.categoryId, categories.id),
+          eq(categoryTranslations.language, lang)
+        )
+      )
+      .groupBy(categories.id)
+      .orderBy(categories.name);
+
+    results = rows.map((r) => ({
+      id: r.id,
+      name: r.translatedName ?? r.name,
+      slug: r.slug,
+      questionCount: r.questionCount,
+    }));
+  }
 
   const [totalQuestions] = await db.select({ value: count() }).from(questions);
 

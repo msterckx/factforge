@@ -61,6 +61,32 @@ Mix difficulties across the batch. Avoid overly obscure questions for "easy". En
   return parsed.questions as GeneratedQuestion[];
 }
 
+export async function translateText(
+  text: string,
+  targetLanguage: "nl"
+): Promise<string> {
+  const languageNames: Record<string, string> = { nl: "Dutch" };
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are a professional translator. Translate the given text from English to ${languageNames[targetLanguage]}. Keep proper nouns unchanged unless a well-known ${languageNames[targetLanguage]} equivalent exists. Return JSON with a single "text" field.`,
+      },
+      {
+        role: "user",
+        content: JSON.stringify({ text }),
+      },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error("No response from OpenAI");
+  return JSON.parse(content).text as string;
+}
+
 export interface TranslatedQuestionFields {
   questionText: string;
   answer: string;

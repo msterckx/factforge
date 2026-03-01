@@ -42,6 +42,60 @@ export const questions = sqliteTable("questions", {
     .default(sql`(datetime('now'))`),
 });
 
+export const categoryTranslations = sqliteTable(
+  "category_translations",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    categoryId: integer("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    language: text("language", { enum: ["nl"] }).notNull(),
+    name: text("name").notNull(),
+    isAutoTranslated: integer("is_auto_translated", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    uniqCategoryLang: uniqueIndex("category_translations_category_id_language_unique").on(
+      table.categoryId,
+      table.language
+    ),
+  })
+);
+
+export const subcategoryTranslations = sqliteTable(
+  "subcategory_translations",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    subcategoryId: integer("subcategory_id")
+      .notNull()
+      .references(() => subcategories.id, { onDelete: "cascade" }),
+    language: text("language", { enum: ["nl"] }).notNull(),
+    name: text("name").notNull(),
+    isAutoTranslated: integer("is_auto_translated", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    uniqSubcategoryLang: uniqueIndex("subcategory_translations_subcategory_id_language_unique").on(
+      table.subcategoryId,
+      table.language
+    ),
+  })
+);
+
 export const questionTranslations = sqliteTable(
   "question_translations",
   {
