@@ -57,6 +57,13 @@
       "when": 1772361807009,
       "tag": "0007_lumpy_supreme_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1772364530179,
+      "tag": "0008_lethal_james_howlett",
+      "breakpoints": true
     }
   ]
 }

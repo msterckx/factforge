@@ -1,0 +1,1 @@
+ALTER TABLE `questions` DROP COLUMN `image_is_hint`;
