@@ -9,6 +9,7 @@ const navItems = [
   { label: "Categories", href: "/admin/categories" },
   { label: "Questions", href: "/admin/questions" },
   { label: "Generate Questions", href: "/admin/questions/generate" },
+  { label: "Database", href: "/admin/database" },
 ];
 
 export default function AdminSidebar() {
