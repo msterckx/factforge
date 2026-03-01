@@ -33,6 +33,7 @@ export default function AdminCategoriesPage() {
   const [editName, setEditName] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [bulkTranslating, setBulkTranslating] = useState(false);
 
   // Subcategory state
   const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
@@ -55,11 +56,33 @@ export default function AdminCategoriesPage() {
 
   function showMessage(type: "success" | "error", text: string) {
     setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
+    setTimeout(() => setMessage(null), 4000);
   }
 
   function getSubsForCategory(categoryId: number) {
     return subcategories.filter((s) => s.categoryId === categoryId);
+  }
+
+  async function handleBulkTranslate() {
+    if (!confirm("Auto-translate all untranslated categories and subcategories to Dutch?")) return;
+    setBulkTranslating(true);
+    try {
+      const res = await fetch("/api/admin/translate-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: "nl" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showMessage("error", data.error || "Translation failed.");
+      } else {
+        showMessage("success", data.message);
+      }
+    } catch {
+      showMessage("error", "Failed to connect to server.");
+    } finally {
+      setBulkTranslating(false);
+    }
   }
 
   // Category handlers
@@ -165,7 +188,16 @@ export default function AdminCategoriesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Manage Categories</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Manage Categories</h1>
+        <button
+          onClick={handleBulkTranslate}
+          disabled={bulkTranslating || isPending}
+          className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {bulkTranslating ? "Translating..." : "Auto-translate all to NL"}
+        </button>
+      </div>
 
       {/* Add form */}
       <form onSubmit={handleCreate} className="flex gap-3 mb-6">
