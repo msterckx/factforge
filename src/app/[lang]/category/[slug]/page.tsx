@@ -137,7 +137,7 @@ export default async function CategoryPage({ params }: Props) {
         <p className="text-slate-400 text-center py-12">{dict.category.noQuestions}</p>
       ) : (
         <AnswerChecker
-          questions={categoryQuestions}
+          questions={[...categoryQuestions].sort(() => Math.random() - 0.5)}
           categoryName={categoryName}
           subcategories={categorySubcategories}
           dict={dict}
