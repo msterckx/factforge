@@ -43,6 +43,13 @@
       "when": 1772358568580,
       "tag": "0005_spotty_guardsmen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1772360263097,
+      "tag": "0006_dark_songbird",
+      "breakpoints": true
     }
   ]
 }

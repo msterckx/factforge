@@ -10,6 +10,7 @@ interface Question {
   questionText: string;
   answer: string;
   imagePath: string | null;
+  imageIsHint: boolean;
   didYouKnow: string | null;
   difficulty: "easy" | "intermediate" | "difficult";
   subcategoryId?: number | null;
@@ -151,9 +152,9 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
                 fill
                 className="object-contain transition-[filter] duration-700"
                 style={{
-                  filter: feedback === "correct" || feedback === "revealed"
-                    ? "blur(0px)"
-                    : "blur(12px)",
+                  filter: question.imageIsHint && feedback !== "correct" && feedback !== "revealed"
+                    ? "blur(12px)"
+                    : "blur(0px)",
                 }}
                 sizes="(max-width: 672px) 100vw, 672px"
               />

@@ -34,6 +34,7 @@ export const questions = sqliteTable("questions", {
   difficulty: text("difficulty", { enum: ["easy", "intermediate", "difficult"] }).notNull().default("easy"),
   didYouKnow: text("did_you_know"),
   imagePath: text("image_path"),
+  imageIsHint: integer("image_is_hint", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
