@@ -1,0 +1,1 @@
+ALTER TABLE `questions` ADD `image_is_hint` integer DEFAULT false NOT NULL;

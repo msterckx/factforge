@@ -52,6 +52,7 @@ export async function createQuestion(formData: FormData) {
       difficulty: parsed.data.difficulty,
       didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
+      imageIsHint: formData.get("imageIsHint") === "true",
     })
     .run();
 
@@ -129,6 +130,7 @@ export async function updateQuestion(id: number, formData: FormData) {
       difficulty: parsed.data.difficulty,
       didYouKnow: (formData.get("didYouKnow") as string)?.trim() || null,
       imagePath,
+      imageIsHint: formData.get("imageIsHint") === "true",
       updatedAt: new Date().toISOString(),
     })
     .where(eq(questions.id, id))
