@@ -6,11 +6,13 @@ const categoryLogos: Record<string, string> = {
   geography: "/logos/geography.jpg",
   science: "/logos/science.jpg",
   sports: "/logos/sports.jpg",
-  television: "/logos/films_tv.jpg",
+  television: "/logos/movies_tv.jpg",
+  movies: "/logos/movies_tv.jpg",
+  history: "/logos/history.jpg",
+  art: "/logos/art_architecture.jpg",
 };
 
 const categoryIcons: Record<string, string> = {
-  history: "\u{1F3DB}\u{FE0F}",
   movies: "\u{1F3AC}",
   music: "\u{1F3B5}",
   literature: "\u{1F4DA}",
