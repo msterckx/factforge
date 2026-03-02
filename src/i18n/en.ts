@@ -40,6 +40,10 @@ export interface Dictionary {
     quizMode: string;
     listMode: string;
     answerLabel: string;
+    allDifficulties: string;
+    easy: string;
+    intermediate: string;
+    difficult: string;
   };
   categoryCard: {
     question: string;
@@ -93,6 +97,10 @@ export const en: Dictionary = {
     quizMode: "Quiz",
     listMode: "List",
     answerLabel: "Answer",
+    allDifficulties: "All levels",
+    easy: "Easy",
+    intermediate: "Intermediate",
+    difficult: "Difficult",
   },
   categoryCard: {
     question: "question",
