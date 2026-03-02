@@ -35,6 +35,7 @@ interface AnswerCheckerProps {
 
 type FeedbackState = "idle" | "correct" | "incorrect" | "revealed";
 type ViewMode = "quiz" | "list";
+type Difficulty = "all" | "easy" | "intermediate" | "difficult";
 
 const LIST_PAGE_SIZE = 15;
 
@@ -142,13 +143,17 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>("all");
   const [listPage, setListPage] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
-    if (!selectedSubcategoryId) return questions;
-    return questions.filter((q) => q.subcategoryId === selectedSubcategoryId);
-  }, [questions, selectedSubcategoryId]);
+    return questions.filter((q) => {
+      if (selectedSubcategoryId && q.subcategoryId !== selectedSubcategoryId) return false;
+      if (selectedDifficulty !== "all" && q.difficulty !== selectedDifficulty) return false;
+      return true;
+    });
+  }, [questions, selectedSubcategoryId, selectedDifficulty]);
 
   const total = filtered.length;
   const question = filtered[currentIndex];
@@ -158,7 +163,7 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
     setUserAnswer("");
     setFeedback("idle");
     setListPage(1);
-  }, [selectedSubcategoryId]);
+  }, [selectedSubcategoryId, selectedDifficulty]);
 
   useEffect(() => {
     setUserAnswer("");
@@ -187,28 +192,15 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
   const listStart = (listPage - 1) * LIST_PAGE_SIZE;
   const listItems = filtered.slice(listStart, listStart + LIST_PAGE_SIZE);
 
+  const difficulties: { value: Difficulty; label: string }[] = [
+    { value: "all", label: dict.quiz.allDifficulties },
+    { value: "easy", label: dict.quiz.easy },
+    { value: "intermediate", label: dict.quiz.intermediate },
+    { value: "difficult", label: dict.quiz.difficult },
+  ];
+
   return (
     <div className="max-w-2xl mx-auto">
-      {/* View mode toggle */}
-      <div className="flex items-center gap-1 mb-6 bg-slate-100 rounded-lg p-1 w-fit">
-        <button
-          onClick={() => switchMode("quiz")}
-          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-            viewMode === "quiz" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          {dict.quiz.quizMode}
-        </button>
-        <button
-          onClick={() => switchMode("list")}
-          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-            viewMode === "list" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          {dict.quiz.listMode}
-        </button>
-      </div>
-
       {/* Subcategory filter */}
       {subcategories.length > 0 && (
         <div className="mb-6 flex items-center gap-2 flex-wrap">
@@ -237,6 +229,26 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
           ))}
         </div>
       )}
+
+      {/* Difficulty filter */}
+      <div className="mb-6 flex items-center gap-2 flex-wrap">
+        {difficulties.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setSelectedDifficulty(value)}
+            className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
+              selectedDifficulty === value
+                ? value === "easy" ? "bg-green-500 text-white border-green-500"
+                  : value === "intermediate" ? "bg-yellow-500 text-white border-yellow-500"
+                  : value === "difficult" ? "bg-red-500 text-white border-red-500"
+                  : "bg-amber-500 text-white border-amber-500"
+                : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {total === 0 ? (
         <p className="text-slate-400 text-center py-12">{dict.quiz.noQuestionsInSubcategory}</p>
