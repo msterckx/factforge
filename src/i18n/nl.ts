@@ -42,6 +42,10 @@ export const nl: Dictionary = {
     quizMode: "Quiz",
     listMode: "Lijst",
     answerLabel: "Antwoord",
+    allDifficulties: "Alle niveaus",
+    easy: "Makkelijk",
+    intermediate: "Gemiddeld",
+    difficult: "Moeilijk",
   },
   categoryCard: {
     question: "vraag",
