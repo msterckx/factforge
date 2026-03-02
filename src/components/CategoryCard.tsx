@@ -8,8 +8,11 @@ const categoryLogos: Record<string, string> = {
   sports: "/logos/sports.jpg",
   television: "/logos/movies_tv.jpg",
   movies: "/logos/movies_tv.jpg",
+  "movies-tv": "/logos/movies_tv.jpg",
+  "movies-and-tv": "/logos/movies_tv.jpg",
   history: "/logos/history.jpg",
   art: "/logos/art_architecture.jpg",
+  "art-architecture": "/logos/art_architecture.jpg",
 };
 
 const categoryIcons: Record<string, string> = {
