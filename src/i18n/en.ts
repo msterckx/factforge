@@ -37,6 +37,9 @@ export interface Dictionary {
     showAnswer: string;
     previous: string;
     next: string;
+    quizMode: string;
+    listMode: string;
+    answerLabel: string;
   };
   categoryCard: {
     question: string;
@@ -87,6 +90,9 @@ export const en: Dictionary = {
     showAnswer: "Show Answer",
     previous: "Previous",
     next: "Next",
+    quizMode: "Quiz",
+    listMode: "List",
+    answerLabel: "Answer",
   },
   categoryCard: {
     question: "question",
