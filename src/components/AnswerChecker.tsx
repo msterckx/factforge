@@ -34,12 +34,17 @@ interface AnswerCheckerProps {
 }
 
 type FeedbackState = "idle" | "correct" | "incorrect" | "revealed";
+type ViewMode = "quiz" | "list";
+
+const LIST_PAGE_SIZE = 10;
 
 export default function AnswerChecker({ questions, categoryName, subcategories = [], dict }: AnswerCheckerProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>("quiz");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
+  const [listPage, setListPage] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
@@ -47,14 +52,15 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
     return questions.filter((q) => q.subcategoryId === selectedSubcategoryId);
   }, [questions, selectedSubcategoryId]);
 
-  const question = filtered[currentIndex];
   const total = filtered.length;
+  const question = filtered[currentIndex];
 
-  // Reset index when filter changes
+  // Reset both modes when filter changes
   useEffect(() => {
     setCurrentIndex(0);
     setUserAnswer("");
     setFeedback("idle");
+    setListPage(1);
   }, [selectedSubcategoryId]);
 
   useEffect(() => {
@@ -82,8 +88,45 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
     }
   }
 
+  function switchMode(mode: ViewMode) {
+    setViewMode(mode);
+    setListPage(1);
+    setCurrentIndex(0);
+    setUserAnswer("");
+    setFeedback("idle");
+  }
+
+  // List pagination
+  const totalListPages = Math.ceil(total / LIST_PAGE_SIZE);
+  const listStart = (listPage - 1) * LIST_PAGE_SIZE;
+  const listItems = filtered.slice(listStart, listStart + LIST_PAGE_SIZE);
+
   return (
     <div className="max-w-2xl mx-auto">
+      {/* View mode toggle */}
+      <div className="flex items-center gap-1 mb-6 bg-slate-100 rounded-lg p-1 w-fit">
+        <button
+          onClick={() => switchMode("quiz")}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            viewMode === "quiz"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          {dict.quiz.quizMode}
+        </button>
+        <button
+          onClick={() => switchMode("list")}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            viewMode === "list"
+              ? "bg-white text-slate-800 shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          {dict.quiz.listMode}
+        </button>
+      </div>
+
       {/* Subcategory filter */}
       {subcategories.length > 0 && (
         <div className="mb-6 flex items-center gap-2 flex-wrap">
@@ -117,7 +160,74 @@ export default function AnswerChecker({ questions, categoryName, subcategories =
         <p className="text-slate-400 text-center py-12">
           {dict.quiz.noQuestionsInSubcategory}
         </p>
+      ) : viewMode === "list" ? (
+        /* ── LIST VIEW ── */
+        <>
+          <div className="flex flex-col gap-3 mb-6">
+            {listItems.map((q, i) => (
+              <div key={q.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-sm text-slate-400 font-medium shrink-0 mt-0.5">
+                    {listStart + i + 1}.
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyStyles[q.difficulty]}`}>
+                        {q.difficulty}
+                      </span>
+                    </div>
+                    <p className="text-slate-800 font-medium mb-3">{q.questionText}</p>
+                    {q.imagePath && (
+                      <div className="relative w-full aspect-video mb-3 rounded-lg overflow-hidden bg-slate-100">
+                        <Image
+                          src={q.imagePath}
+                          alt="Question image"
+                          fill
+                          className="object-contain"
+                          sizes="(max-width: 672px) 100vw, 672px"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide shrink-0">
+                        {dict.quiz.answerLabel}:
+                      </span>
+                      <span className="text-amber-700 font-semibold">{q.answer}</span>
+                    </div>
+                    {q.didYouKnow && (
+                      <p className="mt-2 text-xs text-slate-500 italic">{q.didYouKnow}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* List pagination */}
+          {totalListPages > 1 && (
+            <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+              <button
+                onClick={() => setListPage((p) => p - 1)}
+                disabled={listPage === 1}
+                className="px-5 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {dict.quiz.previous}
+              </button>
+              <span className="text-sm text-slate-500">
+                {listPage} / {totalListPages}
+              </span>
+              <button
+                onClick={() => setListPage((p) => p + 1)}
+                disabled={listPage === totalListPages}
+                className="px-5 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {dict.quiz.next}
+              </button>
+            </div>
+          )}
+        </>
       ) : (
+        /* ── QUIZ VIEW ── */
         <>
           {/* Progress */}
           <div className="flex items-center justify-between mb-6">

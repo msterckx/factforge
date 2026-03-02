@@ -39,6 +39,9 @@ export const nl: Dictionary = {
     showAnswer: "Toon antwoord",
     previous: "Vorige",
     next: "Volgende",
+    quizMode: "Quiz",
+    listMode: "Lijst",
+    answerLabel: "Antwoord",
   },
   categoryCard: {
     question: "vraag",
