@@ -1,12 +1,16 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Lang } from "@/i18n";
 
+const categoryLogos: Record<string, string> = {
+  geography: "/logos/geography.jpg",
+  science: "/logos/science.jpg",
+  sports: "/logos/sports.jpg",
+  television: "/logos/films_tv.jpg",
+};
+
 const categoryIcons: Record<string, string> = {
-  geography: "\u{1F30D}",
   history: "\u{1F3DB}\u{FE0F}",
-  television: "\u{1F4FA}",
-  science: "\u{1F52C}",
-  sports: "\u{26BD}",
   movies: "\u{1F3AC}",
   music: "\u{1F3B5}",
   literature: "\u{1F4DA}",
@@ -25,6 +29,7 @@ interface CategoryCardProps {
 }
 
 export default function CategoryCard({ name, slug, questionCount, lang, dict }: CategoryCardProps) {
+  const logo = categoryLogos[slug];
   const icon = categoryIcons[slug] || "\u{2753}";
 
   return (
@@ -32,8 +37,18 @@ export default function CategoryCard({ name, slug, questionCount, lang, dict }: 
       href={`/${lang}/category/${slug}`}
       className="flex items-center gap-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-4 border border-slate-200 hover:border-amber-400 group"
     >
-      <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-2xl shrink-0 group-hover:bg-amber-100 transition-colors">
-        {icon}
+      <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-amber-50 flex items-center justify-center text-2xl group-hover:ring-2 group-hover:ring-amber-400 transition-all">
+        {logo ? (
+          <Image
+            src={logo}
+            alt={name}
+            width={48}
+            height={48}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          icon
+        )}
       </div>
       <div>
         <h2 className="text-base font-semibold text-slate-800 group-hover:text-amber-700 transition-colors">
