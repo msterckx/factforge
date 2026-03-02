@@ -54,5 +54,21 @@ export const nl: Dictionary = {
   sidebar: {
     home: "Home",
     quickQuiz: "Snelle Quiz",
+    contact: "Contact",
+  },
+  contact: {
+    title: "Neem contact op",
+    subtitle: "Een vraag of suggestie? We horen graag van je.",
+    name: "Naam",
+    namePlaceholder: "Jouw naam",
+    email: "E-mail",
+    emailPlaceholder: "jouw@email.com",
+    message: "Bericht",
+    messagePlaceholder: "Jouw bericht...",
+    send: "Verstuur bericht",
+    sending: "Verzenden...",
+    successTitle: "Bericht verzonden!",
+    successMessage: "Bedankt voor je bericht. We nemen snel contact op.",
+    errorMessage: "Er ging iets mis. Probeer het opnieuw.",
   },
 };

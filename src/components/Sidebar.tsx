@@ -11,6 +11,7 @@ export default function Sidebar() {
   const menuItems = [
     { label: lang === "nl" ? "Home" : "Home", href: `/${lang}` },
     { label: lang === "nl" ? "Snelle Quiz" : "QuickQuiz", href: `/${lang}/quickquiz` },
+    { label: "Contact", href: `/${lang}/contact` },
   ];
 
   return (
