@@ -18,8 +18,8 @@ export async function sendContactEmail(formData: FormData) {
       from: "Game of Trivia <noreply@gameoftrivia.com>",
       to: "info@gameoftrivia.com",
       replyTo: email,
-      subject: `Contact form: message from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
+      subject: `Message from ${name} via Game of Trivia`,
+      text: `You have a new contact form submission.\n\nName: ${name}\nEmail: ${email}\n\n---\n\n${message}\n\n---\nReply directly to this email to respond to ${name}.`,
     });
 
     return { success: true };
