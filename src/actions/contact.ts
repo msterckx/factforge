@@ -16,7 +16,7 @@ export async function sendContactEmail(formData: FormData) {
   try {
     await resend.emails.send({
       from: "Game of Trivia <noreply@gameoftrivia.com>",
-      to: "info@gameoftrivia.com",
+      to: "info@send.gameoftrivia.com",
       replyTo: email,
       subject: `Message from ${name} via Game of Trivia`,
       text: `You have a new contact form submission.\n\nName: ${name}\nEmail: ${email}\n\n---\n\n${message}\n\n---\nReply directly to this email to respond to ${name}.`,
