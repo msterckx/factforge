@@ -37,9 +37,16 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // Redirect to default lang
+  // Detect browser language from Accept-Language header
+  const acceptLang = req.headers.get("accept-language") ?? "";
+  const preferredLang = acceptLang
+    .split(",")
+    .map((entry) => entry.split(";")[0].trim().toLowerCase().slice(0, 2))
+    .find((lang) => lang === "nl") ?? DEFAULT_LANG;
+
+  // Redirect to detected (or default) lang
   const url = req.nextUrl.clone();
-  url.pathname = `/${DEFAULT_LANG}${pathname === "/" ? "" : pathname}`;
+  url.pathname = `/${preferredLang}${pathname === "/" ? "" : pathname}`;
   return NextResponse.redirect(url);
 });
 

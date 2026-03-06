@@ -52,6 +52,22 @@ export interface Dictionary {
   sidebar: {
     home: string;
     quickQuiz: string;
+    contact: string;
+  };
+  contact: {
+    title: string;
+    subtitle: string;
+    name: string;
+    namePlaceholder: string;
+    email: string;
+    emailPlaceholder: string;
+    message: string;
+    messagePlaceholder: string;
+    send: string;
+    sending: string;
+    successTitle: string;
+    successMessage: string;
+    errorMessage: string;
   };
 }
 
@@ -109,5 +125,21 @@ export const en: Dictionary = {
   sidebar: {
     home: "Home",
     quickQuiz: "QuickQuiz",
+    contact: "Contact",
+  },
+  contact: {
+    title: "Contact Us",
+    subtitle: "Have a question or suggestion? We'd love to hear from you.",
+    name: "Name",
+    namePlaceholder: "Your name",
+    email: "Email",
+    emailPlaceholder: "your@email.com",
+    message: "Message",
+    messagePlaceholder: "Your message...",
+    send: "Send Message",
+    sending: "Sending...",
+    successTitle: "Message sent!",
+    successMessage: "Thanks for reaching out. We'll get back to you soon.",
+    errorMessage: "Something went wrong. Please try again.",
   },
 };
