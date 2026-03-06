@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { getRawDb } from "@/db/raw";
 import Link from "next/link";
+import DatabaseActions from "@/components/DatabaseActions";
 
 const PAGE_SIZE = 50;
 
@@ -55,11 +56,14 @@ export default async function DatabasePage({ searchParams }: Props) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Database Browser</h1>
-        <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">
-          Read-only
-        </span>
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-3">
+          <h1 className="text-2xl font-bold text-slate-800">Database Browser</h1>
+          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">
+            Read-only
+          </span>
+        </div>
+        <DatabaseActions />
       </div>
 
       {/* Table tabs */}
