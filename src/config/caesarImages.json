@@ -2,7 +2,7 @@
   {
     "id": 1,
     "name": "Julius Caesar",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Gaius_Iulius_Caesar_%28100-44_BC%29.jpg/240px-Gaius_Iulius_Caesar_%28100-44_BC%29.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8f/Gaius_Iulius_Caesar_%28Vatican_Museum%29.jpg"
   },
   {
     "id": 2,
@@ -27,7 +27,7 @@
   {
     "id": 6,
     "name": "Nero",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Nero_1.jpg/240px-Nero_1.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Nero_Glyptothek_Munich_321.jpg/500px-Nero_Glyptothek_Munich_321.jpg"
   },
   {
     "id": 7,
@@ -52,7 +52,7 @@
   {
     "id": 11,
     "name": "Titus",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Titus_MAN_Napoli_Inv6067_n01.jpg/240px-Titus_MAN_Napoli_Inv6067_n01.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Titus%2C_Roman%2C_c._70_AD%2C_marble_-_Galleria_Borghese_-_Rome%2C_Italy_-_DSC04762.jpg/500px-Titus%2C_Roman%2C_c._70_AD%2C_marble_-_Galleria_Borghese_-_Rome%2C_Italy_-_DSC04762.jpg"
   },
   {
     "id": 12,
