@@ -20,19 +20,19 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Roman numeral fallback when image fails to load
-const ROMAN = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
-
 export default function ChronologyGame({ caesars, dict }: Props) {
   const [order, setOrder] = useState<Caesar[]>(() => shuffle(caesars));
   const [gameState, setGameState] = useState<GameState>("playing");
   const [score, setScore] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const dragIndex = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const correctOrder = [...caesars].sort((a, b) => a.id - b.id);
+
+  // Real-time: a card is correct whenever its id matches its current position
+  const isCorrectAt = (caesar: Caesar, index: number) => caesar.id === index + 1;
+  const allCorrect = order.every((c, i) => isCorrectAt(c, i));
 
   // ── Tap-to-swap ───────────────────────────────────────────────────────────
   function handleTap(index: number) {
@@ -80,7 +80,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
 
   // ── Game actions ──────────────────────────────────────────────────────────
   function handleSubmit() {
-    setScore(order.filter((c, i) => c.id === i + 1).length);
+    setScore(order.filter((c, i) => isCorrectAt(c, i)).length);
     setGameState("submitted");
   }
 
@@ -98,25 +98,62 @@ export default function ChronologyGame({ caesars, dict }: Props) {
 
   const isPerfect = score === caesars.length;
 
-  // ── Per-card styles ───────────────────────────────────────────────────────
-  function topBorderColor(index: number, caesar: Caesar) {
-    if (gameState === "playing") return "border-t-slate-200";
-    const correct = caesar.id === index + 1;
-    if (gameState === "revealed") return correct ? "border-t-indigo-400" : "border-t-slate-200";
-    return correct ? "border-t-green-400" : "border-t-red-400";
-  }
-
-  function cardRing(index: number) {
-    if (selectedIndex === index) return "ring-2 ring-amber-400 ring-offset-1";
-    if (dragOverIndex === index) return "ring-2 ring-amber-300 ring-offset-1 opacity-80";
-    return "";
-  }
-
   return (
     <div>
+      {/* CSS animations */}
+      <style>{`
+        @keyframes caesarPop {
+          0%   { transform: scale(1); }
+          35%  { transform: scale(1.08); }
+          100% { transform: scale(1); }
+        }
+        @keyframes caesarGlow {
+          0%, 100% {
+            box-shadow:
+              0 0 0 2px #4ade80,
+              0 0 8px 1px #4ade8088,
+              0 0 18px 2px #4ade8044;
+          }
+          50% {
+            box-shadow:
+              0 0 0 2px #86efac,
+              0 0 16px 4px #4ade80bb,
+              0 0 32px 8px #4ade8033;
+          }
+        }
+        @keyframes caesarShine {
+          0%        { left: -80%; }
+          40%, 100% { left: 130%; }
+        }
+        .caesar-correct {
+          animation: caesarPop 0.35s ease-out, caesarGlow 2.2s ease-in-out 0.35s infinite;
+          outline: 2px solid #4ade80;
+          outline-offset: 0px;
+        }
+        .caesar-shine::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            110deg,
+            transparent 30%,
+            rgba(255,255,255,0.55) 50%,
+            transparent 70%
+          );
+          animation: caesarShine 2.2s ease-in-out 0.35s infinite;
+          pointer-events: none;
+          border-radius: inherit;
+        }
+      `}</style>
+
       {/* Status banner */}
-      {gameState === "playing" && (
+      {gameState === "playing" && !allCorrect && (
         <p className="text-sm text-slate-500 mb-4">{dict.dragOrTap}</p>
+      )}
+      {gameState === "playing" && allCorrect && (
+        <div className="mb-4 p-3 rounded-xl border bg-green-50 border-green-300 text-green-800 text-sm font-semibold">
+          {dict.perfectOrder}
+        </div>
       )}
       {gameState === "submitted" && (
         <div className={`mb-4 p-3 rounded-xl border text-sm font-semibold ${
@@ -136,79 +173,73 @@ export default function ChronologyGame({ caesars, dict }: Props) {
       {/* Selection hint */}
       {selectedIndex !== null && (
         <p className="text-xs text-amber-600 mb-3 font-medium">
-          "{order[selectedIndex].name}" selected — tap another to swap
+          &ldquo;{order[selectedIndex].name}&rdquo; selected — tap another to swap
         </p>
       )}
 
-      {/* Grid of cards */}
+      {/* Grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-5">
         {order.map((caesar, index) => {
-          const isCorrect = gameState !== "playing" && caesar.id === index + 1;
-          const isWrong = gameState === "submitted" && !isCorrect;
-          const imgFailed = imgErrors[caesar.id];
+          const correct = isCorrectAt(caesar, index);
+          const isSelected = selectedIndex === index;
+          const isDragOver = dragOverIndex === index;
+
+          // After submit: show red for wrong positions
+          const showWrong = gameState === "submitted" && !correct;
 
           return (
             <div
-              key={caesar.id}
+              // Key includes index so animation replays when the card lands in a new slot
+              key={`${caesar.id}-${index}`}
               draggable={gameState === "playing"}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
               onClick={() => handleTap(index)}
-              className={`
-                relative flex flex-col rounded-xl border border-slate-200 overflow-hidden
-                border-t-4 ${topBorderColor(index, caesar)}
-                ${gameState === "playing" ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
-                ${cardRing(index)}
-                transition-all select-none bg-white
-              `}
+              className={[
+                "relative flex flex-col rounded-xl overflow-hidden border transition-all select-none",
+                gameState === "playing" ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+                correct ? "caesar-correct caesar-shine" : "",
+                showWrong ? "border-red-400 ring-1 ring-red-300" : "",
+                !correct && !showWrong && isSelected ? "ring-2 ring-amber-400 ring-offset-1 border-amber-300" : "",
+                !correct && !showWrong && isDragOver ? "ring-2 ring-amber-300 border-dashed border-amber-300 opacity-70" : "",
+                !correct && !showWrong && !isSelected && !isDragOver ? "border-slate-200" : "",
+              ].join(" ")}
             >
               {/* Position badge */}
-              <div className="absolute top-1.5 left-1.5 z-10 bg-black/40 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none">
+              <div className="absolute top-1.5 left-1.5 z-20 bg-black/50 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none">
                 {index + 1}
               </div>
 
-              {/* Result badge */}
-              {gameState === "submitted" && (
-                <div className={`absolute top-1.5 right-1.5 z-10 text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center ${
-                  isCorrect ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                }`}>
-                  {isCorrect ? "✓" : "✗"}
+              {/* Wrong position indicator after submit */}
+              {showWrong && (
+                <div className="absolute top-1.5 right-1.5 z-20 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  ✗
                 </div>
               )}
 
-              {/* Image */}
-              <div className="aspect-square w-full bg-stone-100 overflow-hidden">
-                {!imgFailed ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={caesar.imageUrl}
-                    alt={caesar.name}
-                    className="w-full h-full object-cover object-top"
-                    onError={() => setImgErrors((prev) => ({ ...prev, [caesar.id]: true }))}
-                    draggable={false}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl text-stone-400 font-serif">
-                    {ROMAN[caesar.id - 1]}
-                  </div>
-                )}
+              {/* Image — fills the square */}
+              <div className="aspect-square w-full bg-stone-200 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={caesar.imageUrl}
+                  alt={caesar.name}
+                  className="w-full h-full object-cover object-top"
+                  draggable={false}
+                />
               </div>
 
-              {/* Name + reign */}
-              <div className="px-1.5 py-1.5">
+              {/* Name strip */}
+              <div className={`px-1.5 py-1 text-center ${correct ? "bg-green-50" : showWrong ? "bg-red-50" : "bg-white"}`}>
                 <p className="text-[11px] font-semibold text-slate-800 leading-tight truncate">
                   {caesar.name}
                 </p>
-                <p className="text-[10px] text-slate-400 leading-tight truncate">
-                  {gameState !== "playing" ? caesar.reign : ""}
-                </p>
-                {/* Show correct slot if wrong on submit */}
-                {isWrong && (
-                  <p className="text-[10px] text-red-400 leading-tight">
-                    → #{caesar.id}
-                  </p>
+                {gameState !== "playing" && (
+                  <p className="text-[10px] text-slate-400 leading-tight truncate">{caesar.reign}</p>
+                )}
+                {showWrong && (
+                  <p className="text-[10px] text-red-400 leading-tight">→ #{caesar.id}</p>
                 )}
               </div>
             </div>
@@ -216,7 +247,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
         })}
       </div>
 
-      {/* Facts after submission */}
+      {/* Facts */}
       {(gameState === "submitted" || gameState === "revealed") && (
         <div className="mb-5 p-4 bg-slate-50 border border-slate-200 rounded-xl">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Did you know?</p>
