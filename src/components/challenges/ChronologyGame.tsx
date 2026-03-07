@@ -9,8 +9,6 @@ interface Props {
   dict: Dictionary["challenges"];
 }
 
-type GameState = "playing" | "submitted" | "revealed";
-
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -21,89 +19,101 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function ChronologyGame({ caesars, dict }: Props) {
-  const [order, setOrder] = useState<Caesar[]>(() => shuffle(caesars));
-  const [gameState, setGameState] = useState<GameState>("playing");
-  const [score, setScore] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const dragIndex = useRef<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  // slotIndex (0-11) → Caesar when correctly placed by the player
+  const [placed, setPlaced] = useState<Record<number, Caesar>>({});
+  // Names not yet placed
+  const [pool, setPool] = useState<Caesar[]>(() => shuffle(caesars));
+  // Tap-to-place: which chip is currently selected
+  const [selectedCaesar, setSelectedCaesar] = useState<Caesar | null>(null);
+  // Slot currently being dragged over
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+  // Slot that just had a wrong drop (for red flash animation)
+  const [wrongSlot, setWrongSlot] = useState<number | null>(null);
+  // Whether the player clicked "Give up"
+  const [revealed, setRevealed] = useState(false);
 
+  const dragging = useRef<Caesar | null>(null);
   const correctOrder = [...caesars].sort((a, b) => a.id - b.id);
 
-  // Real-time: a card is correct whenever its id matches its current position
-  const isCorrectAt = (caesar: Caesar, index: number) => caesar.id === index + 1;
-  const isLocked = (index: number) => isCorrectAt(order[index], index);
-  const allCorrect = order.every((c, i) => isCorrectAt(c, i));
+  const placedCount = Object.keys(placed).length;
+  const allCorrect = placedCount === caesars.length;
 
-  // ── Tap-to-swap ───────────────────────────────────────────────────────────
-  function handleTap(index: number) {
-    if (gameState !== "playing") return;
-    if (isLocked(index)) return; // locked — ignore taps
-    if (selectedIndex === null) {
-      setSelectedIndex(index);
-    } else if (selectedIndex === index) {
-      setSelectedIndex(null);
+  // ── Core placement logic ──────────────────────────────────────────────────
+  function tryPlace(caesar: Caesar, slotIndex: number) {
+    if (placed[slotIndex]) return;
+    if (caesar.id === slotIndex + 1) {
+      setPlaced((prev) => ({ ...prev, [slotIndex]: caesar }));
+      setPool((prev) => prev.filter((c) => c.id !== caesar.id));
+      setSelectedCaesar(null);
     } else {
-      const newOrder = [...order];
-      [newOrder[selectedIndex], newOrder[index]] = [newOrder[index], newOrder[selectedIndex]];
-      setOrder(newOrder);
-      setSelectedIndex(null);
+      // Flash the slot red, name stays in pool
+      setWrongSlot(slotIndex);
+      setTimeout(() => setWrongSlot(null), 600);
+      setSelectedCaesar(null);
     }
   }
 
-  // ── Drag-and-drop ─────────────────────────────────────────────────────────
-  function handleDragStart(index: number) {
-    if (isLocked(index)) return; // locked — cannot be dragged out
-    dragIndex.current = index;
-    setSelectedIndex(null);
+  // ── Tap / click interactions ──────────────────────────────────────────────
+  function handleChipClick(caesar: Caesar) {
+    setSelectedCaesar((prev) => (prev?.id === caesar.id ? null : caesar));
   }
 
-  function handleDragOver(e: React.DragEvent, index: number) {
-    if (isLocked(index)) return; // locked — cannot be dropped into
+  function handleSlotClick(slotIndex: number) {
+    if (placed[slotIndex] || revealed) return;
+    if (selectedCaesar) tryPlace(selectedCaesar, slotIndex);
+  }
+
+  // ── Drag interactions ─────────────────────────────────────────────────────
+  function handleChipDragStart(caesar: Caesar) {
+    dragging.current = caesar;
+    setSelectedCaesar(null);
+  }
+
+  function handleChipDragEnd() {
+    dragging.current = null;
+  }
+
+  function handleSlotDragOver(e: React.DragEvent, slotIndex: number) {
+    if (placed[slotIndex] || revealed) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverIndex(index);
+    setDragOverSlot(slotIndex);
   }
 
-  function handleDrop(e: React.DragEvent, targetIndex: number) {
+  function handleSlotDragLeave() {
+    setDragOverSlot(null);
+  }
+
+  function handleSlotDrop(e: React.DragEvent, slotIndex: number) {
     e.preventDefault();
-    const from = dragIndex.current;
-    if (from === null || from === targetIndex || isLocked(targetIndex)) {
-      setDragOverIndex(null);
-      return;
-    }
-    const newOrder = [...order];
-    const [moved] = newOrder.splice(from, 1);
-    newOrder.splice(targetIndex, 0, moved);
-    setOrder(newOrder);
-    dragIndex.current = null;
-    setDragOverIndex(null);
+    setDragOverSlot(null);
+    const caesar = dragging.current;
+    if (!caesar) return;
+    dragging.current = null;
+    tryPlace(caesar, slotIndex);
   }
 
-  function handleDragEnd() {
-    dragIndex.current = null;
-    setDragOverIndex(null);
-  }
-
-  // ── Game actions ──────────────────────────────────────────────────────────
-  function handleSubmit() {
-    setScore(order.filter((c, i) => isCorrectAt(c, i)).length);
-    setGameState("submitted");
+  // ── Game controls ─────────────────────────────────────────────────────────
+  function handleReveal() {
+    const next: Record<number, Caesar> = { ...placed };
+    pool.forEach((c) => { next[c.id - 1] = c; });
+    setPlaced(next);
+    setPool([]);
+    setRevealed(true);
   }
 
   function handleReset() {
-    setOrder(shuffle(caesars));
-    setGameState("playing");
-    setScore(0);
-    setSelectedIndex(null);
+    setPlaced({});
+    setPool(shuffle(caesars));
+    setSelectedCaesar(null);
+    setRevealed(false);
+    setWrongSlot(null);
   }
 
-  function handleReveal() {
-    setOrder(correctOrder);
-    setGameState("revealed");
+  // ── Render helpers ────────────────────────────────────────────────────────
+  // Was this slot placed by the player (not revealed)?
+  function isPlayerPlaced(slotIndex: number) {
+    return !!placed[slotIndex] && !revealed;
   }
-
-  const isPerfect = score === caesars.length;
 
   return (
     <div>
@@ -116,16 +126,10 @@ export default function ChronologyGame({ caesars, dict }: Props) {
         }
         @keyframes caesarGlow {
           0%, 100% {
-            box-shadow:
-              0 0 0 2px #4ade80,
-              0 0 8px 1px #4ade8088,
-              0 0 18px 2px #4ade8044;
+            box-shadow: 0 0 0 2px #4ade80, 0 0 8px 1px #4ade8088, 0 0 18px 2px #4ade8044;
           }
           50% {
-            box-shadow:
-              0 0 0 2px #86efac,
-              0 0 16px 4px #4ade80bb,
-              0 0 32px 8px #4ade8033;
+            box-shadow: 0 0 0 2px #86efac, 0 0 16px 4px #4ade80bb, 0 0 32px 8px #4ade8033;
           }
         }
         @keyframes caesarShine {
@@ -135,7 +139,6 @@ export default function ChronologyGame({ caesars, dict }: Props) {
         .caesar-correct {
           animation: caesarPop 0.35s ease-out, caesarGlow 2.2s ease-in-out 0.35s infinite;
           outline: 2px solid #4ade80;
-          outline-offset: 0px;
         }
         .caesar-shine::after {
           content: '';
@@ -151,151 +154,144 @@ export default function ChronologyGame({ caesars, dict }: Props) {
           pointer-events: none;
           border-radius: inherit;
         }
+        @keyframes wrongFlash {
+          0%   { background-color: #fef2f2; border-color: #f87171; transform: translateX(0); }
+          25%  { transform: translateX(-5px); }
+          75%  { transform: translateX(5px); }
+          100% { background-color: transparent; border-color: #cbd5e1; transform: translateX(0); }
+        }
+        .slot-wrong {
+          animation: wrongFlash 0.55s ease-out forwards;
+        }
       `}</style>
 
-      {/* Status banner */}
-      {gameState === "playing" && !allCorrect && (
-        <p className="text-sm text-slate-500 mb-4">{dict.dragOrTap}</p>
-      )}
-      {gameState === "playing" && allCorrect && (
-        <div className="mb-4 p-3 rounded-xl border bg-green-50 border-green-300 text-green-800 text-sm font-semibold">
-          {dict.perfectOrder}
-        </div>
-      )}
-      {gameState === "submitted" && (
-        <div className={`mb-4 p-3 rounded-xl border text-sm font-semibold ${
-          isPerfect
-            ? "bg-green-50 border-green-300 text-green-800"
-            : "bg-amber-50 border-amber-300 text-amber-800"
-        }`}>
-          {isPerfect ? dict.perfectOrder : dict.correctPositions.replace("{correct}", String(score))}
-        </div>
-      )}
-      {gameState === "revealed" && (
-        <div className="mb-4 p-3 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-800 text-sm font-semibold">
-          {dict.revealAnswer}
-        </div>
-      )}
+      {/* Status bar */}
+      <div className="flex items-center justify-between mb-4">
+        {allCorrect ? (
+          <p className="text-sm font-semibold text-green-700">
+            {revealed ? dict.revealAnswer : dict.perfectOrder}
+          </p>
+        ) : (
+          <p className="text-sm text-slate-500">
+            {dict.dragOrTap} &mdash; <span className="font-semibold text-amber-700">{placedCount}/12</span> placed
+            <span className="font-semibold text-amber-700">{placedCount}/12</span>
+          </p>
+        )}
+        {selectedCaesar && (
+          <p className="text-xs text-amber-600 font-medium">
+            &ldquo;{selectedCaesar.name}&rdquo; — tap a slot
+          </p>
+        )}
+      </div>
 
-      {/* Selection hint */}
-      {selectedIndex !== null && (
-        <p className="text-xs text-amber-600 mb-3 font-medium">
-          &ldquo;{order[selectedIndex].name}&rdquo; selected — tap another to swap
-        </p>
-      )}
+      {/* 12-slot grid */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6">
+        {Array.from({ length: 12 }, (_, i) => {
+          const caesar = placed[i];
+          const isWrong = wrongSlot === i;
+          const isDragOver = dragOverSlot === i;
+          const playerPlaced = isPlayerPlaced(i);
 
-      {/* Grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-5">
-        {order.map((caesar, index) => {
-          const correct = isCorrectAt(caesar, index);
-          const isSelected = selectedIndex === index;
-          const isDragOver = dragOverIndex === index;
+          if (caesar) {
+            // Filled slot — show image
+            return (
+              <div
+                key={`filled-${i}`}
+                className={`relative flex flex-col rounded-xl overflow-hidden border border-slate-200 select-none cursor-not-allowed ${
+                  playerPlaced ? "caesar-correct caesar-shine" : "outline outline-2 outline-indigo-400"
+                }`}
+              >
+                {/* Position badge */}
+                <div className="absolute top-1.5 left-1.5 z-20 bg-black/50 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none">
+                  {i + 1}
+                </div>
 
-          // After submit: show red for wrong positions
-          const showWrong = gameState === "submitted" && !correct;
+                <div className="aspect-square w-full bg-stone-200 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={caesar.imageUrl}
+                    alt={caesar.name}
+                    className="w-full h-full object-cover object-top"
+                    draggable={false}
+                  />
+                </div>
 
+                <div className={`px-1.5 py-1 text-center ${playerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
+                  <p className="text-[11px] font-semibold text-slate-800 leading-tight truncate">
+                    {caesar.name}
+                  </p>
+                  <p className="text-[10px] text-slate-400 leading-tight">{caesar.reign}</p>
+                </div>
+              </div>
+            );
+          }
+
+          // Empty slot
           return (
             <div
-              // Key includes index so animation replays when the card lands in a new slot
-              key={`${caesar.id}-${index}`}
-              draggable={gameState === "playing" && !correct}
-              onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={(e) => handleDrop(e, index)}
-              onDragEnd={handleDragEnd}
-              onClick={() => handleTap(index)}
+              key={`empty-${i}`}
+              onDragOver={(e) => handleSlotDragOver(e, i)}
+              onDragLeave={handleSlotDragLeave}
+              onDrop={(e) => handleSlotDrop(e, i)}
+              onClick={() => handleSlotClick(i)}
               className={[
-                "relative flex flex-col rounded-xl overflow-hidden border transition-all select-none",
-                gameState !== "playing" ? "cursor-default"
-                  : correct ? "cursor-not-allowed"
-                  : "cursor-grab active:cursor-grabbing",
-                correct ? "caesar-correct caesar-shine" : "",
-                showWrong ? "border-red-400 ring-1 ring-red-300" : "",
-                !correct && !showWrong && isSelected ? "ring-2 ring-amber-400 ring-offset-1 border-amber-300" : "",
-                !correct && !showWrong && isDragOver ? "ring-2 ring-amber-300 border-dashed border-amber-300 opacity-70" : "",
-                !correct && !showWrong && !isSelected && !isDragOver ? "border-slate-200" : "",
+                "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors",
+                selectedCaesar ? "cursor-pointer" : "cursor-default",
+                isWrong ? "slot-wrong" : "",
+                isDragOver && !isWrong ? "border-amber-400 bg-amber-50" : "",
+                !isDragOver && !isWrong ? "border-slate-300 bg-slate-50 hover:border-slate-400" : "",
               ].join(" ")}
             >
-              {/* Position badge */}
-              <div className="absolute top-1.5 left-1.5 z-20 bg-black/50 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none">
-                {index + 1}
-              </div>
-
-              {/* Wrong position indicator after submit */}
-              {showWrong && (
-                <div className="absolute top-1.5 right-1.5 z-20 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                  ✗
-                </div>
-              )}
-
-              {/* Image — fills the square */}
-              <div className="aspect-square w-full bg-stone-200 overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={caesar.imageUrl}
-                  alt={caesar.name}
-                  className="w-full h-full object-cover object-top"
-                  draggable={false}
-                />
-              </div>
-
-              {/* Name strip */}
-              <div className={`px-1.5 py-1 text-center ${correct ? "bg-green-50" : showWrong ? "bg-red-50" : "bg-white"}`}>
-                <p className="text-[11px] font-semibold text-slate-800 leading-tight truncate">
-                  {caesar.name}
-                </p>
-                {gameState !== "playing" && (
-                  <p className="text-[10px] text-slate-400 leading-tight truncate">{caesar.reign}</p>
-                )}
-                {showWrong && (
-                  <p className="text-[10px] text-red-400 leading-tight">→ #{caesar.id}</p>
-                )}
-              </div>
+              <span className="text-2xl font-bold text-slate-300">{i + 1}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Facts */}
-      {(gameState === "submitted" || gameState === "revealed") && (
-        <div className="mb-5 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Did you know?</p>
-          <ul className="flex flex-col gap-1.5">
-            {correctOrder.map((c) => (
-              <li key={c.id} className="text-xs text-slate-600">
-                <span className="font-semibold text-slate-700">{c.name}</span> — {c.fact}
-              </li>
+      {/* Name chip pool */}
+      {pool.length > 0 && (
+        <div className="mb-5">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            Drag a name to the correct slot
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {pool.map((caesar) => (
+              <div
+                key={caesar.id}
+                draggable
+                onDragStart={() => handleChipDragStart(caesar)}
+                onDragEnd={handleChipDragEnd}
+                onClick={() => handleChipClick(caesar)}
+                className={[
+                  "px-3 py-1.5 rounded-full border text-sm font-medium transition-all cursor-grab active:cursor-grabbing select-none",
+                  selectedCaesar?.id === caesar.id
+                    ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
+                    : "bg-white border-slate-300 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
+                ].join(" ")}
+              >
+                {caesar.name}
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
-      {/* Buttons */}
-      <div className="flex gap-3 flex-wrap">
-        {gameState === "playing" && (
-          <button onClick={handleSubmit}
-            className="px-6 py-2.5 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors">
-            {dict.checkOrder}
+      {/* Action buttons */}
+      <div className="flex gap-3">
+        {!allCorrect && !revealed && (
+          <button
+            onClick={handleReveal}
+            className="px-5 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            {dict.revealAnswer}
           </button>
         )}
-        {gameState === "submitted" && !isPerfect && (
-          <>
-            <button onClick={handleReset}
-              className="px-6 py-2.5 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors">
-              {dict.tryAgain}
-            </button>
-            <button onClick={handleReveal}
-              className="px-6 py-2.5 border border-slate-300 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-colors">
-              {dict.revealAnswer}
-            </button>
-          </>
-        )}
-        {((gameState === "submitted" && isPerfect) || gameState === "revealed") && (
-          <button onClick={handleReset}
-            className="px-6 py-2.5 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors">
-            {dict.tryAgain}
-          </button>
-        )}
+        <button
+          onClick={handleReset}
+          className="px-5 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
+        >
+          {dict.tryAgain}
+        </button>
       </div>
     </div>
   );
