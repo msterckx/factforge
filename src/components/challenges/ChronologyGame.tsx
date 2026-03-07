@@ -32,11 +32,13 @@ export default function ChronologyGame({ caesars, dict }: Props) {
 
   // Real-time: a card is correct whenever its id matches its current position
   const isCorrectAt = (caesar: Caesar, index: number) => caesar.id === index + 1;
+  const isLocked = (index: number) => isCorrectAt(order[index], index);
   const allCorrect = order.every((c, i) => isCorrectAt(c, i));
 
   // ── Tap-to-swap ───────────────────────────────────────────────────────────
   function handleTap(index: number) {
     if (gameState !== "playing") return;
+    if (isLocked(index)) return; // locked — ignore taps
     if (selectedIndex === null) {
       setSelectedIndex(index);
     } else if (selectedIndex === index) {
@@ -51,11 +53,13 @@ export default function ChronologyGame({ caesars, dict }: Props) {
 
   // ── Drag-and-drop ─────────────────────────────────────────────────────────
   function handleDragStart(index: number) {
+    if (isLocked(index)) return; // locked — cannot be dragged out
     dragIndex.current = index;
     setSelectedIndex(null);
   }
 
   function handleDragOver(e: React.DragEvent, index: number) {
+    if (isLocked(index)) return; // locked — cannot be dropped into
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setDragOverIndex(index);
@@ -64,7 +68,10 @@ export default function ChronologyGame({ caesars, dict }: Props) {
   function handleDrop(e: React.DragEvent, targetIndex: number) {
     e.preventDefault();
     const from = dragIndex.current;
-    if (from === null || from === targetIndex) { setDragOverIndex(null); return; }
+    if (from === null || from === targetIndex || isLocked(targetIndex)) {
+      setDragOverIndex(null);
+      return;
+    }
     const newOrder = [...order];
     const [moved] = newOrder.splice(from, 1);
     newOrder.splice(targetIndex, 0, moved);
@@ -191,7 +198,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
             <div
               // Key includes index so animation replays when the card lands in a new slot
               key={`${caesar.id}-${index}`}
-              draggable={gameState === "playing"}
+              draggable={gameState === "playing" && !correct}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={(e) => handleDrop(e, index)}
@@ -199,7 +206,9 @@ export default function ChronologyGame({ caesars, dict }: Props) {
               onClick={() => handleTap(index)}
               className={[
                 "relative flex flex-col rounded-xl overflow-hidden border transition-all select-none",
-                gameState === "playing" ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+                gameState !== "playing" ? "cursor-default"
+                  : correct ? "cursor-not-allowed"
+                  : "cursor-grab active:cursor-grabbing",
                 correct ? "caesar-correct caesar-shine" : "",
                 showWrong ? "border-red-400 ring-1 ring-red-300" : "",
                 !correct && !showWrong && isSelected ? "ring-2 ring-amber-400 ring-offset-1 border-amber-300" : "",
