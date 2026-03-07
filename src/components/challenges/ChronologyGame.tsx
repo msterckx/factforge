@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import type { Caesar } from "@/data/romanCaesars";
 import type { Dictionary } from "@/i18n/en";
 
@@ -18,25 +18,92 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// ── Glitter bomb overlay ──────────────────────────────────────────────────────
+const COLORS = ["#fbbf24", "#4ade80", "#f59e0b", "#86efac", "#fde68a", "#a3e635", "#34d399", "#fcd34d"];
+const SHAPES = ["50%", "0%", "2px"];
+
+interface Particle {
+  id: number;
+  x: number;       // % left
+  y: number;       // % top
+  size: number;    // px
+  color: string;
+  radius: string;  // border-radius
+  delay: number;   // s
+  duration: number;// s
+  dx: number;      // px horizontal drift
+  dy: number;      // px vertical (negative = up)
+  rot: number;     // deg
+}
+
+function GlitterBomb() {
+  const particles = useMemo<Particle[]>(() =>
+    Array.from({ length: 80 }, (_, id) => ({
+      id,
+      x: 10 + Math.random() * 80,
+      y: 20 + Math.random() * 60,
+      size: 4 + Math.random() * 7,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      radius: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+      delay: Math.random() * 0.4,
+      duration: 0.9 + Math.random() * 0.8,
+      dx: (Math.random() - 0.5) * 260,
+      dy: -(80 + Math.random() * 180),
+      rot: (Math.random() - 0.5) * 720,
+    }))
+  , []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl z-30">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          style={{
+            position: "absolute",
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            borderRadius: p.radius,
+            animationName: "glitterFly",
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+            animationTimingFunction: "ease-out",
+            animationFillMode: "forwards",
+            ["--dx" as string]: `${p.dx}px`,
+            ["--dy" as string]: `${p.dy}px`,
+            ["--rot" as string]: `${p.rot}deg`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function ChronologyGame({ caesars, dict }: Props) {
-  // slotIndex (0-11) → Caesar when correctly placed by the player
   const [placed, setPlaced] = useState<Record<number, Caesar>>({});
-  // Names not yet placed
   const [pool, setPool] = useState<Caesar[]>(() => shuffle(caesars));
-  // Tap-to-place: which chip is currently selected
   const [selectedCaesar, setSelectedCaesar] = useState<Caesar | null>(null);
-  // Slot currently being dragged over
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
-  // Slot that just had a wrong drop (for red flash animation)
   const [wrongSlot, setWrongSlot] = useState<number | null>(null);
-  // Whether the player clicked "Give up"
   const [revealed, setRevealed] = useState(false);
+  const [glitterActive, setGlitterActive] = useState(false);
 
   const dragging = useRef<Caesar | null>(null);
-  const correctOrder = [...caesars].sort((a, b) => a.id - b.id);
 
   const placedCount = Object.keys(placed).length;
-  const allCorrect = placedCount === caesars.length;
+  const allCorrect = !revealed && placedCount === caesars.length;
+
+  // Fire glitter bomb once when all tiles are correctly placed by the player
+  useEffect(() => {
+    if (allCorrect) {
+      setGlitterActive(true);
+      const t = setTimeout(() => setGlitterActive(false), 2200);
+      return () => clearTimeout(t);
+    }
+  }, [allCorrect]);
 
   // ── Core placement logic ──────────────────────────────────────────────────
   function tryPlace(caesar: Caesar, slotIndex: number) {
@@ -46,14 +113,13 @@ export default function ChronologyGame({ caesars, dict }: Props) {
       setPool((prev) => prev.filter((c) => c.id !== caesar.id));
       setSelectedCaesar(null);
     } else {
-      // Flash the slot red, name stays in pool
       setWrongSlot(slotIndex);
       setTimeout(() => setWrongSlot(null), 600);
       setSelectedCaesar(null);
     }
   }
 
-  // ── Tap / click interactions ──────────────────────────────────────────────
+  // ── Tap interactions ──────────────────────────────────────────────────────
   function handleChipClick(caesar: Caesar) {
     setSelectedCaesar((prev) => (prev?.id === caesar.id ? null : caesar));
   }
@@ -107,38 +173,32 @@ export default function ChronologyGame({ caesars, dict }: Props) {
     setSelectedCaesar(null);
     setRevealed(false);
     setWrongSlot(null);
-  }
-
-  // ── Render helpers ────────────────────────────────────────────────────────
-  // Was this slot placed by the player (not revealed)?
-  function isPlayerPlaced(slotIndex: number) {
-    return !!placed[slotIndex] && !revealed;
+    setGlitterActive(false);
   }
 
   return (
     <div>
-      {/* CSS animations */}
       <style>{`
+        /* ── Per-tile: plays once, then holds the green outline ── */
         @keyframes caesarPop {
           0%   { transform: scale(1); }
           35%  { transform: scale(1.08); }
           100% { transform: scale(1); }
         }
         @keyframes caesarGlow {
-          0%, 100% {
-            box-shadow: 0 0 0 2px #4ade80, 0 0 8px 1px #4ade8088, 0 0 18px 2px #4ade8044;
-          }
-          50% {
-            box-shadow: 0 0 0 2px #86efac, 0 0 16px 4px #4ade80bb, 0 0 32px 8px #4ade8033;
-          }
+          0%   { box-shadow: 0 0 0 2px #4ade80, 0 0 8px 1px #4ade8088, 0 0 18px 2px #4ade8044; }
+          50%  { box-shadow: 0 0 0 2px #86efac, 0 0 16px 4px #4ade80bb, 0 0 32px 8px #4ade8033; }
+          100% { box-shadow: 0 0 0 2px #4ade80, 0 0 6px 1px #4ade8033; }
         }
         @keyframes caesarShine {
-          0%        { left: -80%; }
-          40%, 100% { left: 130%; }
+          0%   { left: -80%; }
+          100% { left: 130%; }
         }
         .caesar-correct {
-          animation: caesarPop 0.35s ease-out, caesarGlow 2.2s ease-in-out 0.35s infinite;
+          /* pop (0.35s) → glow pulse once (1.4s) → done */
+          animation: caesarPop 0.35s ease-out, caesarGlow 1.4s ease-in-out 0.35s 1 forwards;
           outline: 2px solid #4ade80;
+          outline-offset: 0;
         }
         .caesar-shine::after {
           content: '';
@@ -150,102 +210,108 @@ export default function ChronologyGame({ caesars, dict }: Props) {
             rgba(255,255,255,0.55) 50%,
             transparent 70%
           );
-          animation: caesarShine 2.2s ease-in-out 0.35s infinite;
+          /* single sweep that starts with the glow */
+          animation: caesarShine 0.9s ease-in-out 0.35s 1 forwards;
           pointer-events: none;
           border-radius: inherit;
         }
+
+        /* ── Wrong slot flash ── */
         @keyframes wrongFlash {
           0%   { background-color: #fef2f2; border-color: #f87171; transform: translateX(0); }
           25%  { transform: translateX(-5px); }
           75%  { transform: translateX(5px); }
           100% { background-color: transparent; border-color: #cbd5e1; transform: translateX(0); }
         }
-        .slot-wrong {
-          animation: wrongFlash 0.55s ease-out forwards;
+        .slot-wrong { animation: wrongFlash 0.55s ease-out forwards; }
+
+        /* ── Glitter bomb particles ── */
+        @keyframes glitterFly {
+          0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity: 1; }
+          60%  { opacity: 1; }
+          100% {
+            transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3);
+            opacity: 0;
+          }
         }
       `}</style>
 
       {/* Status bar */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 min-h-[24px]">
         {allCorrect ? (
-          <p className="text-sm font-semibold text-green-700">
-            {revealed ? dict.revealAnswer : dict.perfectOrder}
-          </p>
+          <p className="text-sm font-semibold text-green-700">{dict.perfectOrder} 🎉</p>
         ) : (
           <p className="text-sm text-slate-500">
-            {dict.dragOrTap} &mdash; <span className="font-semibold text-amber-700">{placedCount}/12</span> placed
-            <span className="font-semibold text-amber-700">{placedCount}/12</span>
+            {dict.dragOrTap} &mdash;{" "}
+            <span className="font-semibold text-amber-700">{placedCount}/12</span> placed
           </p>
         )}
-        {selectedCaesar && (
+        {selectedCaesar && !allCorrect && (
           <p className="text-xs text-amber-600 font-medium">
             &ldquo;{selectedCaesar.name}&rdquo; — tap a slot
           </p>
         )}
       </div>
 
-      {/* 12-slot grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6">
-        {Array.from({ length: 12 }, (_, i) => {
-          const caesar = placed[i];
-          const isWrong = wrongSlot === i;
-          const isDragOver = dragOverSlot === i;
-          const playerPlaced = isPlayerPlaced(i);
+      {/* Grid — wrapper is relative so glitter can overlay it */}
+      <div className="relative mb-6">
+        {glitterActive && <GlitterBomb />}
 
-          if (caesar) {
-            // Filled slot — show image
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {Array.from({ length: 12 }, (_, i) => {
+            const caesar = placed[i];
+            const isWrong = wrongSlot === i;
+            const isDragOver = dragOverSlot === i;
+            const playerPlaced = !!caesar && !revealed;
+
+            if (caesar) {
+              return (
+                <div
+                  key={`filled-${i}`}
+                  className={`relative flex flex-col rounded-xl overflow-hidden border border-slate-200 select-none cursor-not-allowed ${
+                    playerPlaced ? "caesar-correct caesar-shine" : "outline outline-2 outline-indigo-400"
+                  }`}
+                >
+                  <div className="absolute top-1.5 left-1.5 z-20 bg-black/50 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none">
+                    {i + 1}
+                  </div>
+                  <div className="aspect-square w-full bg-stone-200 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={caesar.imageUrl}
+                      alt={caesar.name}
+                      className="w-full h-full object-cover object-top"
+                      draggable={false}
+                    />
+                  </div>
+                  <div className={`px-1.5 py-1 text-center ${playerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
+                    <p className="text-[11px] font-semibold text-slate-800 leading-tight truncate">{caesar.name}</p>
+                    <p className="text-[10px] text-slate-400 leading-tight">{caesar.reign}</p>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
-                key={`filled-${i}`}
-                className={`relative flex flex-col rounded-xl overflow-hidden border border-slate-200 select-none cursor-not-allowed ${
-                  playerPlaced ? "caesar-correct caesar-shine" : "outline outline-2 outline-indigo-400"
-                }`}
+                key={`empty-${i}`}
+                onDragOver={(e) => handleSlotDragOver(e, i)}
+                onDragLeave={handleSlotDragLeave}
+                onDrop={(e) => handleSlotDrop(e, i)}
+                onClick={() => handleSlotClick(i)}
+                className={[
+                  "aspect-square rounded-xl border-2 border-dashed flex items-center justify-center transition-colors",
+                  selectedCaesar ? "cursor-pointer" : "cursor-default",
+                  isWrong ? "slot-wrong" : "",
+                  isDragOver && !isWrong ? "border-amber-400 bg-amber-50" : "",
+                  !isDragOver && !isWrong ? "border-slate-300 bg-slate-50 hover:border-slate-400" : "",
+                ].join(" ")}
               >
-                {/* Position badge */}
-                <div className="absolute top-1.5 left-1.5 z-20 bg-black/50 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none">
-                  {i + 1}
-                </div>
-
-                <div className="aspect-square w-full bg-stone-200 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={caesar.imageUrl}
-                    alt={caesar.name}
-                    className="w-full h-full object-cover object-top"
-                    draggable={false}
-                  />
-                </div>
-
-                <div className={`px-1.5 py-1 text-center ${playerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
-                  <p className="text-[11px] font-semibold text-slate-800 leading-tight truncate">
-                    {caesar.name}
-                  </p>
-                  <p className="text-[10px] text-slate-400 leading-tight">{caesar.reign}</p>
-                </div>
+                <span className="text-2xl font-bold text-slate-300">{i + 1}</span>
               </div>
             );
-          }
-
-          // Empty slot
-          return (
-            <div
-              key={`empty-${i}`}
-              onDragOver={(e) => handleSlotDragOver(e, i)}
-              onDragLeave={handleSlotDragLeave}
-              onDrop={(e) => handleSlotDrop(e, i)}
-              onClick={() => handleSlotClick(i)}
-              className={[
-                "aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors",
-                selectedCaesar ? "cursor-pointer" : "cursor-default",
-                isWrong ? "slot-wrong" : "",
-                isDragOver && !isWrong ? "border-amber-400 bg-amber-50" : "",
-                !isDragOver && !isWrong ? "border-slate-300 bg-slate-50 hover:border-slate-400" : "",
-              ].join(" ")}
-            >
-              <span className="text-2xl font-bold text-slate-300">{i + 1}</span>
-            </div>
-          );
-        })}
+          })}
+        </div>
       </div>
 
       {/* Name chip pool */}
@@ -276,7 +342,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
         </div>
       )}
 
-      {/* Action buttons */}
+      {/* Buttons */}
       <div className="flex gap-3">
         {!allCorrect && !revealed && (
           <button
