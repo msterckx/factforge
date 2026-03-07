@@ -52,7 +52,30 @@ export interface Dictionary {
   sidebar: {
     home: string;
     quickQuiz: string;
+    challenges: string;
     contact: string;
+  };
+  challenges: {
+    title: string;
+    subtitle: string;
+    pickGame: string;
+    gamesTitle: string;
+    guessThePerson: string;
+    guessThePersonSubtitle: string;
+    comingSoon: string;
+    backToChallenges: string;
+    typeTheName: string;
+    submit: string;
+    correct: string;
+    wrong: string;
+    timeUp: string;
+    thePersonWas: string;
+    nextPerson: string;
+    score: string;
+    timeLeft: string;
+    hint: string;
+    round: string;
+    playAgain: string;
   };
   contact: {
     title: string;
@@ -125,7 +148,30 @@ export const en: Dictionary = {
   sidebar: {
     home: "Home",
     quickQuiz: "QuickQuiz",
+    challenges: "Challenges",
     contact: "Contact",
+  },
+  challenges: {
+    title: "Challenges",
+    subtitle: "Test your knowledge in a whole new way.",
+    pickGame: "Pick a game from the right and start playing!",
+    gamesTitle: "Games",
+    guessThePerson: "Guess the Person",
+    guessThePersonSubtitle: "Recognize a famous face before time runs out",
+    comingSoon: "Coming soon",
+    backToChallenges: "Back to Challenges",
+    typeTheName: "Type the name...",
+    submit: "Submit",
+    correct: "Correct!",
+    wrong: "Wrong — keep trying!",
+    timeUp: "Time's up!",
+    thePersonWas: "The person was:",
+    nextPerson: "Next Person",
+    score: "Score",
+    timeLeft: "Time left",
+    hint: "Hint",
+    round: "Round",
+    playAgain: "Play Again",
   },
   contact: {
     title: "Contact Us",
