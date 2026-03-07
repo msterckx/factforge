@@ -22,6 +22,9 @@ export default function Navbar({ lang }: NavbarProps) {
             <Link href={`/${lang}/quickquiz`} className="text-sm text-slate-300 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-800">
               Quiz
             </Link>
+            <Link href={`/${lang}/challenges`} className="text-sm text-slate-300 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-800">
+              Challenges
+            </Link>
             <Link href={`/${lang}/contact`} className="text-sm text-slate-300 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-800">
               Contact
             </Link>
