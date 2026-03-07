@@ -7,22 +7,22 @@
   {
     "id": 2,
     "name": "Augustus",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Statue-Augustus.jpg/240px-Statue-Augustus.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Statue-Augustus.jpg/330px-Statue-Augustus.jpg"
   },
   {
     "id": 3,
     "name": "Tiberius",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Tiberius_Louvre.jpg/240px-Tiberius_Louvre.jpg"
+    "imageUrl": "https://ancientrome.ru/art/artwork/sculp/rom/imp/tiberius/tib021.jpg"
   },
   {
     "id": 4,
     "name": "Caligula",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/MuseeNational_Caligula.jpg/240px-MuseeNational_Caligula.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Tiberius_Capri_Louvre_Ma1248.jpg/250px-Tiberius_Capri_Louvre_Ma1248.jpg"
   },
   {
     "id": 5,
     "name": "Claudius",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Claudius_crop.jpg/240px-Claudius_crop.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Claudius_Pio-Clementino_Inv243.jpg/960px-Claudius_Pio-Clementino_Inv243.jpg"
   },
   {
     "id": 6,
@@ -32,22 +32,22 @@
   {
     "id": 7,
     "name": "Galba",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Galba_rom.jpg/240px-Galba_rom.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Roman_emperor_Galba%2C_Gustav_III%27s_Museum_of_Antiquities%2C_Stockholm_%2820%29_%2835867773310%29_edited.jpg/500px-Roman_emperor_Galba%2C_Gustav_III%27s_Museum_of_Antiquities%2C_Stockholm_%2820%29_%2835867773310%29_edited.jpg"
   },
   {
     "id": 8,
     "name": "Otho",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Otho_Musei_Capitolini_MC1118.jpg/240px-Otho_Musei_Capitolini_MC1118.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Statue_of_the_emperor_Otho%2C_Ma_1215_%28cropped1%29.jpg/500px-Statue_of_the_emperor_Otho%2C_Ma_1215_%28cropped1%29.jpg"
   },
   {
     "id": 9,
     "name": "Vitellius",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Vitellius_Louvre_Ma1210_n4.jpg/240px-Vitellius_Louvre_Ma1210_n4.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Pseudo-Vitellius_Louvre_MR684.jpg/250px-Pseudo-Vitellius_Louvre_MR684.jpg"
   },
   {
     "id": 10,
     "name": "Vespasian",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Vespasianus01_pushkin.jpg/240px-Vespasianus01_pushkin.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Vespasianus01_pushkin.jpg/330px-Vespasianus01_pushkin.jpg"
   },
   {
     "id": 11,
@@ -57,6 +57,6 @@
   {
     "id": 12,
     "name": "Domitian",
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Domitian.jpg/240px-Domitian.jpg"
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Domitian.jpg/330px-Domitian.jpg"
   }
 ]
