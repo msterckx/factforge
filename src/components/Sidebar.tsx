@@ -9,8 +9,9 @@ export default function Sidebar() {
   const lang = pathname.split("/")[1] || "en";
 
   const menuItems = [
-    { label: lang === "nl" ? "Home" : "Home", href: `/${lang}` },
+    { label: "Home", href: `/${lang}` },
     { label: lang === "nl" ? "Snelle Quiz" : "QuickQuiz", href: `/${lang}/quickquiz` },
+    { label: lang === "nl" ? "Uitdagingen" : "Challenges", href: `/${lang}/challenges` },
     { label: "Contact", href: `/${lang}/contact` },
   ];
 
