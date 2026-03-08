@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Dictionary } from "@/i18n/en";
 
 export type GameCategory = "history" | "science" | "other";
-export type GameType = "chronology" | "guess" | "other";
+export type GameType = "chronology" | "puzzle" | "other";
 
 export interface GameEntry {
   href: string;
@@ -19,7 +19,7 @@ export interface GameEntry {
 
 type FilterMode = "category" | "gametype";
 type CategoryFilter = "all" | GameCategory;
-type TypeFilter = "all" | GameType;
+type TypeFilter = "all" | "chronology" | "puzzle";
 
 interface Props {
   games: GameEntry[];
@@ -41,7 +41,7 @@ export default function GamePicker({ games, dict }: Props) {
   const typeLabels: Record<string, string> = {
     all: dict.filterAll,
     chronology: dict.gameTypeChronology,
-    guess: dict.guessThePerson,
+    puzzle: dict.gameTypePuzzle,
     other: dict.filterAll,
   };
 
@@ -91,7 +91,7 @@ export default function GamePicker({ games, dict }: Props) {
                 {categoryLabels[c]}
               </button>
             ))
-          : (["all", "chronology", "guess"] as TypeFilter[]).map((t) => (
+          : (["all", "chronology", "puzzle"] as TypeFilter[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setType(t)}

@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Usain Bolt",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Usain_Bolt_at_the_2012_Olympics.jpg/500px-Usain_Bolt_at_the_2012_Olympics.jpg",
+    "hint": "Athletics · Jamaica",
+    "achievement": "9 Olympic gold medals (2008 · 2012 · 2016)"
+  },
+  {
+    "id": 2,
+    "name": "Michael Phelps",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Michael_Phelps_2012.jpg/500px-Michael_Phelps_2012.jpg",
+    "hint": "Swimming · USA",
+    "achievement": "23 Olympic gold medals — the most decorated Olympian of all time"
+  },
+  {
+    "id": 3,
+    "name": "Simone Biles",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Simone_Biles_2016.jpg/500px-Simone_Biles_2016.jpg",
+    "hint": "Artistic Gymnastics · USA",
+    "achievement": "7 Olympic gold medals (2016 · 2024)"
+  }
+]
