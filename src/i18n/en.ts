@@ -89,6 +89,15 @@ export interface Dictionary {
     categoryHistory: string;
     categoryScience: string;
     gameTypeChronology: string;
+    gameTypePuzzle: string;
+    olympics: string;
+    olympicsSubtitle: string;
+    puzzleProgress: string;
+    puzzleSolved: string;
+    nextPuzzle: string;
+    shufflePuzzle: string;
+    allPuzzlesSolved: string;
+    finish: string;
     dragOrTap: string;
     checkOrder: string;
     correctPositions: string;
@@ -205,6 +214,15 @@ export const en: Dictionary = {
     categoryHistory: "History",
     categoryScience: "Science",
     gameTypeChronology: "Chronology",
+    gameTypePuzzle: "Puzzle",
+    olympics: "The Olympics",
+    olympicsSubtitle: "Reassemble the puzzle to reveal the Olympic champion",
+    puzzleProgress: "Puzzle",
+    puzzleSolved: "Puzzle solved!",
+    nextPuzzle: "Next Puzzle",
+    shufflePuzzle: "Shuffle",
+    allPuzzlesSolved: "All puzzles completed! Well done!",
+    finish: "Finish",
     dragOrTap: "Drag to reorder, or tap two items to swap them",
     checkOrder: "Check My Order",
     correctPositions: "{correct} of {total} in the right position",

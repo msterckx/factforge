@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Usain Bolt",
+    "en": "Jamaican sprinter widely regarded as the greatest of all time. He set the 100 m world record of 9.58 s in 2009 — a mark that still stands. His triple-triple (100 m, 200 m, 4×100 m relay gold at three consecutive Olympics) has never been matched.",
+    "nl": "Jamaicaanse sprinter die algemeen wordt beschouwd als de beste ooit. Hij vestigde het wereldrecord op de 100 m van 9,58 seconden in 2009 — een record dat nog steeds staat. Zijn triple-triple (100 m, 200 m en 4×100 m estafette goud op drie opeenvolgende Olympische Spelen) is nooit geëvenaard."
+  },
+  {
+    "id": 2,
+    "name": "Michael Phelps",
+    "en": "American swimmer and the most decorated Olympian in history, with 28 Olympic medals (23 gold). Competing across five Games from Sydney 2000 to Rio 2016, he won eight golds in a single Games (Beijing 2008), a record in itself.",
+    "nl": "Amerikaans zwemmer en de meest gedecoreerde Olympiër in de geschiedenis, met 28 Olympische medailles (23 goud). Actief op vijf Spelen van Sydney 2000 tot Rio 2016, won hij acht gouden medailles op één Spelen (Peking 2008), op zichzelf al een record."
+  },
+  {
+    "id": 3,
+    "name": "Simone Biles",
+    "en": "American artistic gymnast and the most decorated gymnast in World Championship history. She won four gold medals at Rio 2016 and added three more at Paris 2024 aged 27, cementing her status as the greatest gymnast of all time.",
+    "nl": "Amerikaans artistiek turnster en de meest gedecoreerde gymnast in de geschiedenis van de Wereldkampioenschappen. Ze won vier gouden medailles op Rio 2016 en voegde er op 27-jarige leeftijd nog drie toe op Parijs 2024, waarmee ze haar status als de grootste gymnaste aller tijden bevestigde."
+  }
+]

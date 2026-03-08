@@ -42,12 +42,12 @@ export default async function ChallengesPage({ params }: Props) {
       available: true,
     },
     {
-      href: `/${lang}/challenges/guess-the-person`,
-      icon: "🕵️",
-      label: d.guessThePerson,
-      subtitle: d.guessThePersonSubtitle,
+      href: `/${lang}/challenges/olympics`,
+      icon: "🏅",
+      label: d.olympics,
+      subtitle: d.olympicsSubtitle,
       category: "other",
-      gameType: "guess",
+      gameType: "puzzle",
       available: true,
     },
     {
