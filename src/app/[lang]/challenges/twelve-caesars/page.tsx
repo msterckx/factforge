@@ -1,7 +1,7 @@
 import { isValidLang, getDictionary, type Lang } from "@/i18n";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { romanCaesars } from "@/data/romanCaesars";
+import { getRomanCaesars } from "@/data/romanCaesars";
 import ChronologyGame from "@/components/challenges/ChronologyGame";
 
 interface Props {
@@ -26,7 +26,7 @@ export default async function TwelveCaesarsPage({ params }: Props) {
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{d.twelveCaesars}</h1>
       <p className="text-slate-500 text-sm mb-6">{d.twelveCaesarsSubtitle}</p>
 
-      <ChronologyGame caesars={romanCaesars} dict={d} />
+      <ChronologyGame caesars={getRomanCaesars(lang)} dict={d} />
     </div>
   );
 }

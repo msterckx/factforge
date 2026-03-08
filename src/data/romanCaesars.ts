@@ -10,12 +10,12 @@ export interface Caesar {
   description: string;
 }
 
-// Edit src/config/caesarImages.json to fix missing images.
-// Edit src/config/caesarDescriptions.json to update hover descriptions.
+// Edit src/config/caesarImages.json      → fix/replace images
+// Edit src/config/caesarDescriptions.json → update hover descriptions (add more lang keys as needed)
 const imageMap = new Map(imageConfig.map((e) => [e.id, e.imageUrl]));
-const descMap = new Map(descriptionConfig.map((e) => [e.id, e.description]));
+const descMap   = new Map(descriptionConfig.map((e) => [e.id, e as unknown as Record<string, string>]));
 
-const data: Omit<Caesar, "imageUrl" | "description">[] = [
+const base: Omit<Caesar, "imageUrl" | "description">[] = [
   { id: 1,  name: "Julius Caesar", reign: "49–44 BC",      fact: "Crossed the Rubicon in 49 BC, triggering a civil war that ended the Roman Republic." },
   { id: 2,  name: "Augustus",      reign: "27 BC–14 AD",   fact: "First Roman emperor; his 41-year reign was the longest of the Julio-Claudian dynasty." },
   { id: 3,  name: "Tiberius",      reign: "14–37 AD",      fact: "Spent the last decade of his reign in self-imposed exile on the island of Capri." },
@@ -30,8 +30,14 @@ const data: Omit<Caesar, "imageUrl" | "description">[] = [
   { id: 12, name: "Domitian",      reign: "81–96 AD",      fact: "Last of the Twelve Caesars; his assassination led to the adoptive Antonine emperors." },
 ];
 
-export const romanCaesars: Caesar[] = data.map((c) => ({
-  ...c,
-  imageUrl: imageMap.get(c.id) ?? "",
-  description: descMap.get(c.id) ?? "",
-}));
+/** Returns the 12 Caesars with descriptions in the requested language (falls back to English). */
+export function getRomanCaesars(lang: string): Caesar[] {
+  return base.map((c) => {
+    const desc = descMap.get(c.id);
+    return {
+      ...c,
+      imageUrl:    imageMap.get(c.id) ?? "",
+      description: desc?.[lang] ?? desc?.["en"] ?? "",
+    };
+  });
+}
