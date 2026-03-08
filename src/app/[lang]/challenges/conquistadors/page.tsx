@@ -26,7 +26,7 @@ export default async function ConquistadorsPage({ params }: Props) {
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{d.conquistadors}</h1>
       <p className="text-slate-500 text-sm mb-6">{d.conquistadorsSubtitle}</p>
 
-      <ChronologyGame items={getConquistadors(lang)} dict={d} />
+      <ChronologyGame items={getConquistadors(lang)} dict={d} challengeId="conquistadors" />
     </div>
   );
 }

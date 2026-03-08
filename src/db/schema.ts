@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const categories = sqliteTable("categories", {
@@ -121,6 +121,26 @@ export const questionTranslations = sqliteTable(
     uniqQuestionLang: uniqueIndex("question_translations_question_id_language_unique").on(
       table.questionId,
       table.language
+    ),
+  })
+);
+
+export const challengeScores = sqliteTable(
+  "challenge_scores",
+  {
+    id:          integer("id").primaryKey({ autoIncrement: true }),
+    userEmail:   text("user_email").notNull(),
+    challengeId: text("challenge_id").notNull(), // e.g. "twelve-caesars"
+    score:       integer("score").notNull(),
+    maxScore:    integer("max_score").notNull(),
+    completedAt: text("completed_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    userChallengeIdx: index("challenge_scores_user_challenge_idx").on(
+      table.userEmail,
+      table.challengeId
     ),
   })
 );

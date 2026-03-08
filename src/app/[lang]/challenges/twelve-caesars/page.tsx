@@ -26,7 +26,7 @@ export default async function TwelveCaesarsPage({ params }: Props) {
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{d.twelveCaesars}</h1>
       <p className="text-slate-500 text-sm mb-6">{d.twelveCaesarsSubtitle}</p>
 
-      <ChronologyGame items={getRomanCaesars(lang)} dict={d} />
+      <ChronologyGame items={getRomanCaesars(lang)} dict={d} challengeId="twelve-caesars" />
     </div>
   );
 }

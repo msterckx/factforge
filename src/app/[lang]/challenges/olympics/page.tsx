@@ -26,7 +26,7 @@ export default async function OlympicsPage({ params }: Props) {
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{d.olympics}</h1>
       <p className="text-slate-500 text-sm mb-6">{d.olympicsSubtitle}</p>
 
-      <PuzzleGame subjects={getOlympicChampions(lang)} dict={d} />
+      <PuzzleGame subjects={getOlympicChampions(lang)} dict={d} challengeId="olympics" />
     </div>
   );
 }

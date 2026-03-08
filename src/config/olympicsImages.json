@@ -19,5 +19,26 @@
     "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/74/Simone_Biles_Rio_2016e.jpg",
     "hint": "Artistic Gymnastics · USA",
     "achievement": "7 Olympic gold medals (2016 · 2024)"
+  },
+  {
+    "id": 4,
+    "name": "Carl Lewis",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Carl_Lewis_2011_Shankbone.JPG",
+    "hint": "Athletics · USA",
+    "achievement": "9 Olympic gold medals (1984 · 1988 · 1992 · 1996)"
+  },
+  {
+    "id": 5,
+    "name": "Nadia Comaneci",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/72/Nadia_Com%C4%83neci_1976b.jpg",
+    "hint": "Artistic Gymnastics · Romania",
+    "achievement": "5 Olympic gold medals · First gymnast to score a perfect 10 (1976)"
+  },
+  {
+    "id": 6,
+    "name": "Mark Spitz",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Mark_Spitz_1972c.jpg/960px-Mark_Spitz_1972c.jpg?_=20170720070216",
+    "hint": "Swimming · USA",
+    "achievement": "9 Olympic gold medals · 7 golds in a single Games (Munich 1972)"
   }
 ]

@@ -98,6 +98,8 @@ export interface Dictionary {
     shufflePuzzle: string;
     allPuzzlesSolved: string;
     finish: string;
+    yourScore: string;
+    bestScore: string;
     dragOrTap: string;
     checkOrder: string;
     correctPositions: string;
@@ -223,6 +225,8 @@ export const en: Dictionary = {
     shufflePuzzle: "Shuffle",
     allPuzzlesSolved: "All puzzles completed! Well done!",
     finish: "Finish",
+    yourScore: "Your score",
+    bestScore: "Best",
     dragOrTap: "Drag to reorder, or tap two items to swap them",
     checkOrder: "Check My Order",
     correctPositions: "{correct} of {total} in the right position",

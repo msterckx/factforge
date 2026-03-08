@@ -26,7 +26,7 @@ export default async function QuantumScientistsPage({ params }: Props) {
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{d.quantumScientists}</h1>
       <p className="text-slate-500 text-sm mb-6">{d.quantumScientistsSubtitle}</p>
 
-      <ChronologyGame items={getQuantumScientists(lang)} dict={d} />
+      <ChronologyGame items={getQuantumScientists(lang)} dict={d} challengeId="quantum-scientists" />
     </div>
   );
 }
