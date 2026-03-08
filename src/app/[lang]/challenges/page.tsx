@@ -47,6 +47,18 @@ export default async function ChallengesPage({ params }: Props) {
             <p className="text-sm text-slate-400">{d.twelveCaesarsSubtitle}</p>
           </div>
         </Link>
+        <Link
+          href={`/${lang}/challenges/conquistadors`}
+          className="flex items-center gap-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-all p-4 border border-slate-200 hover:border-amber-400 group"
+        >
+          <span className="text-3xl">⚔️</span>
+          <div>
+            <p className="font-semibold text-slate-800 group-hover:text-amber-700 transition-colors">
+              {d.conquistadors}
+            </p>
+            <p className="text-sm text-slate-400">{d.conquistadorsSubtitle}</p>
+          </div>
+        </Link>
       </div>
     </div>
   );

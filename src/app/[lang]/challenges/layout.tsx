@@ -29,6 +29,13 @@ export default async function ChallengesLayout({ children, params }: Props) {
       available: true,
     },
     {
+      href: `/${lang}/challenges/conquistadors`,
+      icon: "⚔️",
+      label: d.conquistadors,
+      subtitle: d.conquistadorsSubtitle,
+      available: true,
+    },
+    {
       href: "#",
       icon: "🌍",
       label: "Flag Quiz",

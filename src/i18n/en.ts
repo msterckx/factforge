@@ -78,6 +78,8 @@ export interface Dictionary {
     playAgain: string;
     twelveCaesars: string;
     twelveCaesarsSubtitle: string;
+    conquistadors: string;
+    conquistadorsSubtitle: string;
     dragOrTap: string;
     checkOrder: string;
     correctPositions: string;
@@ -183,10 +185,12 @@ export const en: Dictionary = {
     playAgain: "Play Again",
     twelveCaesars: "The Twelve Caesars",
     twelveCaesarsSubtitle: "Order the Roman emperors chronologically",
+    conquistadors: "The Conquistadors",
+    conquistadorsSubtitle: "Order the Spanish conquistadors chronologically",
     dragOrTap: "Drag to reorder, or tap two items to swap them",
     checkOrder: "Check My Order",
-    correctPositions: "{correct} of 12 in the right position",
-    perfectOrder: "Perfect! You know your Roman history!",
+    correctPositions: "{correct} of {total} in the right position",
+    perfectOrder: "Perfect chronological order! 🎉",
     tryAgain: "Try Again",
     revealAnswer: "Reveal Correct Order",
     yourAnswer: "Your order",

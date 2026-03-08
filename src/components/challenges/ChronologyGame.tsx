@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import type { Caesar } from "@/data/romanCaesars";
+import type { ChronologyItem } from "@/types/chronology";
 import type { Dictionary } from "@/i18n/en";
 
 interface Props {
-  caesars: Caesar[];
+  items: ChronologyItem[];
   dict: Dictionary["challenges"];
 }
 
@@ -101,19 +101,19 @@ function GlitterBomb() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ChronologyGame({ caesars, dict }: Props) {
-  const [placed, setPlaced] = useState<Record<number, Caesar>>({});
-  const [pool, setPool] = useState<Caesar[]>(() => shuffle(caesars));
-  const [selectedCaesar, setSelectedCaesar] = useState<Caesar | null>(null);
+export default function ChronologyGame({ items, dict }: Props) {
+  const [placed, setPlaced] = useState<Record<number, ChronologyItem>>({});
+  const [pool, setPool] = useState<ChronologyItem[]>(() => shuffle(items));
+  const [selectedCaesar, setSelectedCaesar] = useState<ChronologyItem | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [wrongSlot, setWrongSlot] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [glitterActive, setGlitterActive] = useState(false);
 
-  const dragging = useRef<Caesar | null>(null);
+  const dragging = useRef<ChronologyItem | null>(null);
 
   const placedCount = Object.keys(placed).length;
-  const allCorrect = !revealed && placedCount === caesars.length;
+  const allCorrect = !revealed && placedCount === items.length;
 
   // Fire glitter bomb once when all tiles are correctly placed by the player
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
   }, [allCorrect]);
 
   // ── Core placement logic ──────────────────────────────────────────────────
-  function tryPlace(caesar: Caesar, slotIndex: number) {
+  function tryPlace(caesar: ChronologyItem, slotIndex: number) {
     if (placed[slotIndex]) return;
     if (caesar.id === slotIndex + 1) {
       setPlaced((prev) => ({ ...prev, [slotIndex]: caesar }));
@@ -139,7 +139,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
   }
 
   // ── Tap interactions ──────────────────────────────────────────────────────
-  function handleChipClick(caesar: Caesar) {
+  function handleChipClick(caesar: ChronologyItem) {
     setSelectedCaesar((prev) => (prev?.id === caesar.id ? null : caesar));
   }
 
@@ -149,7 +149,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
   }
 
   // ── Drag interactions ─────────────────────────────────────────────────────
-  function handleChipDragStart(caesar: Caesar) {
+  function handleChipDragStart(caesar: ChronologyItem) {
     dragging.current = caesar;
     setSelectedCaesar(null);
   }
@@ -179,7 +179,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
 
   // ── Game controls ─────────────────────────────────────────────────────────
   function handleReveal() {
-    const next: Record<number, Caesar> = { ...placed };
+    const next: Record<number, ChronologyItem> = { ...placed };
     pool.forEach((c) => { next[c.id - 1] = c; });
     setPlaced(next);
     setPool([]);
@@ -188,7 +188,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
 
   function handleReset() {
     setPlaced({});
-    setPool(shuffle(caesars));
+    setPool(shuffle(items));
     setSelectedCaesar(null);
     setRevealed(false);
     setWrongSlot(null);
@@ -262,7 +262,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
         ) : (
           <p className="text-sm text-slate-500">
             {dict.dragOrTap} &mdash;{" "}
-            <span className="font-semibold text-amber-700">{placedCount}/12</span> placed
+            <span className="font-semibold text-amber-700">{placedCount}/{items.length}</span> placed
           </p>
         )}
         {selectedCaesar && !allCorrect && (
@@ -277,7 +277,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
         {glitterActive && <GlitterBomb />}
 
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-          {Array.from({ length: 12 }, (_, i) => {
+          {Array.from({ length: items.length }, (_, i) => {
             const caesar = placed[i];
             const isWrong = wrongSlot === i;
             const isDragOver = dragOverSlot === i;
