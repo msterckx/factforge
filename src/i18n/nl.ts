@@ -100,6 +100,8 @@ export const nl: Dictionary = {
     shufflePuzzle: "Schudden",
     allPuzzlesSolved: "Alle puzzels voltooid! Goed gedaan!",
     finish: "Voltooien",
+    yourScore: "Jouw score",
+    bestScore: "Beste",
     dragOrTap: "Sleep om te herordenen, of tik twee items om ze te wisselen",
     checkOrder: "Controleer mijn volgorde",
     correctPositions: "{correct} van {total} op de juiste positie",

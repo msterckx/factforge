@@ -7,6 +7,7 @@ import type { Dictionary } from "@/i18n/en";
 interface Props {
   items: ChronologyItem[];
   dict: Dictionary["challenges"];
+  challengeId: string;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -101,7 +102,7 @@ function GlitterBomb() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ChronologyGame({ items, dict }: Props) {
+export default function ChronologyGame({ items, dict, challengeId }: Props) {
   const [placed, setPlaced] = useState<Record<number, ChronologyItem>>({});
   const [pool, setPool] = useState<ChronologyItem[]>(() => shuffle(items));
   const [selectedCaesar, setSelectedCaesar] = useState<ChronologyItem | null>(null);
@@ -109,11 +110,16 @@ export default function ChronologyGame({ items, dict }: Props) {
   const [wrongSlot, setWrongSlot] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [glitterActive, setGlitterActive] = useState(false);
+  const [wrongAttempts, setWrongAttempts] = useState(0);
+  const [playerPlaced, setPlayerPlaced] = useState(0);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
 
   const dragging = useRef<ChronologyItem | null>(null);
 
   const placedCount = Object.keys(placed).length;
   const allCorrect = !revealed && placedCount === items.length;
+  const maxScore = items.length * 10;
+  const currentScore = Math.max(0, playerPlaced * 10 - wrongAttempts * 2);
 
   // Fire glitter bomb once when all tiles are correctly placed by the player
   useEffect(() => {
@@ -124,6 +130,19 @@ export default function ChronologyGame({ items, dict }: Props) {
     }
   }, [allCorrect]);
 
+  // Submit score once on game end (allCorrect or reveal)
+  useEffect(() => {
+    if ((allCorrect || revealed) && !scoreSubmitted) {
+      setScoreSubmitted(true);
+      fetch("/api/challenges/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeId, score: currentScore, maxScore }),
+      }).catch(() => {}); // silent — user may not be logged in
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allCorrect, revealed]);
+
   // ── Core placement logic ──────────────────────────────────────────────────
   function tryPlace(caesar: ChronologyItem, slotIndex: number) {
     if (placed[slotIndex]) return;
@@ -131,7 +150,9 @@ export default function ChronologyGame({ items, dict }: Props) {
       setPlaced((prev) => ({ ...prev, [slotIndex]: caesar }));
       setPool((prev) => prev.filter((c) => c.id !== caesar.id));
       setSelectedCaesar(null);
+      setPlayerPlaced((p) => p + 1);
     } else {
+      setWrongAttempts((w) => w + 1);
       setWrongSlot(slotIndex);
       setTimeout(() => setWrongSlot(null), 600);
       setSelectedCaesar(null);
@@ -193,6 +214,9 @@ export default function ChronologyGame({ items, dict }: Props) {
     setRevealed(false);
     setWrongSlot(null);
     setGlitterActive(false);
+    setWrongAttempts(0);
+    setPlayerPlaced(0);
+    setScoreSubmitted(false);
   }
 
   return (
@@ -258,14 +282,23 @@ export default function ChronologyGame({ items, dict }: Props) {
       {/* Status bar */}
       <div className="flex items-center justify-between mb-4 min-h-[24px]">
         {allCorrect ? (
-          <p className="text-sm font-semibold text-green-700">{dict.perfectOrder} 🎉</p>
+          <p className="text-sm font-semibold text-green-700">
+            {dict.perfectOrder} 🎉 &nbsp;·&nbsp; {dict.yourScore}: <span className="text-amber-700">{currentScore}/{maxScore}</span>
+          </p>
+        ) : revealed ? (
+          <p className="text-sm text-slate-500">
+            {dict.yourScore}: <span className="font-semibold text-amber-700">{currentScore}/{maxScore}</span>
+          </p>
         ) : (
           <p className="text-sm text-slate-500">
             {dict.dragOrTap} &mdash;{" "}
             <span className="font-semibold text-amber-700">{placedCount}/{items.length}</span> placed
+            {wrongAttempts > 0 && (
+              <span className="ml-2 text-red-400 text-xs">−{wrongAttempts * 2} pts</span>
+            )}
           </p>
         )}
-        {selectedCaesar && !allCorrect && (
+        {selectedCaesar && !allCorrect && !revealed && (
           <p className="text-xs text-amber-600 font-medium">
             &ldquo;{selectedCaesar.name}&rdquo; — tap a slot
           </p>

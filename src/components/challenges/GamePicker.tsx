@@ -8,6 +8,7 @@ export type GameCategory = "history" | "science" | "other";
 export type GameType = "chronology" | "puzzle" | "other";
 
 export interface GameEntry {
+  challengeId: string;
   href: string;
   icon: string;
   label: string;
@@ -17,6 +18,8 @@ export interface GameEntry {
   available: boolean;
 }
 
+export type ScoreMap = Record<string, { score: number; maxScore: number } | undefined>;
+
 type FilterMode = "category" | "gametype";
 type CategoryFilter = "all" | GameCategory;
 type TypeFilter = "all" | "chronology" | "puzzle";
@@ -24,9 +27,10 @@ type TypeFilter = "all" | "chronology" | "puzzle";
 interface Props {
   games: GameEntry[];
   dict: Dictionary["challenges"];
+  scores: ScoreMap;
 }
 
-export default function GamePicker({ games, dict }: Props) {
+export default function GamePicker({ games, dict, scores }: Props) {
   const [mode, setMode] = useState<FilterMode>("category");
   const [cat, setCat] = useState<CategoryFilter>("all");
   const [type, setType] = useState<TypeFilter>("all");
@@ -132,6 +136,11 @@ export default function GamePicker({ games, dict }: Props) {
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
                   {typeLabels[game.gameType] ?? game.gameType}
                 </span>
+                {scores[game.challengeId] && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                    ⭐ {dict.bestScore}: {scores[game.challengeId]!.score}/{scores[game.challengeId]!.maxScore}
+                  </span>
+                )}
               </div>
             </Link>
           ) : (

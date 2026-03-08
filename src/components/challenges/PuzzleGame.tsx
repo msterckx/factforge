@@ -22,16 +22,21 @@ function scramble(n: number): number[] {
 interface Props {
   subjects: PuzzleSubject[];
   dict: Dictionary["challenges"];
+  challengeId: string;
 }
 
-export default function PuzzleGame({ subjects, dict }: Props) {
-  const [current, setCurrent]   = useState(0);
-  const [tiles, setTiles]       = useState<number[]>(() => scramble(GRID * GRID));
-  const [selected, setSelected] = useState<number | null>(null);
-  const [dragOver, setDragOver] = useState<number | null>(null);
-  const [solved, setSolved]     = useState(false);
-  const [allDone, setAllDone]   = useState(false);
-  const [showHint, setShowHint] = useState(false);
+export default function PuzzleGame({ subjects, dict, challengeId }: Props) {
+  const [current, setCurrent]           = useState(0);
+  const [tiles, setTiles]               = useState<number[]>(() => scramble(GRID * GRID));
+  const [selected, setSelected]         = useState<number | null>(null);
+  const [dragOver, setDragOver]         = useState<number | null>(null);
+  const [solved, setSolved]             = useState(false);
+  const [allDone, setAllDone]           = useState(false);
+  const [showHint, setShowHint]         = useState(false);
+  const [puzzleShuffles, setPuzzleShuffles] = useState(0);
+  const [totalScore, setTotalScore]     = useState(0);
+
+  const maxScore = subjects.length * 100;
 
   const dragging = useRef<number | null>(null);
   const subject  = subjects[current];
@@ -57,14 +62,24 @@ export default function PuzzleGame({ subjects, dict }: Props) {
   }
 
   function handleNext() {
+    const puzzleScore = Math.max(0, 100 - puzzleShuffles * 5);
+    const newTotal = totalScore + puzzleScore;
+    setTotalScore(newTotal);
+
     if (current + 1 >= subjects.length) {
       setAllDone(true);
+      fetch("/api/challenges/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeId, score: newTotal, maxScore }),
+      }).catch(() => {}); // silent — user may not be logged in
     } else {
       setCurrent((c) => c + 1);
       setTiles(scramble(GRID * GRID));
       setSelected(null);
       setSolved(false);
       setShowHint(false);
+      setPuzzleShuffles(0);
     }
   }
 
@@ -75,6 +90,8 @@ export default function PuzzleGame({ subjects, dict }: Props) {
     setSolved(false);
     setShowHint(false);
     setAllDone(false);
+    setPuzzleShuffles(0);
+    setTotalScore(0);
   }
 
   // ── All done screen ──────────────────────────────────────────────────────
@@ -83,6 +100,9 @@ export default function PuzzleGame({ subjects, dict }: Props) {
       <div className="text-center py-16">
         <div className="text-5xl mb-4">🏅</div>
         <p className="text-xl font-bold text-slate-800 mb-1">{dict.allPuzzlesSolved}</p>
+        <p className="text-slate-500 mt-2">
+          {dict.yourScore}: <span className="font-bold text-amber-700">{totalScore}/{maxScore}</span>
+        </p>
         <button
           onClick={handleReset}
           className="mt-6 px-6 py-2.5 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors"
@@ -188,13 +208,16 @@ export default function PuzzleGame({ subjects, dict }: Props) {
 
       {/* Controls when unsolved */}
       {!solved && (
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex items-center gap-3">
           <button
-            onClick={() => { setTiles(scramble(GRID * GRID)); setSelected(null); }}
+            onClick={() => { setTiles(scramble(GRID * GRID)); setSelected(null); setPuzzleShuffles((s) => s + 1); }}
             className="px-4 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
           >
             {dict.shufflePuzzle}
           </button>
+          {puzzleShuffles > 0 && (
+            <span className="text-xs text-red-400">−{puzzleShuffles * 5} pts</span>
+          )}
         </div>
       )}
     </div>
