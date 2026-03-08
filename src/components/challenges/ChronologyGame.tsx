@@ -18,6 +18,25 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  return (
+    <div className="relative group/tip">
+      {children}
+      <div className="
+        pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50
+        w-48 px-2.5 py-1.5 rounded-lg bg-slate-800 text-white text-xs leading-snug
+        opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150
+        shadow-lg
+      ">
+        {text}
+        {/* arrow */}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+      </div>
+    </div>
+  );
+}
+
 // ── Glitter bomb overlay ──────────────────────────────────────────────────────
 const COLORS = ["#fbbf24", "#4ade80", "#f59e0b", "#86efac", "#fde68a", "#a3e635", "#34d399", "#fcd34d"];
 const SHAPES = ["50%", "0%", "2px"];
@@ -266,8 +285,8 @@ export default function ChronologyGame({ caesars, dict }: Props) {
 
             if (caesar) {
               return (
+                <Tooltip key={`filled-${i}`} text={caesar.description}>
                 <div
-                  key={`filled-${i}`}
                   className={`relative flex flex-col rounded-xl overflow-hidden border border-slate-200 select-none cursor-not-allowed ${
                     playerPlaced ? "caesar-correct caesar-shine" : "outline outline-2 outline-indigo-400"
                   }`}
@@ -289,6 +308,7 @@ export default function ChronologyGame({ caesars, dict }: Props) {
                     <p className="text-[10px] text-slate-400 leading-tight">{caesar.reign}</p>
                   </div>
                 </div>
+                </Tooltip>
               );
             }
 
@@ -322,21 +342,22 @@ export default function ChronologyGame({ caesars, dict }: Props) {
           </p>
           <div className="flex flex-wrap gap-2">
             {pool.map((caesar) => (
-              <div
-                key={caesar.id}
-                draggable
-                onDragStart={() => handleChipDragStart(caesar)}
-                onDragEnd={handleChipDragEnd}
-                onClick={() => handleChipClick(caesar)}
-                className={[
-                  "px-3 py-1.5 rounded-full border text-sm font-medium transition-all cursor-grab active:cursor-grabbing select-none",
-                  selectedCaesar?.id === caesar.id
-                    ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
-                    : "bg-white border-slate-300 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
-                ].join(" ")}
-              >
-                {caesar.name}
-              </div>
+              <Tooltip key={caesar.id} text={caesar.description}>
+                <div
+                  draggable
+                  onDragStart={() => handleChipDragStart(caesar)}
+                  onDragEnd={handleChipDragEnd}
+                  onClick={() => handleChipClick(caesar)}
+                  className={[
+                    "px-3 py-1.5 rounded-full border text-sm font-medium transition-all cursor-grab active:cursor-grabbing select-none",
+                    selectedCaesar?.id === caesar.id
+                      ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
+                      : "bg-white border-slate-300 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
+                  ].join(" ")}
+                >
+                  {caesar.name}
+                </div>
+              </Tooltip>
             ))}
           </div>
         </div>

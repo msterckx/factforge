@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "name": "Julius Caesar",
+    "description": "Roman general and statesman who ended the Republic by seizing power. Assassinated on the Ides of March, 44 BC."
+  },
+  {
+    "id": 2,
+    "name": "Augustus",
+    "description": "Caesar's adopted heir who won the civil wars and became Rome's first true emperor. His reign brought the Pax Romana."
+  },
+  {
+    "id": 3,
+    "name": "Tiberius",
+    "description": "A capable general who became a reclusive ruler, retreating to Capri and leaving Rome governed by the feared Sejanus."
+  },
+  {
+    "id": 4,
+    "name": "Caligula",
+    "description": "Initially popular, he descended into cruelty and erratic behaviour. Assassinated by his own Praetorian Guard after four years."
+  },
+  {
+    "id": 5,
+    "name": "Claudius",
+    "description": "Considered a fool by his family, he proved a capable administrator. He conquered Britain and expanded Roman citizenship."
+  },
+  {
+    "id": 6,
+    "name": "Nero",
+    "description": "Last of the Julio-Claudians. Notorious for persecuting Christians and his artistic pretensions. Fled Rome and died by suicide."
+  },
+  {
+    "id": 7,
+    "name": "Galba",
+    "description": "The first emperor not from Rome or Italy. His strict frugality alienated the army and he was murdered after just seven months."
+  },
+  {
+    "id": 8,
+    "name": "Otho",
+    "description": "Former friend of Nero who seized power from Galba. He ruled for only 95 days before taking his own life after a military defeat."
+  },
+  {
+    "id": 9,
+    "name": "Vitellius",
+    "description": "Known for lavish banquets and gluttony. His brief reign ended when Vespasian's forces defeated him and he was killed by a mob."
+  },
+  {
+    "id": 10,
+    "name": "Vespasian",
+    "description": "A general of humble origin who restored stability after the Year of the Four Emperors and founded the Flavian dynasty."
+  },
+  {
+    "id": 11,
+    "name": "Titus",
+    "description": "Beloved for his generosity, he oversaw the destruction of Jerusalem and responded admirably to the eruption of Vesuvius."
+  },
+  {
+    "id": 12,
+    "name": "Domitian",
+    "description": "An efficient but autocratic ruler who demanded to be called 'Lord and God'. His assassination ended the Flavian dynasty."
+  }
+]
