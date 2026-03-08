@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Dictionary } from "@/i18n/en";
 
 export type GameCategory = "history" | "science" | "other";
-export type GameType = "chronology" | "puzzle" | "other";
+export type GameType = "chronology" | "puzzle" | "quiz" | "other";
 
 export interface GameEntry {
   challengeId: string;
@@ -22,7 +22,7 @@ export type ScoreMap = Record<string, { score: number; maxScore: number } | unde
 
 type FilterMode = "category" | "gametype";
 type CategoryFilter = "all" | GameCategory;
-type TypeFilter = "all" | "chronology" | "puzzle";
+type TypeFilter = "all" | "chronology" | "puzzle" | "quiz";
 
 interface Props {
   games: GameEntry[];
@@ -43,10 +43,11 @@ export default function GamePicker({ games, dict, scores }: Props) {
   };
 
   const typeLabels: Record<string, string> = {
-    all: dict.filterAll,
+    all:        dict.filterAll,
     chronology: dict.gameTypeChronology,
-    puzzle: dict.gameTypePuzzle,
-    other: dict.filterAll,
+    puzzle:     dict.gameTypePuzzle,
+    quiz:       dict.gameTypeQuiz,
+    other:      dict.filterAll,
   };
 
   const visible = games.filter((g) => {
@@ -95,7 +96,7 @@ export default function GamePicker({ games, dict, scores }: Props) {
                 {categoryLabels[c]}
               </button>
             ))
-          : (["all", "chronology", "puzzle"] as TypeFilter[]).map((t) => (
+          : (["all", "chronology", "puzzle", "quiz"] as TypeFilter[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setType(t)}

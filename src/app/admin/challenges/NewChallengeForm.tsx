@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { GeneratedChallengeItem } from "@/lib/openai";
 
-type GameType = "chronology" | "puzzle";
+type GameType = "chronology" | "puzzle" | "quiz";
+
+interface CategoryOption { id: number; name: string; subcategories: { id: number; name: string }[] }
 
 interface FormState {
   slug: string;
@@ -17,11 +19,15 @@ interface FormState {
   subtitleNl: string;
   sortOrder: number;
   available: boolean;
+  quizCategoryId: number | null;
+  quizSubcategoryId: number | null;
+  quizQuestionLimit: number | null;
 }
 
 const empty: FormState = {
   slug: "", gameType: "chronology", icon: "🎮", category: "history",
   titleEn: "", titleNl: "", subtitleEn: "", subtitleNl: "", sortOrder: 0, available: true,
+  quizCategoryId: null, quizSubcategoryId: null, quizQuestionLimit: null,
 };
 
 export default function NewChallengeForm() {
@@ -32,6 +38,14 @@ export default function NewChallengeForm() {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [dbCategories, setDbCategories] = useState<CategoryOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/categories").then((r) => r.json()).then(setDbCategories).catch(() => {});
+  }, []);
+
+  const selectedCategory = dbCategories.find((c) => c.id === form.quizCategoryId);
+  const availableSubcategories = selectedCategory?.subcategories ?? [];
 
   function set(key: keyof FormState, value: unknown) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -54,16 +68,19 @@ export default function NewChallengeForm() {
       }
       const data = await res.json();
       setForm({
-        slug:       data.slug       ?? "",
-        gameType:   form.gameType,
-        icon:       data.icon       ?? "🎮",
-        category:   data.category   ?? "other",
-        titleEn:    data.titleEn    ?? "",
-        titleNl:    data.titleNl    ?? "",
-        subtitleEn: data.subtitleEn ?? "",
-        subtitleNl: data.subtitleNl ?? "",
-        sortOrder:  0,
-        available:  true,
+        slug:              data.slug       ?? "",
+        gameType:          form.gameType,
+        icon:              data.icon       ?? "🎮",
+        category:          data.category   ?? "other",
+        titleEn:           data.titleEn    ?? "",
+        titleNl:           data.titleNl    ?? "",
+        subtitleEn:        data.subtitleEn ?? "",
+        subtitleNl:        data.subtitleNl ?? "",
+        sortOrder:         0,
+        available:         true,
+        quizCategoryId:    null,
+        quizSubcategoryId: null,
+        quizQuestionLimit: null,
       });
       setItems((data.items ?? []).map((item: GeneratedChallengeItem, i: number) => ({ ...item, position: i + 1 })));
     } catch {
@@ -85,7 +102,12 @@ export default function NewChallengeForm() {
     const gameRes = await fetch("/api/admin/challenges", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        quizCategoryId:    form.quizCategoryId    ?? null,
+        quizSubcategoryId: form.quizSubcategoryId ?? null,
+        quizQuestionLimit: form.quizQuestionLimit  ?? null,
+      }),
     });
     if (!gameRes.ok) {
       const { error } = await gameRes.json();
@@ -153,6 +175,7 @@ export default function NewChallengeForm() {
             >
               <option value="chronology">Chronology — put people/events in order</option>
               <option value="puzzle">Puzzle — reassemble portrait images</option>
+              <option value="quiz">Quiz — questions from an existing category</option>
             </select>
           </div>
           <div>
@@ -212,6 +235,49 @@ export default function NewChallengeForm() {
           </select>
         </div>
       </div>
+
+      {/* ── Quiz-specific config ───────────────────────────────────── */}
+      {form.gameType === "quiz" && (
+        <div className="border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-blue-800">Quiz Source</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Category <span className="text-red-500">*</span></label>
+              <select
+                value={form.quizCategoryId ?? ""}
+                onChange={(e) => { set("quizCategoryId", e.target.value ? Number(e.target.value) : null); set("quizSubcategoryId", null); }}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="">— select category —</option>
+                {dbCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Subcategory <span className="text-slate-400 font-normal">(optional)</span></label>
+              <select
+                value={form.quizSubcategoryId ?? ""}
+                onChange={(e) => set("quizSubcategoryId", e.target.value ? Number(e.target.value) : null)}
+                disabled={!availableSubcategories.length}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-50"
+              >
+                <option value="">— all subcategories —</option>
+                {availableSubcategories.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Question limit <span className="text-slate-400 font-normal">(optional, blank = all)</span></label>
+              <input
+                type="number"
+                min={1}
+                value={form.quizQuestionLimit ?? ""}
+                onChange={(e) => set("quizQuestionLimit", e.target.value ? Number(e.target.value) : null)}
+                placeholder="e.g. 10"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Items list ─────────────────────────────────────────────── */}
       {items.length > 0 && (

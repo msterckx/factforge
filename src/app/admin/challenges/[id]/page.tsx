@@ -35,10 +35,18 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
         <ChallengeEditForm game={game} />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
-        <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} />
-      </div>
+      {game.gameType !== "quiz" && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
+          <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} />
+        </div>
+      )}
+      {game.gameType === "quiz" && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-blue-700">
+          Quiz challenges pull their questions live from the linked category — no items to manage here.
+          Change the quiz source in Game Settings above.
+        </div>
+      )}
     </div>
   );
 }

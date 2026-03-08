@@ -128,16 +128,20 @@ export const questionTranslations = sqliteTable(
 export const challengeGames = sqliteTable("challenge_games", {
   id:          integer("id").primaryKey({ autoIncrement: true }),
   slug:        text("slug").notNull().unique(),
-  gameType:    text("game_type", { enum: ["chronology", "puzzle"] }).notNull(),
+  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz"] }).notNull(),
   icon:        text("icon").notNull().default("🎮"),
   category:    text("category", { enum: ["history", "science", "other"] }).notNull().default("other"),
   titleEn:     text("title_en").notNull(),
   titleNl:     text("title_nl").notNull(),
   subtitleEn:  text("subtitle_en").notNull().default(""),
   subtitleNl:  text("subtitle_nl").notNull().default(""),
-  available:   integer("available", { mode: "boolean" }).notNull().default(true),
-  sortOrder:   integer("sort_order").notNull().default(0),
-  createdAt:   text("created_at").notNull().default(sql`(datetime('now'))`),
+  available:         integer("available", { mode: "boolean" }).notNull().default(true),
+  sortOrder:         integer("sort_order").notNull().default(0),
+  // Quiz-type specific: pull questions from an existing category
+  quizCategoryId:    integer("quiz_category_id").references(() => categories.id, { onDelete: "set null" }),
+  quizSubcategoryId: integer("quiz_subcategory_id").references(() => subcategories.id, { onDelete: "set null" }),
+  quizQuestionLimit: integer("quiz_question_limit"), // null = all questions
+  createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 export const challengeItems = sqliteTable("challenge_items", {

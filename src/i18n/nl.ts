@@ -92,6 +92,7 @@ export const nl: Dictionary = {
     categoryScience: "Wetenschap",
     gameTypeChronology: "Chronologie",
     gameTypePuzzle: "Puzzel",
+    gameTypeQuiz: "Quiz",
     olympics: "De Olympische Spelen",
     olympicsSubtitle: "Herstel de puzzel en ontdek de olympische kampioen",
     puzzleProgress: "Puzzel",
