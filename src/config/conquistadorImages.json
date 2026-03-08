@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "Christopher Columbus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Portrait_of_a_Man%2C_Said_to_be_Christopher_Columbus.jpg/330px-Portrait_of_a_Man%2C_Said_to_be_Christopher_Columbus.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Vasco Núñez de Balboa",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Vasco_Nunez_de_Balboa.jpg/330px-Vasco_Nunez_de_Balboa.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Hernán Cortés",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/HernandoCortez.jpg/330px-HernandoCortez.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Francisco Pizarro",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Francisco_Pizarro.jpg/330px-Francisco_Pizarro.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Diego de Almagro",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Diego_de_Almagro.jpg/330px-Diego_de_Almagro.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Pedro de Valdivia",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Pedro_de_Valdivia.jpg/330px-Pedro_de_Valdivia.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Gonzalo Pizarro",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Gonzalo_Pizarro.jpg/330px-Gonzalo_Pizarro.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Francisco de Orellana",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Francisco_de_Orellana.jpg/330px-Francisco_de_Orellana.jpg"
+  }
+]

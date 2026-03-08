@@ -1,21 +1,16 @@
 import imageConfig from "@/config/caesarImages.json";
 import descriptionConfig from "@/config/caesarDescriptions.json";
+import type { ChronologyItem } from "@/types/chronology";
 
-export interface Caesar {
-  id: number; // 1-12, correct chronological position
-  name: string;
-  reign: string;
-  fact: string;
-  imageUrl: string;
-  description: string;
-}
+/** @deprecated Use ChronologyItem */
+export type Caesar = ChronologyItem;
 
 // Edit src/config/caesarImages.json      → fix/replace images
 // Edit src/config/caesarDescriptions.json → update hover descriptions (add more lang keys as needed)
 const imageMap = new Map(imageConfig.map((e) => [e.id, e.imageUrl]));
 const descMap   = new Map(descriptionConfig.map((e) => [e.id, e as unknown as Record<string, string>]));
 
-const base: Omit<Caesar, "imageUrl" | "description">[] = [
+const base: Omit<ChronologyItem, "imageUrl" | "description">[] = [
   { id: 1,  name: "Julius Caesar", reign: "49–44 BC",      fact: "Crossed the Rubicon in 49 BC, triggering a civil war that ended the Roman Republic." },
   { id: 2,  name: "Augustus",      reign: "27 BC–14 AD",   fact: "First Roman emperor; his 41-year reign was the longest of the Julio-Claudian dynasty." },
   { id: 3,  name: "Tiberius",      reign: "14–37 AD",      fact: "Spent the last decade of his reign in self-imposed exile on the island of Capri." },
@@ -31,7 +26,7 @@ const base: Omit<Caesar, "imageUrl" | "description">[] = [
 ];
 
 /** Returns the 12 Caesars with descriptions in the requested language (falls back to English). */
-export function getRomanCaesars(lang: string): Caesar[] {
+export function getRomanCaesars(lang: string): ChronologyItem[] {
   return base.map((c) => {
     const desc = descMap.get(c.id);
     return {
