@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "name": "Christopher Columbus",
+    "en": "Genoese navigator who sailed for Spain and reached the Americas in 1492, opening the era of European exploration and colonisation.",
+    "nl": "Genuese zeevaarder die voor Spanje voer en in 1492 Amerika bereikte, waarmee hij het tijdperk van Europese verkenning en kolonisatie inluidde."
+  },
+  {
+    "id": 2,
+    "name": "Vasco Núñez de Balboa",
+    "en": "First European to see the Pacific Ocean from the Americas after crossing the Isthmus of Darién in 1513, claiming the sea for Spain.",
+    "nl": "De eerste Europeaan die de Stille Oceaan vanuit Amerika zag na het oversteken van de landengte van Darién in 1513, en de zee voor Spanje opeiste."
+  },
+  {
+    "id": 3,
+    "name": "Hernán Cortés",
+    "en": "Led the Spanish conquest of the Aztec Empire between 1519 and 1521, toppling Tenochtitlán and claiming Mexico for the Spanish Crown.",
+    "nl": "Leidde de Spaanse verovering van het Azteekse Rijk tussen 1519 en 1521, veroverde Tenochtitlán en claimde Mexico voor de Spaanse kroon."
+  },
+  {
+    "id": 4,
+    "name": "Francisco Pizarro",
+    "en": "Conquered the Inca Empire in the 1530s with a small force, capturing Emperor Atahualpa and claiming vast Andean territories for Spain.",
+    "nl": "Veroverde het Incarijk in de jaren 1530 met een kleine troepenmacht, greep keizer Atahualpa en claimde uitgestrekte Andesgebieden voor Spanje."
+  },
+  {
+    "id": 5,
+    "name": "Diego de Almagro",
+    "en": "Partner of Pizarro in the Peru conquest; later led a gruelling expedition to Chile in 1535–36, finding little gold and returning defeated.",
+    "nl": "Partner van Pizarro bij de verovering van Peru; leidde later een uitputtende expeditie naar Chili in 1535–36, vond weinig goud en keerde verslagen terug."
+  },
+  {
+    "id": 6,
+    "name": "Pedro de Valdivia",
+    "en": "Conquered and settled Chile from 1540 onward, founding Santiago and other cities before being killed in battle with the Mapuche in 1553.",
+    "nl": "Veroverde en koloniseerde Chili vanaf 1540, stichtte Santiago en andere steden voordat hij in 1553 in gevecht met de Mapuche sneuvelde."
+  },
+  {
+    "id": 7,
+    "name": "Gonzalo Pizarro",
+    "en": "Half-brother of Francisco Pizarro who led a disastrous expedition east of the Andes in 1541–42 searching for El Dorado and the Land of Cinnamon.",
+    "nl": "Halfbroer van Francisco Pizarro die in 1541–42 een rampzalige expeditie ten oosten van de Andes leidde op zoek naar El Dorado en het Kaneelland."
+  },
+  {
+    "id": 8,
+    "name": "Francisco de Orellana",
+    "en": "Separated from Gonzalo Pizarro's expedition and in 1541–42 became the first European to navigate the entire length of the Amazon River.",
+    "nl": "Scheidde zich af van Gonzalo Pizarro's expeditie en werd in 1541–42 de eerste Europeaan die de volledige Amazone-rivier bevuhr."
+  }
+]

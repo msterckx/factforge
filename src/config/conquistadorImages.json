@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "Christopher Columbus",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Christopher_Columbus.PNG/500px-Christopher_Columbus.PNG"
+  },
+  {
+    "id": 2,
+    "name": "Vasco Núñez de Balboa",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Retrato_de_Vasco_Nu%C3%B1ez_de_Balboa_%281475-1517%29_-_An%C3%B3nimo.jpg/960px-Retrato_de_Vasco_Nu%C3%B1ez_de_Balboa_%281475-1517%29_-_An%C3%B3nimo.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Hernán Cortés",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/06/Retrato_de_Hern%C3%A1n_Cort%C3%A9s.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Francisco Pizarro",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Portrait_of_Francisco_Pizarro.jpg/330px-Portrait_of_Francisco_Pizarro.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Diego de Almagro",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/70/Diego_de_Almagro.JPG?_=20180421094203"
+  },
+  {
+    "id": 6,
+    "name": "Pedro de Valdivia",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Pedro_de_Valdivia.jpg/500px-Pedro_de_Valdivia.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Gonzalo Pizarro",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/96/Gonzalo_Pizarro.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Francisco de Orellana",
+    "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRs6npWfM_HV7SWUES9mPCusVQkwF27_VIZlyIOwKImUb_zG_3Ei-dy8F0A7MhPVmT4Mt-cA4Agf2I6jrgd8PfAgFYmTwo92xRJZC13nLWi&s=10"
+  }
+]

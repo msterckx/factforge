@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "name": "Max Planck",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Max_Planck_by_Hugo_Erfurth_1938cr_-_restoration1.jpg/500px-Max_Planck_by_Hugo_Erfurth_1938cr_-_restoration1.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Albert Einstein",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Albert_Einstein_Head.jpg/330px-Albert_Einstein_Head.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Niels Bohr",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Niels_Bohr.jpg/330px-Niels_Bohr.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Louis de Broglie",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d2/Broglie_Big.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Werner Heisenberg",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f8/Bundesarchiv_Bild183-R57262%2C_Werner_Heisenberg.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Erwin Schrödinger",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Erwin_Schr%C3%B6dinger_%281933%29.jpg/330px-Erwin_Schr%C3%B6dinger_%281933%29.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Max Born",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Max_Born.jpg/500px-Max_Born.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Paul Dirac",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Paul_Dirac%2C_1933%2C_head_and_shoulders_portrait%2C_bw.jpg"
+  }
+]

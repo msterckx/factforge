@@ -64,6 +64,27 @@
       "when": 1772364530179,
       "tag": "0008_lethal_james_howlett",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1772975892313,
+      "tag": "0009_useful_thunderbolts",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1772989458711,
+      "tag": "0010_faulty_rhodey",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1772992079322,
+      "tag": "0011_remarkable_whistler",
+      "breakpoints": true
     }
   ]
 }

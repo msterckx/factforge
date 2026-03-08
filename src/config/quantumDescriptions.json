@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "name": "Max Planck",
+    "en": "Solved the blackbody radiation problem in 1900 by proposing that energy is emitted in discrete packets — quanta. This act of 'desperation' launched quantum theory.",
+    "nl": "Loste het probleem van zwartlichaamsstraling op in 1900 door voor te stellen dat energie in discrete pakketten — quanta — wordt uitgestraald. Deze 'wanhoopsdaad' leidde de kwantumtheorie in."
+  },
+  {
+    "id": 2,
+    "name": "Albert Einstein",
+    "en": "Explained the photoelectric effect in 1905 using light quanta (photons), for which he received the Nobel Prize. Also showed that mass and energy are interchangeable.",
+    "nl": "Verklaarde het foto-elektrisch effect in 1905 met behulp van lichtquanta (fotonen), waarvoor hij de Nobelprijs ontving. Toonde ook aan dat massa en energie uitwisselbaar zijn."
+  },
+  {
+    "id": 3,
+    "name": "Niels Bohr",
+    "en": "Proposed in 1913 that electrons orbit the nucleus in fixed quantised energy levels, explaining atomic spectra. Later led the Copenhagen interpretation of quantum mechanics.",
+    "nl": "Stelde in 1913 voor dat elektronen de kern omcirkelen in vaste gekwantiseerde energieniveaus, waarmee atomaire spectra werden verklaard. Leidde later de Kopenhagen-interpretatie van de kwantummechanica."
+  },
+  {
+    "id": 4,
+    "name": "Louis de Broglie",
+    "en": "Proposed in his 1924 PhD thesis that all matter has an associated wave, extending wave-particle duality beyond light and earning him a Nobel Prize five years later.",
+    "nl": "Stelde in zijn proefschrift van 1924 voor dat alle materie een bijbehorende golf heeft, waarmee golff-deeltjesdualiteit verder reikte dan licht. Dit leverde hem vijf jaar later een Nobelprijs op."
+  },
+  {
+    "id": 5,
+    "name": "Werner Heisenberg",
+    "en": "Formulated matrix mechanics — the first complete version of quantum mechanics — in 1925, and in 1927 stated the uncertainty principle: position and momentum cannot both be precisely known.",
+    "nl": "Formuleerde matrixmechanica — de eerste volledige versie van kwantummechanica — in 1925, en stelde in 1927 het onzekerheidsbeginsel: positie en impuls kunnen niet beide precies bekend zijn."
+  },
+  {
+    "id": 6,
+    "name": "Erwin Schrödinger",
+    "en": "Developed wave mechanics and the Schrödinger equation in 1926, describing how quantum states evolve. His thought experiment about a cat in a box became an icon of quantum weirdness.",
+    "nl": "Ontwikkelde golfmechanica en de Schrödinger-vergelijking in 1926, die beschrijft hoe kwantumtoestanden evolueren. Zijn gedachte-experiment over een kat in een doos werd een icoon van kwantumvreemdheid."
+  },
+  {
+    "id": 7,
+    "name": "Max Born",
+    "en": "Provided the probabilistic interpretation of Schrödinger's wave function in 1926: the square of the amplitude gives the probability of finding a particle at a location.",
+    "nl": "Gaf in 1926 de probabilistische interpretatie van Schrödingers golffunctie: het kwadraat van de amplitude geeft de kans om een deeltje op een locatie aan te treffen."
+  },
+  {
+    "id": 8,
+    "name": "Paul Dirac",
+    "en": "Unified quantum mechanics and special relativity in the Dirac equation (1928), which predicted the existence of antimatter — confirmed four years later with the discovery of the positron.",
+    "nl": "Verenigde kwantummechanica en speciale relativiteitstheorie in de Dirac-vergelijking (1928), die het bestaan van antimaterie voorspelde — vier jaar later bevestigd met de ontdekking van het positron."
+  }
+]

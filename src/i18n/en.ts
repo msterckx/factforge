@@ -52,7 +52,62 @@ export interface Dictionary {
   sidebar: {
     home: string;
     quickQuiz: string;
+    challenges: string;
     contact: string;
+  };
+  challenges: {
+    title: string;
+    subtitle: string;
+    pickGame: string;
+    gamesTitle: string;
+    guessThePerson: string;
+    guessThePersonSubtitle: string;
+    comingSoon: string;
+    backToChallenges: string;
+    typeTheName: string;
+    submit: string;
+    correct: string;
+    wrong: string;
+    timeUp: string;
+    thePersonWas: string;
+    nextPerson: string;
+    score: string;
+    timeLeft: string;
+    hint: string;
+    round: string;
+    playAgain: string;
+    twelveCaesars: string;
+    twelveCaesarsSubtitle: string;
+    conquistadors: string;
+    conquistadorsSubtitle: string;
+    quantumScientists: string;
+    quantumScientistsSubtitle: string;
+    filterBy: string;
+    filterByCategory: string;
+    filterByGameType: string;
+    filterAll: string;
+    categoryHistory: string;
+    categoryScience: string;
+    gameTypeChronology: string;
+    gameTypePuzzle: string;
+    gameTypeQuiz: string;
+    olympics: string;
+    olympicsSubtitle: string;
+    puzzleProgress: string;
+    puzzleSolved: string;
+    nextPuzzle: string;
+    shufflePuzzle: string;
+    allPuzzlesSolved: string;
+    finish: string;
+    yourScore: string;
+    bestScore: string;
+    dragOrTap: string;
+    checkOrder: string;
+    correctPositions: string;
+    perfectOrder: string;
+    tryAgain: string;
+    revealAnswer: string;
+    yourAnswer: string;
   };
   contact: {
     title: string;
@@ -125,7 +180,62 @@ export const en: Dictionary = {
   sidebar: {
     home: "Home",
     quickQuiz: "QuickQuiz",
+    challenges: "Challenges",
     contact: "Contact",
+  },
+  challenges: {
+    title: "Challenges",
+    subtitle: "Test your knowledge in a whole new way.",
+    pickGame: "Pick a game from the right and start playing!",
+    gamesTitle: "Games",
+    guessThePerson: "Guess the Person",
+    guessThePersonSubtitle: "Recognize a famous face before time runs out",
+    comingSoon: "Coming soon",
+    backToChallenges: "Back to Challenges",
+    typeTheName: "Type the name...",
+    submit: "Submit",
+    correct: "Correct!",
+    wrong: "Wrong — keep trying!",
+    timeUp: "Time's up!",
+    thePersonWas: "The person was:",
+    nextPerson: "Next Person",
+    score: "Score",
+    timeLeft: "Time left",
+    hint: "Hint",
+    round: "Round",
+    playAgain: "Play Again",
+    twelveCaesars: "The Twelve Caesars",
+    twelveCaesarsSubtitle: "Order the Roman emperors chronologically",
+    conquistadors: "The Conquistadors",
+    conquistadorsSubtitle: "Order the Spanish conquistadors chronologically",
+    quantumScientists: "Quantum Scientists",
+    quantumScientistsSubtitle: "Order the pioneers of quantum mechanics chronologically",
+    filterBy: "Filter by",
+    filterByCategory: "Category",
+    filterByGameType: "Game Type",
+    filterAll: "All",
+    categoryHistory: "History",
+    categoryScience: "Science",
+    gameTypeChronology: "Chronology",
+    gameTypePuzzle: "Puzzle",
+    gameTypeQuiz: "Quiz",
+    olympics: "The Olympics",
+    olympicsSubtitle: "Reassemble the puzzle to reveal the Olympic champion",
+    puzzleProgress: "Puzzle",
+    puzzleSolved: "Puzzle solved!",
+    nextPuzzle: "Next Puzzle",
+    shufflePuzzle: "Shuffle",
+    allPuzzlesSolved: "All puzzles completed! Well done!",
+    finish: "Finish",
+    yourScore: "Your score",
+    bestScore: "Best",
+    dragOrTap: "Drag to reorder, or tap two items to swap them",
+    checkOrder: "Check My Order",
+    correctPositions: "{correct} of {total} in the right position",
+    perfectOrder: "Perfect chronological order! 🎉",
+    tryAgain: "Try Again",
+    revealAnswer: "Reveal Correct Order",
+    yourAnswer: "Your order",
   },
   contact: {
     title: "Contact Us",

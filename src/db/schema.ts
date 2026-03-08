@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const categories = sqliteTable("categories", {
@@ -121,6 +121,62 @@ export const questionTranslations = sqliteTable(
     uniqQuestionLang: uniqueIndex("question_translations_question_id_language_unique").on(
       table.questionId,
       table.language
+    ),
+  })
+);
+
+export const challengeGames = sqliteTable("challenge_games", {
+  id:          integer("id").primaryKey({ autoIncrement: true }),
+  slug:        text("slug").notNull().unique(),
+  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz"] }).notNull(),
+  icon:        text("icon").notNull().default("🎮"),
+  category:    text("category", { enum: ["history", "science", "other"] }).notNull().default("other"),
+  titleEn:     text("title_en").notNull(),
+  titleNl:     text("title_nl").notNull(),
+  subtitleEn:  text("subtitle_en").notNull().default(""),
+  subtitleNl:  text("subtitle_nl").notNull().default(""),
+  available:         integer("available", { mode: "boolean" }).notNull().default(true),
+  sortOrder:         integer("sort_order").notNull().default(0),
+  // Quiz-type specific: pull questions from an existing category
+  quizCategoryId:    integer("quiz_category_id").references(() => categories.id, { onDelete: "set null" }),
+  quizSubcategoryId: integer("quiz_subcategory_id").references(() => subcategories.id, { onDelete: "set null" }),
+  quizQuestionLimit: integer("quiz_question_limit"), // null = all questions
+  createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export const challengeItems = sqliteTable("challenge_items", {
+  id:            integer("id").primaryKey({ autoIncrement: true }),
+  gameId:        integer("game_id").notNull().references(() => challengeGames.id, { onDelete: "cascade" }),
+  position:      integer("position").notNull(), // sort order within the game
+  name:          text("name").notNull(),
+  imageUrl:      text("image_url").notNull().default(""),
+  descriptionEn: text("description_en").notNull().default(""),
+  descriptionNl: text("description_nl").notNull().default(""),
+  // Chronology fields
+  dates:         text("dates"),           // e.g. "27 BC–14 AD"
+  fact:          text("fact"),            // one-line chronology fact
+  // Puzzle fields
+  hint:          text("hint"),            // e.g. "Athletics · Jamaica"
+  achievement:   text("achievement"),     // e.g. "9 Olympic gold medals"
+  createdAt:     text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export const challengeScores = sqliteTable(
+  "challenge_scores",
+  {
+    id:          integer("id").primaryKey({ autoIncrement: true }),
+    userEmail:   text("user_email").notNull(),
+    challengeId: text("challenge_id").notNull(), // e.g. "twelve-caesars"
+    score:       integer("score").notNull(),
+    maxScore:    integer("max_score").notNull(),
+    completedAt: text("completed_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    userChallengeIdx: index("challenge_scores_user_challenge_idx").on(
+      table.userEmail,
+      table.challengeId
     ),
   })
 );

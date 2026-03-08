@@ -142,6 +142,88 @@ Return a JSON object with exactly these fields:
   };
 }
 
+export interface GeneratedChallengeItem {
+  position: number;
+  name: string;
+  imageUrl: string;
+  descriptionEn: string;
+  descriptionNl: string;
+  // chronology
+  dates?: string;
+  fact?: string;
+  // puzzle
+  hint?: string;
+  achievement?: string;
+}
+
+export interface GeneratedChallenge {
+  slug: string;
+  icon: string;
+  category: "history" | "science" | "other";
+  titleEn: string;
+  titleNl: string;
+  subtitleEn: string;
+  subtitleNl: string;
+  items: GeneratedChallengeItem[];
+}
+
+export async function generateChallenge(
+  description: string,
+  gameType: "chronology" | "puzzle"
+): Promise<GeneratedChallenge> {
+  const isChronology = gameType === "chronology";
+
+  const itemShape = isChronology
+    ? `- "position": sequential integer (1 = earliest)
+- "name": person's full name
+- "dates": their life or reign dates, e.g. "1451–1506" or "27 BC–14 AD"
+- "fact": one engaging sentence about why they matter, referencing a specific event/year
+- "descriptionEn": 2–3 sentence English biography for a tooltip
+- "descriptionNl": Dutch translation of descriptionEn
+- "imageUrl": leave as empty string ""`
+    : `- "position": sequential integer
+- "name": person's full name
+- "hint": short context clue, e.g. "Athletics · Jamaica" or "Swimming · USA"
+- "achievement": concise medal/achievement line, e.g. "9 Olympic gold medals (2008 · 2012 · 2016)"
+- "descriptionEn": 2–3 sentence English biography for a tooltip
+- "descriptionNl": Dutch translation of descriptionEn
+- "imageUrl": leave as empty string ""`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are an expert educational game designer. Given a topic description, generate a complete challenge configuration as JSON.
+
+The JSON must have:
+- "slug": URL-friendly slug (lowercase, hyphens, no spaces), e.g. "french-revolution"
+- "icon": a single relevant emoji
+- "category": one of "history", "science", "other"
+- "titleEn": short English title for the challenge card
+- "titleNl": Dutch translation of titleEn
+- "subtitleEn": one English sentence describing what the player does
+- "subtitleNl": Dutch translation of subtitleEn
+- "items": array of ${isChronology ? "people in correct chronological order" : "people/subjects for the puzzle"}
+
+Each item in the array must have:
+${itemShape}
+
+Generate between 6 and 12 items. Ensure all facts are historically accurate.`,
+      },
+      {
+        role: "user",
+        content: `Generate a ${gameType} challenge about: ${description}`,
+      },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error("No response from OpenAI");
+  return JSON.parse(content) as GeneratedChallenge;
+}
+
 export async function classifySubcategories(
   questions: { id: number; questionText: string; answer: string }[],
   categoryName: string,

@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "name": "Julius Caesar",
+    "en": "Roman general and statesman who ended the Republic by seizing power. Assassinated on the Ides of March, 44 BC.",
+    "nl": "Romeins veldheer en staatsman die de Republiek ten einde bracht. Vermoord op de Iden van Maart, 44 v.Chr."
+  },
+  {
+    "id": 2,
+    "name": "Augustus",
+    "en": "Caesar's adopted heir who won the civil wars and became Rome's first true emperor. His reign brought the Pax Romana.",
+    "nl": "Caesars geadopteerde erfgenaam die de burgeroorlogen won en Rome's eerste echte keizer werd. Zijn bewind bracht de Pax Romana."
+  },
+  {
+    "id": 3,
+    "name": "Tiberius",
+    "en": "A capable general who became a reclusive ruler, retreating to Capri and leaving Rome governed by the feared Sejanus.",
+    "nl": "Een bekwaam veldheer die een teruggetrokken heerser werd. Hij trok zich terug op Capri en liet Rome besturen door de gevreesde Sejanus."
+  },
+  {
+    "id": 4,
+    "name": "Caligula",
+    "en": "Initially popular, he descended into cruelty and erratic behaviour. Assassinated by his own Praetorian Guard after four years.",
+    "nl": "Aanvankelijk populair, verviel hij in wreedheid en grillig gedrag. Na vier jaar vermoord door zijn eigen Praetoriaanse Garde."
+  },
+  {
+    "id": 5,
+    "name": "Claudius",
+    "en": "Considered a fool by his family, he proved a capable administrator. He conquered Britain and expanded Roman citizenship.",
+    "nl": "Door zijn familie als een dwaas beschouwd, bleek hij een bekwaam bestuurder. Hij veroverde Britannia en breidde het Romeins burgerschap uit."
+  },
+  {
+    "id": 6,
+    "name": "Nero",
+    "en": "Last of the Julio-Claudians. Notorious for persecuting Christians and his artistic pretensions. Fled Rome and died by suicide.",
+    "nl": "De laatste Julio-Claudiër. Berucht om zijn vervolging van christenen en zijn artistieke pretenties. Vluchtte uit Rome en stierf door zelfdoding."
+  },
+  {
+    "id": 7,
+    "name": "Galba",
+    "en": "The first emperor not from Rome or Italy. His strict frugality alienated the army and he was murdered after just seven months.",
+    "nl": "De eerste keizer die niet uit Rome of Italië stamde. Zijn strenge zuinigheid vervreemdde het leger en hij werd na zeven maanden vermoord."
+  },
+  {
+    "id": 8,
+    "name": "Otho",
+    "en": "Former friend of Nero who seized power from Galba. He ruled for only 95 days before taking his own life after a military defeat.",
+    "nl": "Voormalig vriend van Nero die de macht van Galba overnam. Hij regeerde slechts 95 dagen en pleegde zelfmoord na een militaire nederlaag."
+  },
+  {
+    "id": 9,
+    "name": "Vitellius",
+    "en": "Known for lavish banquets and gluttony. His brief reign ended when Vespasian's forces defeated him and he was killed by a mob.",
+    "nl": "Bekend om weelderige banketten en vraatzucht. Zijn korte bewind eindigde toen Vespasianus' troepen hem versloegen en hij door een menigte werd gedood."
+  },
+  {
+    "id": 10,
+    "name": "Vespasian",
+    "en": "A general of humble origin who restored stability after the Year of the Four Emperors and founded the Flavian dynasty.",
+    "nl": "Een generaal van bescheiden afkomst die stabiliteit herstelde na het Jaar van de Vier Keizers en de Flavische dynastie stichtte."
+  },
+  {
+    "id": 11,
+    "name": "Titus",
+    "en": "Beloved for his generosity, he oversaw the destruction of Jerusalem and responded admirably to the eruption of Vesuvius.",
+    "nl": "Geliefd om zijn vrijgevigheid. Hij leidde de verwoesting van Jeruzalem en reageerde bewonderenswaardig op de uitbarsting van de Vesuvius."
+  },
+  {
+    "id": 12,
+    "name": "Domitian",
+    "en": "An efficient but autocratic ruler who demanded to be called 'Lord and God'. His assassination ended the Flavian dynasty.",
+    "nl": "Een efficiënte maar autocratische heerser die eiste 'Heer en God' genoemd te worden. Zijn moord beëindigde de Flavische dynastie."
+  }
+]
