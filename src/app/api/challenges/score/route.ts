@@ -7,7 +7,8 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Guest users — silently ignore, no score stored
+    return NextResponse.json({ ok: false, reason: "not_logged_in" });
   }
 
   const { challengeId, score, maxScore } = await req.json() as {
