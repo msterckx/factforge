@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import path from "path";
 import fs from "fs";
+import { seedChallenges } from "./seedChallenges";
 
 console.log("=== Game of Trivia Database Setup ===");
 console.log(`  NODE_ENV:      ${process.env.NODE_ENV || "(not set)"}`);
@@ -43,6 +44,9 @@ const db = drizzle(sqlite);
 
 console.log("  Running migrations...");
 migrate(db, { migrationsFolder });
+
+console.log("  Seeding data...");
+seedChallenges(db);
 
 // Verify tables exist
 const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as { name: string }[];
