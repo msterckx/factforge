@@ -90,6 +90,7 @@ export interface Dictionary {
     categoryScience: string;
     gameTypeChronology: string;
     gameTypePuzzle: string;
+    gameTypeQuiz: string;
     olympics: string;
     olympicsSubtitle: string;
     puzzleProgress: string;
@@ -217,6 +218,7 @@ export const en: Dictionary = {
     categoryScience: "Science",
     gameTypeChronology: "Chronology",
     gameTypePuzzle: "Puzzle",
+    gameTypeQuiz: "Quiz",
     olympics: "The Olympics",
     olympicsSubtitle: "Reassemble the puzzle to reveal the Olympic champion",
     puzzleProgress: "Puzzle",

@@ -17,7 +17,8 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { slug, gameType, icon, category, titleEn, titleNl, subtitleEn, subtitleNl, available, sortOrder } = body;
+  const { slug, gameType, icon, category, titleEn, titleNl, subtitleEn, subtitleNl, available, sortOrder,
+          quizCategoryId, quizSubcategoryId, quizQuestionLimit } = body;
 
   if (!slug || !gameType || !titleEn || !titleNl) {
     return NextResponse.json({ error: "slug, gameType, titleEn, titleNl are required" }, { status: 400 });
@@ -25,7 +26,14 @@ export async function POST(req: Request) {
 
   const [game] = db
     .insert(challengeGames)
-    .values({ slug, gameType, icon: icon ?? "🎮", category: category ?? "other", titleEn, titleNl, subtitleEn: subtitleEn ?? "", subtitleNl: subtitleNl ?? "", available: available ?? true, sortOrder: sortOrder ?? 0 })
+    .values({
+      slug, gameType, icon: icon ?? "🎮", category: category ?? "other",
+      titleEn, titleNl, subtitleEn: subtitleEn ?? "", subtitleNl: subtitleNl ?? "",
+      available: available ?? true, sortOrder: sortOrder ?? 0,
+      quizCategoryId: quizCategoryId ?? null,
+      quizSubcategoryId: quizSubcategoryId ?? null,
+      quizQuestionLimit: quizQuestionLimit ?? null,
+    })
     .returning()
     .all();
 
