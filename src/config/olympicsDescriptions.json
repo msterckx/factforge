@@ -16,5 +16,23 @@
     "name": "Simone Biles",
     "en": "American artistic gymnast and the most decorated gymnast in World Championship history. She won four gold medals at Rio 2016 and added three more at Paris 2024 aged 27, cementing her status as the greatest gymnast of all time.",
     "nl": "Amerikaans artistiek turnster en de meest gedecoreerde gymnast in de geschiedenis van de Wereldkampioenschappen. Ze won vier gouden medailles op Rio 2016 en voegde er op 27-jarige leeftijd nog drie toe op Parijs 2024, waarmee ze haar status als de grootste gymnaste aller tijden bevestigde."
+  },
+  {
+    "id": 4,
+    "name": "Carl Lewis",
+    "en": "American sprinter and long jumper who dominated track and field for over a decade. He matched Jesse Owens's legendary four-gold haul at a single Games (Los Angeles 1984) and defended his long jump title at four consecutive Olympics.",
+    "nl": "Amerikaans sprinter en verspringer die de atletiek meer dan een decennium domineerde. Hij evenaarde Jesse Owens' legendarische vier gouden medailles op één Spelen (Los Angeles 1984) en verdedigde zijn verspringtitel op vier opeenvolgende Olympische Spelen."
+  },
+  {
+    "id": 5,
+    "name": "Nadia Comaneci",
+    "en": "Romanian gymnast who, at just 14 years old, became the first athlete in Olympic history to be awarded a perfect score of 10.0 at the 1976 Montreal Games. The scoreboard wasn't even designed to display a 10 — it showed 1.00 instead.",
+    "nl": "Roemeense turnster die op slechts 14-jarige leeftijd de eerste atleet in de olympische geschiedenis werd die een perfecte score van 10,0 ontving op de Spelen van Montreal 1976. Het scorebord was niet eens ontworpen om een 10 te tonen — het gaf 1,00 weer."
+  },
+  {
+    "id": 6,
+    "name": "Mark Spitz",
+    "en": "American swimmer who won seven gold medals at the Munich 1972 Olympics — each in world record time — a feat that stood as the record for most golds in a single Games for 36 years until Michael Phelps won eight in Beijing.",
+    "nl": "Amerikaans zwemmer die zeven gouden medailles won op de Olympische Spelen van München 1972 — elk in wereldrecordtijd — een prestatie die 36 jaar lang het record bleef voor de meeste gouden medailles op één Spelen, totdat Michael Phelps er acht won in Peking."
   }
 ]

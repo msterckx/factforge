@@ -11,6 +11,9 @@ const base: Pick<PuzzleSubject, "id" | "name">[] = [
   { id: 1, name: "Usain Bolt" },
   { id: 2, name: "Michael Phelps" },
   { id: 3, name: "Simone Biles" },
+  { id: 4, name: "Carl Lewis" },
+  { id: 5, name: "Nadia Comaneci" },
+  { id: 6, name: "Mark Spitz" },
 ];
 
 /** Returns the olympic champions with descriptions in the requested language (falls back to English). */
