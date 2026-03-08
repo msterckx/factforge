@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { challengeScores } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { getAllChallengeGames } from "@/data/challengeGame";
 import GamePicker from "@/components/challenges/GamePicker";
 import type { GameEntry, ScoreMap } from "@/components/challenges/GamePicker";
 
@@ -34,58 +35,18 @@ export default async function ChallengesPage({ params }: Props) {
     }
   }
 
-  const games: GameEntry[] = [
-    {
-      challengeId: "twelve-caesars",
-      href: `/${lang}/challenges/twelve-caesars`,
-      icon: "🏛️",
-      label: d.twelveCaesars,
-      subtitle: d.twelveCaesarsSubtitle,
-      category: "history",
-      gameType: "chronology",
-      available: true,
-    },
-    {
-      challengeId: "conquistadors",
-      href: `/${lang}/challenges/conquistadors`,
-      icon: "⚔️",
-      label: d.conquistadors,
-      subtitle: d.conquistadorsSubtitle,
-      category: "history",
-      gameType: "chronology",
-      available: true,
-    },
-    {
-      challengeId: "quantum-scientists",
-      href: `/${lang}/challenges/quantum-scientists`,
-      icon: "🔬",
-      label: d.quantumScientists,
-      subtitle: d.quantumScientistsSubtitle,
-      category: "science",
-      gameType: "chronology",
-      available: true,
-    },
-    {
-      challengeId: "olympics",
-      href: `/${lang}/challenges/olympics`,
-      icon: "🏅",
-      label: d.olympics,
-      subtitle: d.olympicsSubtitle,
-      category: "other",
-      gameType: "puzzle",
-      available: true,
-    },
-    {
-      challengeId: "flag-quiz",
-      href: "#",
-      icon: "🌍",
-      label: "Flag Quiz",
-      subtitle: d.comingSoon,
-      category: "other",
-      gameType: "other",
-      available: false,
-    },
-  ];
+  const dbGames = getAllChallengeGames();
+
+  const games: GameEntry[] = dbGames.map((game) => ({
+    challengeId: game.slug,
+    href:        game.available ? `/${lang}/challenges/${game.slug}` : "#",
+    icon:        game.icon,
+    label:       lang === "nl" ? game.titleNl    || game.titleEn    : game.titleEn,
+    subtitle:    lang === "nl" ? game.subtitleNl || game.subtitleEn : game.subtitleEn,
+    category:    game.category,
+    gameType:    game.gameType,
+    available:   game.available,
+  }));
 
   return (
     <div>
