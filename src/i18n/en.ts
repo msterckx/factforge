@@ -80,6 +80,15 @@ export interface Dictionary {
     twelveCaesarsSubtitle: string;
     conquistadors: string;
     conquistadorsSubtitle: string;
+    quantumScientists: string;
+    quantumScientistsSubtitle: string;
+    filterBy: string;
+    filterByCategory: string;
+    filterByGameType: string;
+    filterAll: string;
+    categoryHistory: string;
+    categoryScience: string;
+    gameTypeChronology: string;
     dragOrTap: string;
     checkOrder: string;
     correctPositions: string;
@@ -187,6 +196,15 @@ export const en: Dictionary = {
     twelveCaesarsSubtitle: "Order the Roman emperors chronologically",
     conquistadors: "The Conquistadors",
     conquistadorsSubtitle: "Order the Spanish conquistadors chronologically",
+    quantumScientists: "Quantum Scientists",
+    quantumScientistsSubtitle: "Order the pioneers of quantum mechanics chronologically",
+    filterBy: "Filter by",
+    filterByCategory: "Category",
+    filterByGameType: "Game Type",
+    filterAll: "All",
+    categoryHistory: "History",
+    categoryScience: "Science",
+    gameTypeChronology: "Chronology",
     dragOrTap: "Drag to reorder, or tap two items to swap them",
     checkOrder: "Check My Order",
     correctPositions: "{correct} of {total} in the right position",
