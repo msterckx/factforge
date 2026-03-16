@@ -121,7 +121,12 @@ export default function GamePicker({ games, dict, scores }: Props) {
               href={game.href}
               className="flex flex-col items-center gap-3 p-6 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-400 transition-all group"
             >
-              <span className="text-4xl">{game.icon}</span>
+              {game.icon?.startsWith("http") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={game.icon} alt={game.label} className="w-16 h-16 rounded-lg object-cover" />
+              ) : (
+                <span className="text-4xl">{game.icon}</span>
+              )}
               <div className="text-center">
                 <p className="font-semibold text-slate-800 group-hover:text-amber-700 transition-colors">
                   {game.label}
@@ -149,7 +154,12 @@ export default function GamePicker({ games, dict, scores }: Props) {
               key={game.label}
               className="flex flex-col items-center gap-3 p-6 bg-slate-50 rounded-xl border border-slate-100 opacity-50"
             >
-              <span className="text-4xl grayscale">{game.icon}</span>
+              {game.icon?.startsWith("http") ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={game.icon} alt={game.label} className="w-16 h-16 rounded-lg object-cover grayscale" />
+              ) : (
+                <span className="text-4xl grayscale">{game.icon}</span>
+              )}
               <div className="text-center">
                 <p className="font-semibold text-slate-500">{game.label}</p>
                 <p className="text-sm text-slate-400 mt-1">{dict.comingSoon}</p>
