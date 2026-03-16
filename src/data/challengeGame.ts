@@ -21,7 +21,7 @@ export function getChallengeItems(gameId: number): ChallengeItem[] {
 
 export function mapToChronologyItems(items: ChallengeItem[], lang: string): ChronologyItem[] {
   return items.map((item) => ({
-    id:          item.id,
+    id:          item.position,
     name:        item.name,
     reign:       item.dates ?? "",
     fact:        item.fact ?? "",
