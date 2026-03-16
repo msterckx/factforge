@@ -77,8 +77,8 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Icon</label>
-          <input name="icon" defaultValue={game.icon} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+          <label className="block text-sm font-medium text-slate-700 mb-1">Icon <span className="text-slate-400 font-normal">(emoji or image URL)</span></label>
+          <input name="icon" defaultValue={game.icon} placeholder="🎮 or https://…" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>

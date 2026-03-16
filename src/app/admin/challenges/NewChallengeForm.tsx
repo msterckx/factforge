@@ -220,7 +220,15 @@ export default function NewChallengeForm() {
             <option value="other">Other</option>
           </select>
         </div>
-        {field("Icon", form.icon, (v) => set("icon", v), "🎮")}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Icon <span className="text-slate-400 font-normal">(emoji or image URL)</span></label>
+          <input
+            value={form.icon}
+            onChange={(e) => set("icon", e.target.value)}
+            placeholder="🎮 or https://…"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+        </div>
         {field("Sort Order", form.sortOrder, (v) => set("sortOrder", Number(v)), "0", "number")}
         {field("Title (EN) *", form.titleEn, (v) => set("titleEn", v), "The French Revolution")}
         {field("Title (NL) *", form.titleNl, (v) => set("titleNl", v), "De Franse Revolutie")}
