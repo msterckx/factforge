@@ -136,7 +136,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
   useEffect(() => {
     if ((allCorrect || revealed) && !scoreSubmitted) {
       setScoreSubmitted(true);
-      markComplete(challengeId, currentScore, maxScore);
+      if (allCorrect) markComplete(challengeId, currentScore, maxScore);
       fetch("/api/challenges/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
