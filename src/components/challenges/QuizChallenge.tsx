@@ -58,7 +58,7 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   useEffect(() => {
     if (!done || submitted) return;
     setSubmitted(true);
-    markComplete(challengeId, score, maxScore);
+    if (!revealed.some(Boolean)) markComplete(challengeId, score, maxScore);
     fetch("/api/challenges/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
