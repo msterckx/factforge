@@ -114,15 +114,7 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
     return (
       <div className="max-w-lg mx-auto text-center py-12">
         <div className="text-6xl mb-4">{pct >= 80 ? "🏆" : pct >= 50 ? "👍" : "📚"}</div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">{d.yourScore}</h2>
-        <p className="text-5xl font-bold text-amber-500 mb-1">{score}</p>
-        <p className="text-slate-400 text-sm mb-8">/ {maxScore}</p>
-        <div className="w-full bg-slate-200 rounded-full h-3 mb-8">
-          <div
-            className="bg-amber-500 h-3 rounded-full transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+        <h2 className="text-2xl font-bold text-slate-800 mb-2">{d.finish}</h2>
         <p className="text-slate-500 mb-6">
           {total - revealed.filter(Boolean).length} / {total} answered correctly
         </p>
@@ -143,9 +135,6 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-slate-500">
           {dict.quiz.questionOf.replace("{current}", String(index + 1)).replace("{total}", String(total))}
-        </span>
-        <span className="text-sm font-semibold text-amber-600">
-          {d.yourScore}: {score}/{maxScore}
         </span>
       </div>
 
@@ -197,7 +186,7 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
       {/* Feedback banners */}
       {feedback === "correct" && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-700 font-medium">{dict.quiz.correct} <span className="text-green-500 text-sm font-normal">+{POINTS_CORRECT} pts</span></p>
+          <p className="text-green-700 font-medium">{dict.quiz.correct}</p>
         </div>
       )}
       {feedback === "incorrect" && (

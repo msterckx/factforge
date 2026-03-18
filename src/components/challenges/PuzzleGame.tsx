@@ -103,9 +103,6 @@ export default function PuzzleGame({ subjects, dict, challengeId }: Props) {
       <div className="text-center py-16">
         <div className="text-5xl mb-4">🏅</div>
         <p className="text-xl font-bold text-slate-800 mb-1">{dict.allPuzzlesSolved}</p>
-        <p className="text-slate-500 mt-2">
-          {dict.yourScore}: <span className="font-bold text-amber-700">{totalScore}/{maxScore}</span>
-        </p>
         <button
           onClick={handleReset}
           className="mt-6 px-6 py-2.5 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-colors"
@@ -218,9 +215,6 @@ export default function PuzzleGame({ subjects, dict, challengeId }: Props) {
           >
             {dict.shufflePuzzle}
           </button>
-          {puzzleShuffles > 0 && (
-            <span className="text-xs text-red-400">−{puzzleShuffles * 5} pts</span>
-          )}
         </div>
       )}
     </div>
