@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { checkAnswer } from "@/lib/utils";
 import Image from "next/image";
 import type { Dictionary } from "@/i18n/en";
+import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 
 export interface QuizQuestion {
   id: number;
@@ -32,6 +33,7 @@ const difficultyStyles = {
 };
 
 export default function QuizChallenge({ questions, dict, challengeId }: Props) {
+  const { markComplete } = useCompletedChallenges();
   const d = dict.challenges;
   const [index, setIndex]       = useState(0);
   const [userAnswer, setAnswer] = useState("");
@@ -56,12 +58,13 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   useEffect(() => {
     if (!done || submitted) return;
     setSubmitted(true);
+    markComplete(challengeId, score, maxScore);
     fetch("/api/challenges/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ challengeId, score, maxScore }),
     }).catch(() => {});
-  }, [done, submitted, challengeId, score, maxScore]);
+  }, [done, submitted, challengeId, score, maxScore, markComplete]);
 
   function handleCheck() {
     if (!userAnswer.trim() || feedback === "correct" || feedback === "revealed") return;

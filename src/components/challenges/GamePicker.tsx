@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Dictionary } from "@/i18n/en";
+import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 
 export type GameCategory = "history" | "science" | "other";
 export type GameType = "chronology" | "puzzle" | "quiz" | "other";
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function GamePicker({ games, dict, scores }: Props) {
+  const { completed } = useCompletedChallenges();
   const [mode, setMode] = useState<FilterMode>("category");
   const [cat, setCat] = useState<CategoryFilter>("all");
   const [type, setType] = useState<TypeFilter>("all");
@@ -119,8 +121,13 @@ export default function GamePicker({ games, dict, scores }: Props) {
             <Link
               key={game.label}
               href={game.href}
-              className="flex flex-col items-center gap-3 p-6 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-400 transition-all group"
+              className={`relative flex flex-col items-center gap-3 p-6 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-amber-400 transition-all group ${completed[game.challengeId] ? "border-green-300" : "border-slate-200"}`}
             >
+              {completed[game.challengeId] && (
+                <span className="absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                  ✓ done
+                </span>
+              )}
               {game.icon?.startsWith("http") ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={game.icon} alt={game.label} className="w-16 h-16 rounded-lg object-cover" />
