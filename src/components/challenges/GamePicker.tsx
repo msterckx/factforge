@@ -149,11 +149,6 @@ export default function GamePicker({ games, dict, scores }: Props) {
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
                   {typeLabels[game.gameType] ?? game.gameType}
                 </span>
-                {scores[game.challengeId] && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-                    ⭐ {dict.bestScore}: {scores[game.challengeId]!.score}/{scores[game.challengeId]!.maxScore}
-                  </span>
-                )}
               </div>
             </Link>
           ) : (

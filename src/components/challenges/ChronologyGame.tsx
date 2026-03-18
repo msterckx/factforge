@@ -286,19 +286,12 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       <div className="flex items-center justify-between mb-4 min-h-[24px]">
         {allCorrect ? (
           <p className="text-sm font-semibold text-green-700">
-            {dict.perfectOrder} 🎉 &nbsp;·&nbsp; {dict.yourScore}: <span className="text-amber-700">{currentScore}/{maxScore}</span>
+            {dict.perfectOrder} 🎉
           </p>
-        ) : revealed ? (
-          <p className="text-sm text-slate-500">
-            {dict.yourScore}: <span className="font-semibold text-amber-700">{currentScore}/{maxScore}</span>
-          </p>
-        ) : (
+        ) : revealed ? null : (
           <p className="text-sm text-slate-500">
             {dict.dragOrTap} &mdash;{" "}
             <span className="font-semibold text-amber-700">{placedCount}/{items.length}</span> placed
-            {wrongAttempts > 0 && (
-              <span className="ml-2 text-red-400 text-xs">−{wrongAttempts * 2} pts</span>
-            )}
           </p>
         )}
         {selectedCaesar && !allCorrect && !revealed && (
