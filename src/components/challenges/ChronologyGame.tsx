@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import type { ChronologyItem } from "@/types/chronology";
 import type { Dictionary } from "@/i18n/en";
+import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 
 interface Props {
   items: ChronologyItem[];
@@ -103,6 +104,7 @@ function GlitterBomb() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function ChronologyGame({ items, dict, challengeId }: Props) {
+  const { markComplete } = useCompletedChallenges();
   const [placed, setPlaced] = useState<Record<number, ChronologyItem>>({});
   const [pool, setPool] = useState<ChronologyItem[]>(() => shuffle(items));
   const [selectedCaesar, setSelectedCaesar] = useState<ChronologyItem | null>(null);
@@ -134,6 +136,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
   useEffect(() => {
     if ((allCorrect || revealed) && !scoreSubmitted) {
       setScoreSubmitted(true);
+      markComplete(challengeId, currentScore, maxScore);
       fetch("/api/challenges/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
