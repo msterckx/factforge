@@ -33,7 +33,12 @@ export default async function AdminChallengesPage() {
               <tr key={game.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 text-slate-400 font-mono">{game.sortOrder}</td>
                 <td className="px-4 py-3">
-                  <span className="mr-2">{game.icon}</span>
+                  {game.icon?.startsWith("http") || game.icon?.startsWith("/") ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={game.icon} alt="" className="inline-block w-6 h-6 mr-2 object-contain align-middle" />
+                  ) : (
+                    <span className="mr-2">{game.icon}</span>
+                  )}
                   <span className="font-medium text-slate-800">{game.titleEn}</span>
                   <span className="ml-2 text-slate-400 text-xs font-mono">/{game.slug}</span>
                 </td>
