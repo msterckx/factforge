@@ -21,10 +21,10 @@ interface Props {
   challengeId: string;
 }
 
+type QuestionStatus = "unanswered" | "correct" | "revealed";
 type FeedbackState = "idle" | "correct" | "incorrect" | "revealed";
 
 const POINTS_CORRECT = 10;
-const PENALTY_REVEAL = 5; // deducted from a per-question base of 10
 
 const difficultyStyles = {
   easy:         "bg-green-100 text-green-700",
@@ -35,41 +35,50 @@ const difficultyStyles = {
 export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   const { markComplete } = useCompletedChallenges();
   const d = dict.challenges;
-  const [index, setIndex]       = useState(0);
-  const [userAnswer, setAnswer] = useState("");
-  const [feedback, setFeedback] = useState<FeedbackState>("idle");
-  const [score, setScore]       = useState(0);
-  const [revealed, setRevealed] = useState<boolean[]>(Array(questions.length).fill(false));
-  const [done, setDone]         = useState(false);
+  const total    = questions.length;
+  const maxScore = total * POINTS_CORRECT;
+
+  const [index,     setIndex]     = useState(0);
+  const [userAnswer, setAnswer]   = useState("");
+  const [feedback,  setFeedback]  = useState<FeedbackState>("idle");
+  const [statuses,  setStatuses]  = useState<QuestionStatus[]>(Array(total).fill("unanswered"));
+  const [done,      setDone]      = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const question  = questions[index];
-  const total     = questions.length;
-  const maxScore  = total * POINTS_CORRECT;
+  const question = questions[index];
+  const score    = statuses.filter((s) => s === "correct").length * POINTS_CORRECT;
 
+  // Reset input/feedback when navigating to a different question
   useEffect(() => {
+    const s = statuses[index];
     setAnswer("");
-    setFeedback("idle");
+    setFeedback(s === "unanswered" ? "idle" : s === "correct" ? "correct" : "revealed");
     inputRef.current?.focus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // Submit score when done screen is shown
+  // Submit when done
   useEffect(() => {
     if (!done || submitted) return;
     setSubmitted(true);
-    if (!revealed.some(Boolean)) markComplete(challengeId, score, maxScore);
+    if (statuses.every((s) => s !== "revealed")) markComplete(challengeId, score, maxScore);
     fetch("/api/challenges/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ challengeId, score, maxScore }),
     }).catch(() => {});
-  }, [done, submitted, challengeId, score, maxScore, markComplete]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done, submitted]);
+
+  function navigateTo(i: number) {
+    if (i >= 0 && i < total) setIndex(i);
+  }
 
   function handleCheck() {
     if (!userAnswer.trim() || feedback === "correct" || feedback === "revealed") return;
     if (checkAnswer(userAnswer, question.answer)) {
-      setScore((s) => s + POINTS_CORRECT);
+      setStatuses((prev) => { const n = [...prev]; n[index] = "correct"; return n; });
       setFeedback("correct");
     } else {
       setFeedback("incorrect");
@@ -77,47 +86,33 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   }
 
   function handleReveal() {
-    // Only deduct penalty if they hadn't already answered correctly
-    if (feedback !== "correct") {
-      setScore((s) => Math.max(0, s - PENALTY_REVEAL));
-      setRevealed((r) => { const n = [...r]; n[index] = true; return n; });
-    }
+    if (feedback === "correct") return;
+    setStatuses((prev) => { const n = [...prev]; n[index] = "revealed"; return n; });
     setFeedback("revealed");
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && feedback === "idle") handleCheck();
-    if (e.key === "Enter" && (feedback === "correct" || feedback === "revealed")) handleNext();
-  }
-
-  function handleNext() {
-    if (index < total - 1) {
-      setIndex((i) => i + 1);
-    } else {
-      setDone(true);
-    }
   }
 
   function handlePlayAgain() {
     setIndex(0);
     setAnswer("");
     setFeedback("idle");
-    setScore(0);
-    setRevealed(Array(total).fill(false));
+    setStatuses(Array(total).fill("unanswered"));
     setDone(false);
     setSubmitted(false);
   }
 
   // ── Done screen ──────────────────────────────────────────────────────────────
   if (done) {
-    const pct = Math.round((score / maxScore) * 100);
+    const correctCount = statuses.filter((s) => s === "correct").length;
+    const pct = Math.round((correctCount / total) * 100);
     return (
       <div className="max-w-lg mx-auto text-center py-12">
         <div className="text-6xl mb-4">{pct >= 80 ? "🏆" : pct >= 50 ? "👍" : "📚"}</div>
         <h2 className="text-2xl font-bold text-slate-800 mb-2">{d.finish}</h2>
-        <p className="text-slate-500 mb-6">
-          {total - revealed.filter(Boolean).length} / {total} answered correctly
-        </p>
+        <p className="text-slate-500 mb-6">{correctCount} / {total} answered correctly</p>
         <button
           onClick={handlePlayAgain}
           className="px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors"
@@ -131,22 +126,33 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   // ── Quiz screen ──────────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header: progress + score */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-slate-500">
-          {dict.quiz.questionOf.replace("{current}", String(index + 1)).replace("{total}", String(total))}
-        </span>
+
+      {/* Question status squares */}
+      <div className="flex flex-wrap gap-1.5 mb-6">
+        {statuses.map((status, i) => (
+          <button
+            key={i}
+            onClick={() => navigateTo(i)}
+            title={`Question ${i + 1}`}
+            className={[
+              "w-7 h-7 rounded border-2 text-xs font-bold transition-all",
+              i === index
+                ? status === "correct"
+                  ? "bg-green-500 border-green-600 text-white ring-2 ring-green-300 ring-offset-1"
+                  : "bg-white border-amber-500 text-amber-700 ring-2 ring-amber-300 ring-offset-1"
+                : status === "correct"
+                  ? "bg-green-500 border-green-500 text-white"
+                  : status === "revealed"
+                    ? "bg-slate-200 border-slate-300 text-slate-400"
+                    : "bg-white border-slate-300 text-slate-400 hover:border-amber-400",
+            ].join(" ")}
+          >
+            {i + 1}
+          </button>
+        ))}
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-slate-200 rounded-full h-1.5 mb-8">
-        <div
-          className="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
-          style={{ width: `${((index + 1) / total) * 100}%` }}
-        />
-      </div>
-
-      {/* Difficulty + category */}
+      {/* Difficulty */}
       <div className="flex items-center gap-2 mb-4">
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyStyles[question.difficulty]}`}>
           {dict.quiz[question.difficulty]}
@@ -211,31 +217,46 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
       )}
 
       {/* Action buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-8">
-        {feedback !== "correct" && feedback !== "revealed" ? (
-          <>
-            <button
-              onClick={handleCheck}
-              disabled={!userAnswer.trim()}
-              className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {dict.quiz.checkAnswer}
-            </button>
-            <button
-              onClick={handleReveal}
-              className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
-            >
-              {dict.quiz.showAnswer}
-            </button>
-          </>
-        ) : (
+      {feedback !== "correct" && feedback !== "revealed" && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-8">
           <button
-            onClick={handleNext}
-            className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors"
+            onClick={handleCheck}
+            disabled={!userAnswer.trim()}
+            className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {index < total - 1 ? dict.quiz.next : d.finish}
+            {dict.quiz.checkAnswer}
           </button>
-        )}
+          <button
+            onClick={handleReveal}
+            className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-300 transition-colors"
+          >
+            {dict.quiz.showAnswer}
+          </button>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
+        <button
+          onClick={() => navigateTo(index - 1)}
+          disabled={index === 0}
+          className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          ← {dict.quiz.previous}
+        </button>
+        <button
+          onClick={() => setDone(true)}
+          className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-amber-700 transition-colors"
+        >
+          {d.finish}
+        </button>
+        <button
+          onClick={() => navigateTo(index + 1)}
+          disabled={index === total - 1}
+          className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          {dict.quiz.next} →
+        </button>
       </div>
     </div>
   );
