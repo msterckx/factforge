@@ -1,4 +1,5 @@
 import { type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { sql } from "drizzle-orm";
 import { challengeGames, challengeItems } from "./schema";
 
 // ── static seed data (mirrors the former JSON config files) ──────────────────
@@ -98,8 +99,9 @@ const games = [
 
 /** Seed challenge games and items if the tables are empty. */
 export function seedChallenges(db: BetterSQLite3Database) {
-  const existing = db.select().from(challengeGames).all();
-  if (existing.length > 0) return;
+  // Use raw SQL for the count so this check is never broken by schema column additions
+  const row = db.get<{ count: number }>(sql`SELECT COUNT(*) as count FROM challenge_games`);
+  if ((row?.count ?? 0) > 0) return;
 
   console.log("  Seeding challenge games...");
   for (const game of games) {
