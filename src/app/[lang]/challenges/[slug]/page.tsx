@@ -82,8 +82,12 @@ export default async function ChallengePage({ params }: Props) {
       }));
     }
 
+    // Filter to admin-selected question IDs if a selection is saved
+    const selectedIds: number[] | null = game.quizQuestionIds ? JSON.parse(game.quizQuestionIds) : null;
+    const filtered = selectedIds ? rows.filter((r) => selectedIds.includes(r.id)) : rows;
+
     // Shuffle + optionally cap
-    const shuffled = [...rows].sort(() => Math.random() - 0.5);
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
     quizQuestions = game.quizQuestionLimit ? shuffled.slice(0, game.quizQuestionLimit) : shuffled;
   }
 

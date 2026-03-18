@@ -21,6 +21,7 @@ interface Props {
   challengeId: string;
 }
 
+type Phase = "playing" | "done";
 type QuestionStatus = "unanswered" | "correct" | "revealed";
 type FeedbackState = "idle" | "correct" | "incorrect" | "revealed";
 
@@ -35,32 +36,32 @@ const difficultyStyles = {
 export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   const { markComplete } = useCompletedChallenges();
   const d = dict.challenges;
-  const total    = questions.length;
-  const maxScore = total * POINTS_CORRECT;
 
-  const [index,     setIndex]     = useState(0);
-  const [userAnswer, setAnswer]   = useState("");
-  const [feedback,  setFeedback]  = useState<FeedbackState>("idle");
-  const [statuses,  setStatuses]  = useState<QuestionStatus[]>(Array(total).fill("unanswered"));
-  const [done,      setDone]      = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [phase,      setPhase]     = useState<Phase>("playing");
+  const [index,      setIndex]     = useState(0);
+  const [userAnswer, setAnswer]    = useState("");
+  const [feedback,   setFeedback]  = useState<FeedbackState>("idle");
+  const [statuses,   setStatuses]  = useState<QuestionStatus[]>(Array(questions.length).fill("unanswered"));
+  const [submitted,  setSubmitted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const question = questions[index];
+  const total    = questions.length;
+  const maxScore = total * POINTS_CORRECT;
   const score    = statuses.filter((s) => s === "correct").length * POINTS_CORRECT;
 
-  // Reset input/feedback when navigating to a different question
+  // Reset input/feedback when navigating
   useEffect(() => {
     const s = statuses[index];
     setAnswer("");
     setFeedback(s === "unanswered" ? "idle" : s === "correct" ? "correct" : "revealed");
     inputRef.current?.focus();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index, phase]);
 
   // Submit when done
   useEffect(() => {
-    if (!done || submitted) return;
+    if (phase !== "done" || submitted) return;
     setSubmitted(true);
     if (statuses.every((s) => s !== "revealed")) markComplete(challengeId, score, maxScore);
     fetch("/api/challenges/score", {
@@ -69,7 +70,7 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
       body: JSON.stringify({ challengeId, score, maxScore }),
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done, submitted]);
+  }, [phase, submitted]);
 
   function navigateTo(i: number) {
     if (i >= 0 && i < total) setIndex(i);
@@ -100,12 +101,12 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
     setAnswer("");
     setFeedback("idle");
     setStatuses(Array(total).fill("unanswered"));
-    setDone(false);
     setSubmitted(false);
+    setPhase("playing");
   }
 
-  // ── Done screen ──────────────────────────────────────────────────────────────
-  if (done) {
+  // ── Done screen ───────────────────────────────────────────────────────────
+  if (phase === "done") {
     const correctCount = statuses.filter((s) => s === "correct").length;
     const pct = Math.round((correctCount / total) * 100);
     return (
@@ -123,7 +124,7 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
     );
   }
 
-  // ── Quiz screen ──────────────────────────────────────────────────────────────
+  // ── Quiz screen ───────────────────────────────────────────────────────────
   return (
     <div className="max-w-2xl mx-auto">
 
@@ -245,7 +246,7 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
           ← {dict.quiz.previous}
         </button>
         <button
-          onClick={() => setDone(true)}
+          onClick={() => setPhase("done")}
           className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-amber-700 transition-colors"
         >
           {d.finish}
