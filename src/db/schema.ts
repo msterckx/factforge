@@ -141,6 +141,7 @@ export const challengeGames = sqliteTable("challenge_games", {
   quizCategoryId:    integer("quiz_category_id").references(() => categories.id, { onDelete: "set null" }),
   quizSubcategoryId: integer("quiz_subcategory_id").references(() => subcategories.id, { onDelete: "set null" }),
   quizQuestionLimit: integer("quiz_question_limit"), // null = all questions
+  quizQuestionIds:   text("quiz_question_ids"),      // JSON array of question IDs; null = all
   createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 

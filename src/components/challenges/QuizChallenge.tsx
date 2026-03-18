@@ -21,7 +21,7 @@ interface Props {
   challengeId: string;
 }
 
-type Phase = "selecting" | "playing" | "done";
+type Phase = "playing" | "done";
 type QuestionStatus = "unanswered" | "correct" | "revealed";
 type FeedbackState = "idle" | "correct" | "incorrect" | "revealed";
 
@@ -37,27 +37,21 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   const { markComplete } = useCompletedChallenges();
   const d = dict.challenges;
 
-  // ── Selection phase state ─────────────────────────────────────────────────
-  const [phase,     setPhase]     = useState<Phase>("selecting");
-  const [selected,  setSelected]  = useState<Set<number>>(() => new Set(questions.map((q) => q.id)));
-
-  // ── Playing phase state ───────────────────────────────────────────────────
-  const [activeQuestions, setActiveQuestions] = useState<QuizQuestion[]>([]);
-  const [index,     setIndex]     = useState(0);
-  const [userAnswer, setAnswer]   = useState("");
-  const [feedback,  setFeedback]  = useState<FeedbackState>("idle");
-  const [statuses,  setStatuses]  = useState<QuestionStatus[]>([]);
-  const [submitted, setSubmitted] = useState(false);
+  const [phase,      setPhase]     = useState<Phase>("playing");
+  const [index,      setIndex]     = useState(0);
+  const [userAnswer, setAnswer]    = useState("");
+  const [feedback,   setFeedback]  = useState<FeedbackState>("idle");
+  const [statuses,   setStatuses]  = useState<QuestionStatus[]>(Array(questions.length).fill("unanswered"));
+  const [submitted,  setSubmitted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const question = activeQuestions[index];
-  const total    = activeQuestions.length;
+  const question = questions[index];
+  const total    = questions.length;
   const maxScore = total * POINTS_CORRECT;
   const score    = statuses.filter((s) => s === "correct").length * POINTS_CORRECT;
 
   // Reset input/feedback when navigating
   useEffect(() => {
-    if (phase !== "playing" || !statuses[index]) return;
     const s = statuses[index];
     setAnswer("");
     setFeedback(s === "unanswered" ? "idle" : s === "correct" ? "correct" : "revealed");
@@ -78,28 +72,6 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, submitted]);
 
-  // ── Selection helpers ─────────────────────────────────────────────────────
-  function toggleQuestion(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-
-  function startQuiz() {
-    const active = questions.filter((q) => selected.has(q.id));
-    if (active.length === 0) return;
-    setActiveQuestions(active);
-    setStatuses(Array(active.length).fill("unanswered"));
-    setIndex(0);
-    setAnswer("");
-    setFeedback("idle");
-    setSubmitted(false);
-    setPhase("playing");
-  }
-
-  // ── Playing helpers ───────────────────────────────────────────────────────
   function navigateTo(i: number) {
     if (i >= 0 && i < total) setIndex(i);
   }
@@ -125,64 +97,12 @@ export default function QuizChallenge({ questions, dict, challengeId }: Props) {
   }
 
   function handlePlayAgain() {
-    setPhase("selecting");
-    setSelected(new Set(questions.map((q) => q.id)));
-  }
-
-  // ── Selection screen ──────────────────────────────────────────────────────
-  if (phase === "selecting") {
-    const allSelected = selected.size === questions.length;
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-slate-500">
-            <span className="font-semibold text-slate-700">{selected.size}</span> / {questions.length} questions selected
-          </p>
-          <button
-            onClick={() => setSelected(allSelected ? new Set() : new Set(questions.map((q) => q.id)))}
-            className="text-xs font-medium text-amber-600 hover:text-amber-700 transition-colors"
-          >
-            {allSelected ? "Deselect all" : "Select all"}
-          </button>
-        </div>
-
-        <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden mb-6">
-          {questions.map((q, i) => {
-            const isSelected = selected.has(q.id);
-            return (
-              <label
-                key={q.id}
-                className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${isSelected ? "bg-white hover:bg-slate-50" : "bg-slate-50 hover:bg-slate-100"}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleQuestion(q.id)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-amber-500 focus:ring-amber-400 shrink-0"
-                />
-                <div className="min-w-0">
-                  <span className="text-xs font-mono text-slate-400 mr-2">#{i + 1}</span>
-                  <span className={`text-sm ${isSelected ? "text-slate-800" : "text-slate-400"}`}>
-                    {q.questionText}
-                  </span>
-                  <span className={`ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${difficultyStyles[q.difficulty]}`}>
-                    {dict.quiz[q.difficulty]}
-                  </span>
-                </div>
-              </label>
-            );
-          })}
-        </div>
-
-        <button
-          onClick={startQuiz}
-          disabled={selected.size === 0}
-          className="px-8 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Start Quiz ({selected.size})
-        </button>
-      </div>
-    );
+    setIndex(0);
+    setAnswer("");
+    setFeedback("idle");
+    setStatuses(Array(total).fill("unanswered"));
+    setSubmitted(false);
+    setPhase("playing");
   }
 
   // ── Done screen ───────────────────────────────────────────────────────────

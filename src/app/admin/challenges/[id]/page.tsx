@@ -6,6 +6,7 @@ import { eq, asc } from "drizzle-orm";
 import Link from "next/link";
 import ChallengeEditForm from "./ChallengeEditForm";
 import ItemsManager from "./ItemsManager";
+import QuizQuestionSelector from "./QuizQuestionSelector";
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -42,9 +43,13 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
         </div>
       )}
       {game.gameType === "quiz" && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-blue-700">
-          Quiz challenges pull their questions live from the linked category — no items to manage here.
-          Change the quiz source in Game Settings above.
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">Question Selection</h2>
+          <p className="text-sm text-slate-400 mb-4">Choose which questions appear in this challenge. Save the category first if you haven&apos;t yet.</p>
+          <QuizQuestionSelector
+            gameId={game.id}
+            initialSelectedIds={game.quizQuestionIds ? JSON.parse(game.quizQuestionIds) : null}
+          />
         </div>
       )}
     </div>
