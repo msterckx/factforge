@@ -1,0 +1,24 @@
+{
+  "name": "Game of Trivia",
+  "short_name": "Trivia",
+  "description": "Test your knowledge across multiple categories",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logos/chall_caeasars.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logos/chall_caeasars.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
