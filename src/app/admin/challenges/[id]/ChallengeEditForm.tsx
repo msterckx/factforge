@@ -72,6 +72,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
           <label className="block text-sm font-medium text-slate-700 mb-1">Game Type</label>
           <select name="gameType" value={gameType} onChange={(e) => setGameType(e.target.value as typeof gameType)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
             <option value="chronology">Chronology</option>
+            <option value="matching">Matching</option>
             <option value="puzzle">Puzzle</option>
             <option value="quiz">Quiz</option>
           </select>

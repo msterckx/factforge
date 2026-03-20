@@ -76,8 +76,8 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
           {field("Description EN", "descriptionEn", "", true)}
           {field("Description NL", "descriptionNl", "", true)}
           {gameType === "chronology" && field("Dates / Reign", "dates", "e.g. 27 BC–14 AD")}
-          {gameType === "chronology" && field("Milestone EN", "milestoneEn", "Central milestone (English)", true)}
-          {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
+          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue EN" : "Milestone EN", "milestoneEn", gameType === "matching" ? "Clue text (English)" : "Central milestone (English)", true)}
+          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue NL" : "Milestone NL", "milestoneNl", gameType === "matching" ? "Clue text (Dutch)" : "Central milestone (Dutch)", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
         </div>
@@ -144,8 +144,8 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
           {field("Description EN", "descriptionEn", "", true)}
           {field("Description NL", "descriptionNl", "", true)}
           {gameType === "chronology" && field("Dates / Reign", "dates", "e.g. 27 BC–14 AD")}
-          {gameType === "chronology" && field("Milestone EN", "milestoneEn", "Central milestone (English)", true)}
-          {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
+          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue EN" : "Milestone EN", "milestoneEn", gameType === "matching" ? "Clue text (English)" : "Central milestone (English)", true)}
+          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue NL" : "Milestone NL", "milestoneNl", gameType === "matching" ? "Clue text (Dutch)" : "Central milestone (Dutch)", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
         </div>
