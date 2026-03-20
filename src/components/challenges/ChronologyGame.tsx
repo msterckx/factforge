@@ -459,7 +459,6 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
               <p className="font-semibold text-slate-800 text-sm leading-tight">{infoItem.name}</p>
               {infoItem.reign && <p className="text-xs text-amber-700 font-medium mt-0.5">{infoItem.reign}</p>}
               {infoItem.description && <p className="text-xs text-slate-600 leading-relaxed mt-1">{infoItem.description}</p>}
-              {infoItem.fact && <p className="text-[11px] text-slate-400 italic mt-1">{infoItem.fact}</p>}
             </div>
           </div>
         </div>
