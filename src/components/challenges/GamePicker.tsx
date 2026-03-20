@@ -6,7 +6,7 @@ import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 
 export type GameCategory = "history" | "science" | "other";
-export type GameType = "chronology" | "puzzle" | "quiz" | "other";
+export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "other";
 
 export interface GameEntry {
   challengeId: string;
