@@ -219,8 +219,10 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       setDragOverSlot(null);
       if (idx !== null) tryPlace(dragItem.current, idx);
     } else {
-      // It was a tap — toggle selection
-      setSelectedItem((prev) => (prev?.id === dragItem.current!.id ? null : dragItem.current));
+      // It was a tap — capture before nulling the ref, as React may invoke
+      // the updater callback after dragItem.current has been cleared.
+      const tapped = dragItem.current;
+      setSelectedItem((prev) => (prev?.id === tapped.id ? null : tapped));
     }
 
     dragItem.current = null;
