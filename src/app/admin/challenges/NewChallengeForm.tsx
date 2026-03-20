@@ -138,11 +138,12 @@ export default function NewChallengeForm() {
   }
 
   function addItem() {
-    setItems((prev) => [...prev, {
-      position: prev.length + 1,
-      name: "", imageUrl: "", descriptionEn: "", descriptionNl: "",
-      ...(form.gameType === "chronology" ? { dates: "", fact: "" } : { hint: "", achievement: "" }),
-    }]);
+    const base = { position: items.length + 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "" };
+    const extra =
+      form.gameType === "chronology" ? { dates: "", milestoneEn: "", milestoneNl: "" } :
+      form.gameType === "matching"   ? { dates: "", clueEn: "", clueNl: "" } :
+                                       { hint: "", achievement: "" };
+    setItems((prev) => [...prev, { ...base, ...extra }]);
   }
 
   const field = (label: string, value: string | number, onChange: (v: string) => void, placeholder = "", type = "text") => (
@@ -308,7 +309,15 @@ export default function NewChallengeForm() {
                   {form.gameType === "chronology" && (
                     <>
                       <ItemInput label="Dates / Reign" value={item.dates ?? ""} onChange={(v) => updateItem(i, "dates", v)} placeholder="e.g. 1751–1793" />
-                      <ItemInput label="Fact" value={item.fact ?? ""} onChange={(v) => updateItem(i, "fact", v)} placeholder="Key one-line fact" full />
+                      <ItemInput label="Milestone (EN)" value={item.milestoneEn ?? ""} onChange={(v) => updateItem(i, "milestoneEn", v)} placeholder="Central milestone (English)" full />
+                      <ItemInput label="Milestone (NL)" value={item.milestoneNl ?? ""} onChange={(v) => updateItem(i, "milestoneNl", v)} placeholder="Central milestone (Dutch)" full />
+                    </>
+                  )}
+                  {form.gameType === "matching" && (
+                    <>
+                      <ItemInput label="Dates / Reign" value={item.dates ?? ""} onChange={(v) => updateItem(i, "dates", v)} placeholder="e.g. 1451–1506" />
+                      <ItemInput label="Clue (EN)" value={item.clueEn ?? ""} onChange={(v) => updateItem(i, "clueEn", v)} placeholder="Matching clue (English)" full />
+                      <ItemInput label="Clue (NL)" value={item.clueNl ?? ""} onChange={(v) => updateItem(i, "clueNl", v)} placeholder="Matching clue (Dutch)" full />
                     </>
                   )}
                   {form.gameType === "puzzle" && (
@@ -317,8 +326,12 @@ export default function NewChallengeForm() {
                       <ItemInput label="Achievement" value={item.achievement ?? ""} onChange={(v) => updateItem(i, "achievement", v)} placeholder="e.g. 20 Grand Slam titles" full />
                     </>
                   )}
-                  <ItemInput label="Description (EN)" value={item.descriptionEn} onChange={(v) => updateItem(i, "descriptionEn", v)} full />
-                  <ItemInput label="Description (NL)" value={item.descriptionNl} onChange={(v) => updateItem(i, "descriptionNl", v)} full />
+                  {form.gameType !== "matching" && (
+                    <>
+                      <ItemInput label="Description (EN)" value={item.descriptionEn} onChange={(v) => updateItem(i, "descriptionEn", v)} full />
+                      <ItemInput label="Description (NL)" value={item.descriptionNl} onChange={(v) => updateItem(i, "descriptionNl", v)} full />
+                    </>
+                  )}
                 </div>
               </div>
             ))}

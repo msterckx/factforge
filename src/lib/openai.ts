@@ -150,7 +150,11 @@ export interface GeneratedChallengeItem {
   descriptionNl: string;
   // chronology
   dates?: string;
-  fact?: string;
+  milestoneEn?: string;
+  milestoneNl?: string;
+  // matching
+  clueEn?: string;
+  clueNl?: string;
   // puzzle
   hint?: string;
   achievement?: string;
@@ -169,17 +173,26 @@ export interface GeneratedChallenge {
 
 export async function generateChallenge(
   description: string,
-  gameType: "chronology" | "puzzle"
+  gameType: "chronology" | "puzzle" | "matching"
 ): Promise<GeneratedChallenge> {
   const isChronology = gameType === "chronology";
+  const isMatching = gameType === "matching";
 
   const itemShape = isChronology
     ? `- "position": sequential integer (1 = earliest)
 - "name": person's full name
 - "dates": their life or reign dates, e.g. "1451–1506" or "27 BC–14 AD"
-- "fact": one engaging sentence about why they matter, referencing a specific event/year
+- "milestoneEn": one concise English sentence about their central achievement/milestone, used as the tile clue
+- "milestoneNl": Dutch translation of milestoneEn
 - "descriptionEn": 2–3 sentence English biography for a tooltip
 - "descriptionNl": Dutch translation of descriptionEn
+- "imageUrl": leave as empty string ""`
+    : isMatching
+    ? `- "position": sequential integer
+- "name": person's full name
+- "dates": their life or reign dates, e.g. "1451–1506" or "27 BC–14 AD"
+- "clueEn": one compact English clue displayed on the tile to help the player match the right name (e.g. "First to walk on the Moon · 1969" or "Painted the Sistine Chapel ceiling")
+- "clueNl": Dutch translation of clueEn
 - "imageUrl": leave as empty string ""`
     : `- "position": sequential integer
 - "name": person's full name
@@ -205,7 +218,7 @@ The JSON must have:
 - "titleNl": Dutch translation of titleEn
 - "subtitleEn": one English sentence describing what the player does
 - "subtitleNl": Dutch translation of subtitleEn
-- "items": array of ${isChronology ? "people in correct chronological order" : "people/subjects for the puzzle"}
+- "items": array of ${isChronology ? "people in correct chronological order" : isMatching ? "people/subjects with matching clues" : "people/subjects for the puzzle"}
 
 Each item in the array must have:
 ${itemShape}
