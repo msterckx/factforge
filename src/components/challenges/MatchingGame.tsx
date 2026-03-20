@@ -385,7 +385,7 @@ export default function MatchingGame({ items, dict, challengeId }: Props) {
                 </div>
                 <div className="aspect-square w-full flex items-center justify-center p-2 pt-6">
                   <p className="text-center text-[10px] sm:text-[11px] font-medium text-slate-600 leading-snug">
-                    {items[i]?.milestone || "?"}
+                    {items[i]?.clue || "?"}
                   </p>
                 </div>
                 <div className="px-1 py-0.5 sm:px-1.5 sm:py-1 text-center bg-slate-100 border-t border-slate-200">
@@ -442,8 +442,7 @@ export default function MatchingGame({ items, dict, challengeId }: Props) {
             <div className="min-w-0">
               <p className="font-semibold text-slate-800 text-sm leading-tight">{infoItem.name}</p>
               {infoItem.reign && <p className="text-xs text-amber-700 font-medium mt-0.5">{infoItem.reign}</p>}
-              {infoItem.milestone && <p className="text-xs text-slate-500 italic mt-0.5">{infoItem.milestone}</p>}
-              {infoItem.description && <p className="text-xs text-slate-600 leading-relaxed mt-1">{infoItem.description}</p>}
+              {infoItem.clue && <p className="text-xs text-slate-600 leading-relaxed mt-1">{infoItem.clue}</p>}
             </div>
           </div>
         </div>
