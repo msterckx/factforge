@@ -1,4 +1,4 @@
-const CACHE = 'got-v1';
+const CACHE = 'got-v2';
 
 // Cache Next.js static assets on first fetch
 self.addEventListener('install', () => self.skipWaiting());
