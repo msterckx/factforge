@@ -80,6 +80,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
   const [placed, setPlaced] = useState<Record<number, ChronologyItem>>({});
   const [pool, setPool] = useState<ChronologyItem[]>(() => shuffle(items));
   const [selectedItem, setSelectedItem] = useState<ChronologyItem | null>(null);
+  const [infoItem, setInfoItem] = useState<ChronologyItem | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [wrongSlot, setWrongSlot] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -127,12 +128,14 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       setPlaced((prev) => ({ ...prev, [slotIndex]: item }));
       setPool((prev) => prev.filter((c) => c.id !== item.id));
       setSelectedItem(null);
+      setInfoItem(null);
       setPlayerPlaced((p) => p + 1);
     } else {
       setWrongAttempts((w) => w + 1);
       setWrongSlot(slotIndex);
       setTimeout(() => setWrongSlot(null), 600);
       setSelectedItem(null);
+      setInfoItem(null);
     }
   }
 
@@ -201,6 +204,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
     if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 8) {
       isDragging.current = true;
       setSelectedItem(null);
+      setInfoItem(null);
       createGhost(dragItem.current.name, e.clientX, e.clientY);
     }
 
@@ -222,7 +226,9 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       // It was a tap — capture before nulling the ref, as React may invoke
       // the updater callback after dragItem.current has been cleared.
       const tapped = dragItem.current;
-      setSelectedItem((prev) => (prev?.id === tapped.id ? null : tapped));
+      const isAlreadySelected = selectedItem?.id === tapped.id;
+      setSelectedItem(isAlreadySelected ? null : tapped);
+      setInfoItem(isAlreadySelected ? null : tapped);
     }
 
     dragItem.current = null;
@@ -257,6 +263,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
     setPlaced({});
     setPool(shuffle(items));
     setSelectedItem(null);
+    setInfoItem(null);
     setRevealed(false);
     setWrongSlot(null);
     setGlitterActive(false);
@@ -343,8 +350,10 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
               return (
                 <div
                   key={`filled-${i}`}
-                  className={`relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border border-slate-200 select-none ${
-                    wasPlayerPlaced ? "caesar-correct caesar-shine" : "outline outline-2 outline-indigo-400"
+                  onClick={() => { setInfoItem((prev) => prev?.id === item.id ? null : item); setSelectedItem(null); }}
+                  className={`relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border select-none cursor-pointer ${
+                    infoItem?.id === item.id ? "border-amber-400 ring-2 ring-amber-300" :
+                    wasPlayerPlaced ? "caesar-correct caesar-shine border-slate-200" : "outline outline-2 outline-indigo-400 border-transparent"
                   }`}
                 >
                   <div className="absolute top-1 left-1 z-20 bg-black/50 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
@@ -407,6 +416,42 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
                 {item.name}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Info panel */}
+      {infoItem && (
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-4 relative">
+          <button
+            onClick={() => { setInfoItem(null); setSelectedItem(null); }}
+            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 text-base leading-none rounded-full hover:bg-amber-100"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <div className="flex gap-3 pr-6">
+            {infoItem.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={infoItem.imageUrl}
+                alt={infoItem.name}
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover object-top flex-shrink-0"
+                draggable={false}
+              />
+            )}
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-800 text-sm leading-tight">{infoItem.name}</p>
+              {infoItem.reign && (
+                <p className="text-xs text-amber-700 font-medium mt-0.5">{infoItem.reign}</p>
+              )}
+              {infoItem.description && (
+                <p className="text-xs text-slate-600 leading-relaxed mt-1">{infoItem.description}</p>
+              )}
+              {infoItem.fact && (
+                <p className="text-[11px] text-slate-400 italic mt-1">{infoItem.fact}</p>
+              )}
+            </div>
           </div>
         </div>
       )}
