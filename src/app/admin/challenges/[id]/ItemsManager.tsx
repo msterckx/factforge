@@ -75,9 +75,11 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
           {field("Image URL", "imageUrl", "https://...", true)}
           {field("Description EN", "descriptionEn", "", true)}
           {field("Description NL", "descriptionNl", "", true)}
-          {gameType === "chronology" && field("Dates / Reign", "dates", "e.g. 27 BC–14 AD")}
-          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue EN" : "Milestone EN", "milestoneEn", gameType === "matching" ? "Clue text (English)" : "Central milestone (English)", true)}
-          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue NL" : "Milestone NL", "milestoneNl", gameType === "matching" ? "Clue text (Dutch)" : "Central milestone (Dutch)", true)}
+          {(gameType === "chronology" || gameType === "matching") && field("Dates / Reign", "dates", "e.g. 27 BC–14 AD")}
+          {gameType === "chronology" && field("Milestone EN", "milestoneEn", "Central milestone (English)", true)}
+          {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
+          {gameType === "matching" && field("Clue EN", "clueEn", "Matching clue (English)", true)}
+          {gameType === "matching" && field("Clue NL", "clueNl", "Matching clue (Dutch)", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
         </div>
@@ -97,7 +99,7 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
 function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType: string; onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [vals, setVals] = useState({ position: 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "", dates: "", milestoneEn: "", milestoneNl: "", hint: "", achievement: "" });
+  const [vals, setVals] = useState({ position: 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "", dates: "", milestoneEn: "", milestoneNl: "", clueEn: "", clueNl: "", hint: "", achievement: "" });
 
   async function save() {
     setSaving(true);
@@ -143,9 +145,11 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
           {field("Image URL", "imageUrl", "https://...", true)}
           {field("Description EN", "descriptionEn", "", true)}
           {field("Description NL", "descriptionNl", "", true)}
-          {gameType === "chronology" && field("Dates / Reign", "dates", "e.g. 27 BC–14 AD")}
-          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue EN" : "Milestone EN", "milestoneEn", gameType === "matching" ? "Clue text (English)" : "Central milestone (English)", true)}
-          {(gameType === "chronology" || gameType === "matching") && field(gameType === "matching" ? "Clue NL" : "Milestone NL", "milestoneNl", gameType === "matching" ? "Clue text (Dutch)" : "Central milestone (Dutch)", true)}
+          {(gameType === "chronology" || gameType === "matching") && field("Dates / Reign", "dates", "e.g. 27 BC–14 AD")}
+          {gameType === "chronology" && field("Milestone EN", "milestoneEn", "Central milestone (English)", true)}
+          {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
+          {gameType === "matching" && field("Clue EN", "clueEn", "Matching clue (English)", true)}
+          {gameType === "matching" && field("Clue NL", "clueNl", "Matching clue (Dutch)", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
         </div>
@@ -175,8 +179,8 @@ export default function ItemsManager({ gameId, gameType, initialItems }: Props) 
   function refresh() { router.refresh(); }
 
   function handleExport() {
-    const data = items.map(({ position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, hint, achievement }) => ({
-      position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, hint, achievement,
+    const data = items.map(({ position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, clueEn, clueNl, hint, achievement }) => ({
+      position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, clueEn, clueNl, hint, achievement,
     }));
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
