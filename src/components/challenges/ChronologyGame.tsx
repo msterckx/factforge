@@ -121,9 +121,9 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allCorrect, revealed]);
 
-  // ── Core placement logic ──────────────────────────────────────────────────
+  // ── Core placement logic (ordered: next slot is always placedCount) ─────────
   function tryPlace(item: ChronologyItem, slotIndex: number) {
-    if (placed[slotIndex] || revealed) return;
+    if (placed[slotIndex] !== undefined || revealed) return;
     if (item.id === slotIndex + 1) {
       setPlaced((prev) => ({ ...prev, [slotIndex]: item }));
       setPool((prev) => prev.filter((c) => c.id !== item.id));
@@ -223,8 +223,6 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       setDragOverSlot(null);
       if (idx !== null) tryPlace(dragItem.current, idx);
     } else {
-      // It was a tap — capture before nulling the ref, as React may invoke
-      // the updater callback after dragItem.current has been cleared.
       const tapped = dragItem.current;
       const isAlreadySelected = selectedItem?.id === tapped.id;
       setSelectedItem(isAlreadySelected ? null : tapped);
@@ -244,9 +242,9 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
     isDragging.current = false;
   }
 
-  // ── Slot tap ──────────────────────────────────────────────────────────────
-  function handleSlotClick(slotIndex: number) {
-    if (placed[slotIndex] || revealed) return;
+  // ── Milestone card tap (tap selected chip first, then tap card to place) ──
+  function handleMilestoneClick(slotIndex: number) {
+    if (placed[slotIndex] !== undefined || revealed) return;
     if (selectedItem) tryPlace(selectedItem, slotIndex);
   }
 
@@ -307,9 +305,9 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
         }
         @keyframes wrongFlash {
           0%   { background-color: #fef2f2; border-color: #f87171; transform: translateX(0); }
-          25%  { transform: translateX(-5px); }
-          75%  { transform: translateX(5px); }
-          100% { background-color: transparent; border-color: #cbd5e1; transform: translateX(0); }
+          25%  { transform: translateX(-4px); }
+          75%  { transform: translateX(4px); }
+          100% { background-color: transparent; border-color: inherit; transform: translateX(0); }
         }
         .slot-wrong { animation: wrongFlash 0.55s ease-out forwards; }
         @keyframes glitterFly {
@@ -317,161 +315,209 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
           60%  { opacity: 1; }
           100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); opacity: 0; }
         }
+        @keyframes msAppear {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .ms-appear { animation: msAppear 0.3s ease-out forwards; }
       `}</style>
 
       {/* Status bar */}
-      <div className="flex items-center justify-between mb-4 min-h-[24px]">
+      <div className="flex items-center justify-between mb-3 min-h-[24px]">
         {allCorrect ? (
           <p className="text-sm font-semibold text-green-700">{dict.perfectOrder} 🎉</p>
-        ) : revealed ? null : (
+        ) : revealed ? (
+          <p className="text-sm text-slate-500">Answers revealed</p>
+        ) : (
           <p className="text-sm text-slate-500">
-            {dict.dragOrTap} &mdash;{" "}
             <span className="font-semibold text-amber-700">{placedCount}/{items.length}</span> placed
           </p>
         )}
         {selectedItem && !allCorrect && !revealed && (
-          <p className="text-xs text-amber-600 font-medium">
-            &ldquo;{selectedItem.name}&rdquo; — tap a slot
+          <p className="text-xs text-amber-600 font-medium truncate ml-2">
+            &ldquo;{selectedItem.name}&rdquo; — drop on milestone →
           </p>
         )}
       </div>
 
-      {/* Grid */}
-      <div className="relative mb-6">
-        {glitterActive && <GlitterBomb />}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2">
-          {Array.from({ length: items.length }, (_, i) => {
-            const item = placed[i];
-            const isWrong = wrongSlot === i;
-            const isDragOver = dragOverSlot === i;
-            const wasPlayerPlaced = !!item && !revealed;
+      {/* Two-column layout */}
+      <div className="flex gap-2 sm:gap-3">
 
-            if (item) {
-              return (
-                <div
-                  key={`filled-${i}`}
-                  onClick={() => { setInfoItem((prev) => prev?.id === item.id ? null : item); setSelectedItem(null); }}
-                  className={`relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border select-none cursor-pointer ${
-                    infoItem?.id === item.id ? "border-amber-400 ring-2 ring-amber-300" :
-                    wasPlayerPlaced ? "caesar-correct caesar-shine border-slate-200" : "outline outline-2 outline-indigo-400 border-transparent"
-                  }`}
-                >
-                  <div className="absolute top-1 left-1 z-20 bg-black/50 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
-                    {i + 1}
+        {/* ── Left: placed items grid + chip pool + info + buttons ─────────── */}
+        <div className="flex-1 min-w-0">
+
+          {/* Placed items grid */}
+          {(placedCount > 0 || revealed) && (
+            <div className="relative mb-3">
+              {glitterActive && <GlitterBomb />}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {Array.from({ length: placedCount }, (_, i) => {
+                  const item = placed[i];
+                  if (!item) return null;
+                  const wasPlayerPlaced = !revealed;
+                  return (
+                    <div
+                      key={`placed-${i}`}
+                      onClick={() => { setInfoItem((prev) => prev?.id === item.id ? null : item); setSelectedItem(null); }}
+                      className={`relative flex flex-col rounded-lg overflow-hidden border select-none cursor-pointer ${
+                        infoItem?.id === item.id
+                          ? "border-amber-400 ring-2 ring-amber-300"
+                          : wasPlayerPlaced
+                          ? "caesar-correct caesar-shine border-slate-200"
+                          : "outline outline-2 outline-indigo-400 border-transparent"
+                      }`}
+                    >
+                      <div className="absolute top-1 left-1 z-20 bg-black/50 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+                        {i + 1}
+                      </div>
+                      <div className="aspect-square w-full bg-stone-200 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
+                      </div>
+                      <div className={`px-1 py-0.5 text-center ${wasPlayerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
+                        <p className="text-[10px] font-semibold text-slate-800 leading-tight truncate">{item.name}</p>
+                        <p className="text-[9px] text-slate-400 leading-tight">{item.reign}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Chip pool */}
+          {pool.length > 0 && !allCorrect && !revealed && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                {dict.dragOrTap}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {pool.map((item) => (
+                  <div
+                    key={item.id}
+                    onPointerDown={(e) => handleChipPointerDown(e, item)}
+                    onPointerMove={handleChipPointerMove}
+                    onPointerUp={handleChipPointerUp}
+                    onPointerCancel={handleChipPointerCancel}
+                    style={{ touchAction: "none", userSelect: "none" }}
+                    className={[
+                      "px-2.5 py-1.5 rounded-full border text-xs font-medium transition-all cursor-grab active:cursor-grabbing",
+                      selectedItem?.id === item.id
+                        ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
+                        : "bg-white border-slate-300 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
+                    ].join(" ")}
+                  >
+                    {item.name}
                   </div>
-                  <div className="aspect-square w-full bg-stone-200 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
-                  </div>
-                  <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-center ${wasPlayerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
-                    <p className="text-[10px] sm:text-[11px] font-semibold text-slate-800 leading-tight truncate">{item.name}</p>
-                    <p className="text-[9px] sm:text-[10px] text-slate-400 leading-tight">{item.reign}</p>
-                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Info panel */}
+          {infoItem && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 relative">
+              <button
+                onClick={() => { setInfoItem(null); setSelectedItem(null); }}
+                className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 text-base leading-none rounded-full hover:bg-amber-100"
+                aria-label="Close"
+              >×</button>
+              <div className="flex gap-2 pr-6">
+                {infoItem.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={infoItem.imageUrl} alt={infoItem.name} className="w-12 h-12 rounded-lg object-cover object-top flex-shrink-0" draggable={false} />
+                )}
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-800 text-sm leading-tight">{infoItem.name}</p>
+                  {infoItem.reign && <p className="text-xs text-amber-700 font-medium mt-0.5">{infoItem.reign}</p>}
+                  {infoItem.description && <p className="text-xs text-slate-600 leading-relaxed mt-1">{infoItem.description}</p>}
+                  {infoItem.fact && <p className="text-[11px] text-slate-400 italic mt-1">{infoItem.fact}</p>}
                 </div>
-              );
-            }
+              </div>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex gap-3">
+            {!allCorrect && !revealed && (
+              <button
+                onClick={handleReveal}
+                className="px-4 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                {dict.revealAnswer}
+              </button>
+            )}
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              {dict.tryAgain}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Right: milestone column ───────────────────────────────────────── */}
+        <div className="w-32 sm:w-44 flex-shrink-0 space-y-2">
+          {Array.from({ length: items.length }, (_, i) => {
+            const isPlaced = placed[i] !== undefined;
+            const isActive = i === placedCount && !allCorrect && !revealed;
+            const isVisible = isPlaced || isActive || revealed;
+            if (!isVisible) return null;
+
+            const isDragOver = dragOverSlot === i;
+            const isWrong = wrongSlot === i;
+            const milestone = items[i]?.milestone;
 
             return (
               <div
-                key={`empty-${i}`}
-                data-slot={i}
-                onClick={() => handleSlotClick(i)}
+                key={`ms-${i}`}
+                data-slot={isActive ? i : undefined}
+                onClick={() => isActive && handleMilestoneClick(i)}
                 className={[
-                  "aspect-square rounded-lg sm:rounded-xl border-2 border-dashed flex items-center justify-center transition-colors",
-                  selectedItem && !revealed ? "cursor-pointer" : "cursor-default",
+                  "ms-appear rounded-lg border p-2 text-xs transition-colors",
+                  isActive && selectedItem ? "cursor-pointer" : "",
                   isWrong ? "slot-wrong" : "",
-                  isDragOver && !isWrong ? "border-amber-400 bg-amber-50" : "",
-                  !isDragOver && !isWrong ? "border-slate-300 bg-slate-50" : "",
+                  isPlaced && !isWrong
+                    ? "border-green-200 bg-green-50"
+                    : isActive && isDragOver && !isWrong
+                    ? "border-amber-400 bg-amber-100"
+                    : isActive && !isWrong
+                    ? "border-amber-300 bg-amber-50"
+                    : !isWrong
+                    ? "border-indigo-200 bg-indigo-50"
+                    : "",
                 ].join(" ")}
               >
-                <span className="text-xl sm:text-2xl font-bold text-slate-300">{i + 1}</span>
+                {milestone && (
+                  <p className="font-medium text-slate-700 leading-snug mb-1.5 text-[11px] sm:text-xs">
+                    {milestone}
+                  </p>
+                )}
+                {isPlaced ? (
+                  <div className="flex items-center gap-1.5">
+                    {placed[i].imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={placed[i].imageUrl}
+                        alt={placed[i].name}
+                        className="w-6 h-6 rounded object-cover object-top flex-shrink-0"
+                        draggable={false}
+                      />
+                    )}
+                    <p className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight line-clamp-2">
+                      {placed[i].name}
+                    </p>
+                  </div>
+                ) : isActive ? (
+                  <div className="border-2 border-dashed border-amber-300 rounded-md flex items-center justify-center h-8">
+                    <span className="text-amber-300 text-lg font-bold leading-none">?</span>
+                  </div>
+                ) : null}
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* Name chip pool */}
-      {pool.length > 0 && (
-        <div className="mb-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            {dict.dragOrTap}
-          </p>
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            {pool.map((item) => (
-              <div
-                key={item.id}
-                onPointerDown={(e) => handleChipPointerDown(e, item)}
-                onPointerMove={handleChipPointerMove}
-                onPointerUp={handleChipPointerUp}
-                onPointerCancel={handleChipPointerCancel}
-                style={{ touchAction: "none", userSelect: "none" }}
-                className={[
-                  "px-2.5 py-1.5 sm:px-3 rounded-full border text-xs sm:text-sm font-medium transition-all cursor-grab active:cursor-grabbing",
-                  selectedItem?.id === item.id
-                    ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
-                    : "bg-white border-slate-300 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
-                ].join(" ")}
-              >
-                {item.name}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Info panel */}
-      {infoItem && (
-        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-4 relative">
-          <button
-            onClick={() => { setInfoItem(null); setSelectedItem(null); }}
-            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 text-base leading-none rounded-full hover:bg-amber-100"
-            aria-label="Close"
-          >
-            ×
-          </button>
-          <div className="flex gap-3 pr-6">
-            {infoItem.imageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={infoItem.imageUrl}
-                alt={infoItem.name}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover object-top flex-shrink-0"
-                draggable={false}
-              />
-            )}
-            <div className="min-w-0">
-              <p className="font-semibold text-slate-800 text-sm leading-tight">{infoItem.name}</p>
-              {infoItem.reign && (
-                <p className="text-xs text-amber-700 font-medium mt-0.5">{infoItem.reign}</p>
-              )}
-              {infoItem.description && (
-                <p className="text-xs text-slate-600 leading-relaxed mt-1">{infoItem.description}</p>
-              )}
-              {infoItem.fact && (
-                <p className="text-[11px] text-slate-400 italic mt-1">{infoItem.fact}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Buttons */}
-      <div className="flex gap-3">
-        {!allCorrect && !revealed && (
-          <button
-            onClick={handleReveal}
-            className="px-4 sm:px-5 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
-          >
-            {dict.revealAnswer}
-          </button>
-        )}
-        <button
-          onClick={handleReset}
-          className="px-4 sm:px-5 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
-        >
-          {dict.tryAgain}
-        </button>
       </div>
     </div>
   );
