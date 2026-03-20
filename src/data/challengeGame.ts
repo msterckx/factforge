@@ -27,7 +27,7 @@ export function mapToChronologyItems(items: ChallengeItem[], lang: string): Chro
     fact:        item.fact ?? "",
     imageUrl:    item.imageUrl,
     description: lang === "nl" ? item.descriptionNl || item.descriptionEn : item.descriptionEn,
-    milestone:   item.milestone ?? "",
+    milestone:   item.milestone ?? undefined,
   }));
 }
 

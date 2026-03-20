@@ -5,5 +5,5 @@ export interface ChronologyItem {
   fact: string;
   imageUrl: string;
   description: string;
-  milestone: string;
+  milestone?: string;
 }
