@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { ChallengeItem } from "@/data/challengeGame";
 
@@ -163,33 +163,126 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
 export default function ItemsManager({ gameId, gameType, initialItems }: Props) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function refresh() { router.refresh(); }
 
+  function handleExport() {
+    const data = items.map(({ position, name, imageUrl, descriptionEn, descriptionNl, dates, fact, hint, achievement }) => ({
+      position, name, imageUrl, descriptionEn, descriptionNl, dates, fact, hint, achievement,
+    }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `challenge-${gameId}-items.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError(null);
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error("Expected a JSON array");
+      if (data.length === 0) throw new Error("Array is empty");
+
+      const confirmed = confirm(
+        `Import ${data.length} item(s)?\n\nThis will DELETE all ${items.length} existing item(s) and replace them.`
+      );
+      if (!confirmed) {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      setImporting(true);
+
+      // Delete all existing items
+      await Promise.all(
+        items.map((item) =>
+          fetch(`/api/admin/challenges/${gameId}/items/${item.id}`, { method: "DELETE" })
+        )
+      );
+
+      // Create new items sequentially to preserve order
+      for (const item of data) {
+        const res = await fetch(`/api/admin/challenges/${gameId}/items`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(item),
+        });
+        if (!res.ok) throw new Error(`Failed to create item "${item.name}"`);
+      }
+
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      router.refresh();
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Invalid JSON");
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-slate-50 border-b border-slate-200">
-          <tr>
-            <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 w-10">#</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-slate-500">Name</th>
-            <th className="px-3 py-2 text-left text-xs font-medium text-slate-500">Image URL</th>
-            <th className="px-3 py-2 text-right text-xs font-medium text-slate-500"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {items.map((item) => (
-            <ItemRow
-              key={item.id}
-              gameId={gameId}
-              item={item}
-              gameType={gameType}
-              onDeleted={refresh}
-            />
-          ))}
-          <NewItemRow gameId={gameId} gameType={gameType} onCreated={refresh} />
-        </tbody>
-      </table>
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={handleExport}
+          disabled={items.length === 0}
+          className="px-3 py-1.5 text-xs font-medium border border-slate-300 text-slate-600 rounded hover:bg-slate-50 disabled:opacity-40 transition-colors"
+        >
+          ↓ Export JSON
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importing}
+          className="px-3 py-1.5 text-xs font-medium border border-blue-300 text-blue-600 rounded hover:bg-blue-50 disabled:opacity-40 transition-colors"
+        >
+          {importing ? "Importing…" : "↑ Import JSON"}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleImportFile}
+        />
+        {importError && (
+          <p className="text-xs text-red-500 ml-2">{importError}</p>
+        )}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 w-10">#</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-500">Name</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-slate-500">Image URL</th>
+              <th className="px-3 py-2 text-right text-xs font-medium text-slate-500"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {items.map((item) => (
+              <ItemRow
+                key={item.id}
+                gameId={gameId}
+                item={item}
+                gameType={gameType}
+                onDeleted={refresh}
+              />
+            ))}
+            <NewItemRow gameId={gameId} gameType={gameType} onCreated={refresh} />
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
