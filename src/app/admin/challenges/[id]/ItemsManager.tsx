@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { ChallengeItem } from "@/data/challengeGame";
 
@@ -167,6 +167,9 @@ export default function ItemsManager({ gameId, gameType, initialItems }: Props) 
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Keep items in sync when the server re-renders after router.refresh()
+  useEffect(() => { setItems(initialItems); }, [initialItems]);
+
   function refresh() { router.refresh(); }
 
   function handleExport() {
@@ -203,9 +206,15 @@ export default function ItemsManager({ gameId, gameType, initialItems }: Props) 
 
       setImporting(true);
 
-      // Delete all existing items
+      // Fetch current items fresh from DB so we delete the actual live records,
+      // not whatever is cached in local state from a previous import.
+      const currentRes = await fetch(`/api/admin/challenges/${gameId}/items`);
+      if (!currentRes.ok) throw new Error("Failed to fetch current items");
+      const currentItems: ChallengeItem[] = await currentRes.json();
+
+      // Delete all current items
       await Promise.all(
-        items.map((item) =>
+        currentItems.map((item) =>
           fetch(`/api/admin/challenges/${gameId}/items/${item.id}`, { method: "DELETE" })
         )
       );
