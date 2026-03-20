@@ -36,7 +36,13 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
         <ChallengeEditForm game={game} />
       </div>
 
-      {game.gameType !== "quiz" && (
+      {game.gameType !== "quiz" && game.gameType !== "matching" && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
+          <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} />
+        </div>
+      )}
+      {game.gameType === "matching" && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
           <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} />

@@ -128,7 +128,7 @@ export const questionTranslations = sqliteTable(
 export const challengeGames = sqliteTable("challenge_games", {
   id:          integer("id").primaryKey({ autoIncrement: true }),
   slug:        text("slug").notNull().unique(),
-  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz"] }).notNull(),
+  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz", "matching"] }).notNull(),
   icon:        text("icon").notNull().default("🎮"),
   category:    text("category", { enum: ["history", "science", "other"] }).notNull().default("other"),
   titleEn:     text("title_en").notNull(),

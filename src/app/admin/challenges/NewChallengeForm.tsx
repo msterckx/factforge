@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { GeneratedChallengeItem } from "@/lib/openai";
 
-type GameType = "chronology" | "puzzle" | "quiz";
+type GameType = "chronology" | "matching" | "puzzle" | "quiz";
 
 interface CategoryOption { id: number; name: string; subcategories: { id: number; name: string }[] }
 
@@ -174,6 +174,7 @@ export default function NewChallengeForm() {
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
             >
               <option value="chronology">Chronology — put people/events in order</option>
+              <option value="matching">Matching — match names to clue tiles</option>
               <option value="puzzle">Puzzle — reassemble portrait images</option>
               <option value="quiz">Quiz — questions from an existing category</option>
             </select>

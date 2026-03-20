@@ -11,6 +11,7 @@ import { db } from "@/db";
 import { questions, questionTranslations, subcategories, subcategoryTranslations } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import ChronologyGame from "@/components/challenges/ChronologyGame";
+import MatchingGame from "@/components/challenges/MatchingGame";
 import PuzzleGame from "@/components/challenges/PuzzleGame";
 import QuizChallenge from "@/components/challenges/QuizChallenge";
 import type { QuizQuestion } from "@/components/challenges/QuizChallenge";
@@ -91,7 +92,7 @@ export default async function ChallengePage({ params }: Props) {
     quizQuestions = game.quizQuestionLimit ? shuffled.slice(0, game.quizQuestionLimit) : shuffled;
   }
 
-  // ── Chronology / puzzle items ──────────────────────────────────────────────
+  // ── Chronology / matching / puzzle items ──────────────────────────────────
   const items = game.gameType !== "quiz" ? getChallengeItems(game.id) : [];
 
   return (
@@ -108,6 +109,13 @@ export default async function ChallengePage({ params }: Props) {
 
       {game.gameType === "chronology" && (
         <ChronologyGame
+          items={mapToChronologyItems(items, lang)}
+          dict={d}
+          challengeId={game.slug}
+        />
+      )}
+      {game.gameType === "matching" && (
+        <MatchingGame
           items={mapToChronologyItems(items, lang)}
           dict={d}
           challengeId={game.slug}
