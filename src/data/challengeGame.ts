@@ -24,10 +24,11 @@ export function mapToChronologyItems(items: ChallengeItem[], lang: string): Chro
     id:          item.position,
     name:        item.name,
     reign:       item.dates ?? "",
-    fact:        item.fact ?? "",
     imageUrl:    item.imageUrl,
     description: lang === "nl" ? item.descriptionNl || item.descriptionEn : item.descriptionEn,
-    milestone:   item.milestone ?? undefined,
+    milestone:   lang === "nl"
+      ? (item.milestoneNl || item.milestoneEn) ?? undefined
+      : item.milestoneEn ?? undefined,
   }));
 }
 

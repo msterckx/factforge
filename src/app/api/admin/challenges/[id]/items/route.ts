@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
 
   const body = await req.json();
-  const { position, name, imageUrl, descriptionEn, descriptionNl, dates, fact, milestone, hint, achievement } = body;
+  const { position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, hint, achievement } = body;
 
   if (!name || position == null) {
     return NextResponse.json({ error: "name and position are required" }, { status: 400 });
@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const [item] = db
     .insert(challengeItems)
-    .values({ gameId: Number(id), position, name, imageUrl: imageUrl ?? "", descriptionEn: descriptionEn ?? "", descriptionNl: descriptionNl ?? "", dates, fact, milestone, hint, achievement })
+    .values({ gameId: Number(id), position, name, imageUrl: imageUrl ?? "", descriptionEn: descriptionEn ?? "", descriptionNl: descriptionNl ?? "", dates, milestoneEn, milestoneNl, hint, achievement })
     .returning()
     .all();
 

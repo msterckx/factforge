@@ -155,8 +155,8 @@ export const challengeItems = sqliteTable("challenge_items", {
   descriptionNl: text("description_nl").notNull().default(""),
   // Chronology fields
   dates:         text("dates"),           // e.g. "27 BC–14 AD"
-  fact:          text("fact"),            // one-line chronology fact
-  milestone:     text("milestone"),
+  milestoneEn:   text("milestone_en"),
+  milestoneNl:   text("milestone_nl"),
   // Puzzle fields
   hint:          text("hint"),            // e.g. "Athletics · Jamaica"
   achievement:   text("achievement"),     // e.g. "9 Olympic gold medals"
