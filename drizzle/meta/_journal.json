@@ -92,6 +92,13 @@
       "when": 1774000000000,
       "tag": "0012_quiz_question_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1774100000000,
+      "tag": "0013_chronology_milestone",
+      "breakpoints": true
     }
   ]
 }
