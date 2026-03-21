@@ -26,40 +26,58 @@ interface Props {
   scores: ScoreMap;
 }
 
+const categoryColors: Record<GameCategory, string> = {
+  geography:  "bg-emerald-700",
+  history:    "bg-amber-800",
+  television: "bg-purple-700",
+  science:    "bg-blue-700",
+  sports:     "bg-orange-600",
+  other:      "bg-slate-700",
+};
+
 function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMap }) {
+  const colorClass = categoryColors[game.category];
+  const isDone = !!completed[game.challengeId];
+
   if (game.available) {
     return (
       <Link
         href={game.href}
-        className={`relative flex flex-col items-center gap-2 p-4 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-amber-400 transition-all group ${completed[game.challengeId] ? "border-green-300" : "border-slate-200"}`}
+        className={`relative flex flex-col overflow-hidden rounded-xl shadow-sm hover:shadow-lg hover:brightness-110 transition-all ${colorClass}`}
       >
-        {completed[game.challengeId] && (
-          <span className="absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+        {isDone && (
+          <span className="absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">
             ✓ done
           </span>
         )}
-        {game.icon?.startsWith("http") ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={game.icon} alt={game.label} className="w-12 h-12 rounded-lg object-cover" />
-        ) : (
-          <span className="text-3xl">{game.icon}</span>
-        )}
-        <p className="font-semibold text-slate-800 group-hover:text-amber-700 transition-colors text-center">
-          {game.label}
-        </p>
+        <div className="flex items-center justify-center py-7">
+          {game.icon?.startsWith("http") ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={game.icon} alt={game.label} className="w-20 h-20 rounded-lg object-cover shadow-md" />
+          ) : (
+            <span className="text-6xl">{game.icon}</span>
+          )}
+        </div>
+        <div className="bg-black/20 px-3 py-2">
+          <p className="font-semibold text-white text-center text-sm">{game.label}</p>
+        </div>
       </Link>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-xl border border-slate-100 opacity-50">
-      {game.icon?.startsWith("http") ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={game.icon} alt={game.label} className="w-12 h-12 rounded-lg object-cover grayscale" />
-      ) : (
-        <span className="text-3xl grayscale">{game.icon}</span>
-      )}
-      <p className="font-semibold text-slate-500 text-center">{game.label}</p>
+    <div className={`flex flex-col overflow-hidden rounded-xl opacity-40 grayscale ${colorClass}`}>
+      <div className="flex items-center justify-center py-7">
+        {game.icon?.startsWith("http") ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={game.icon} alt={game.label} className="w-20 h-20 rounded-lg object-cover shadow-md" />
+        ) : (
+          <span className="text-6xl">{game.icon}</span>
+        )}
+      </div>
+      <div className="bg-black/20 px-3 py-2">
+        <p className="font-semibold text-white text-center text-sm">{game.label}</p>
+      </div>
     </div>
   );
 }
