@@ -121,7 +121,7 @@ export default function GamePicker({ games, dict, scores }: Props) {
             <Link
               key={game.label}
               href={game.href}
-              className={`relative flex flex-col items-center gap-3 p-6 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-amber-400 transition-all group ${completed[game.challengeId] ? "border-green-300" : "border-slate-200"}`}
+              className={`relative flex flex-col items-center gap-2 p-4 bg-white rounded-xl border shadow-sm hover:shadow-md hover:border-amber-400 transition-all group ${completed[game.challengeId] ? "border-green-300" : "border-slate-200"}`}
             >
               {completed[game.challengeId] && (
                 <span className="absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
@@ -130,15 +130,14 @@ export default function GamePicker({ games, dict, scores }: Props) {
               )}
               {game.icon?.startsWith("http") ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={game.icon} alt={game.label} className="w-16 h-16 rounded-lg object-cover" />
+                <img src={game.icon} alt={game.label} className="w-12 h-12 rounded-lg object-cover" />
               ) : (
-                <span className="text-4xl">{game.icon}</span>
+                <span className="text-3xl">{game.icon}</span>
               )}
               <div className="text-center">
                 <p className="font-semibold text-slate-800 group-hover:text-amber-700 transition-colors">
                   {game.label}
                 </p>
-                <p className="text-sm text-slate-400 mt-1 leading-snug">{game.subtitle}</p>
               </div>
               <div className="flex gap-1.5 mt-auto pt-1 flex-wrap justify-center">
                 {game.category !== "other" && (
@@ -154,17 +153,16 @@ export default function GamePicker({ games, dict, scores }: Props) {
           ) : (
             <div
               key={game.label}
-              className="flex flex-col items-center gap-3 p-6 bg-slate-50 rounded-xl border border-slate-100 opacity-50"
+              className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-xl border border-slate-100 opacity-50"
             >
               {game.icon?.startsWith("http") ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={game.icon} alt={game.label} className="w-16 h-16 rounded-lg object-cover grayscale" />
+                <img src={game.icon} alt={game.label} className="w-12 h-12 rounded-lg object-cover grayscale" />
               ) : (
-                <span className="text-4xl grayscale">{game.icon}</span>
+                <span className="text-3xl grayscale">{game.icon}</span>
               )}
               <div className="text-center">
                 <p className="font-semibold text-slate-500">{game.label}</p>
-                <p className="text-sm text-slate-400 mt-1">{dict.comingSoon}</p>
               </div>
             </div>
           )
