@@ -40,7 +40,7 @@ function CardInner({ game, isDone }: { game: GameEntry; isDone: boolean }) {
   const isImage = game.icon?.startsWith("http");
 
   return (
-    <div className={`relative aspect-[16/10] overflow-hidden rounded-xl ${colorClass}`}>
+    <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-white border border-slate-200">
       {isImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
