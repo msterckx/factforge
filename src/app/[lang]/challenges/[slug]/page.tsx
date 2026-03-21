@@ -112,6 +112,7 @@ export default async function ChallengePage({ params }: Props) {
           items={mapToChronologyItems(items, lang)}
           dict={d}
           challengeId={game.slug}
+          startingLives={game.startingLives ?? 5}
         />
       )}
       {game.gameType === "matching" && (

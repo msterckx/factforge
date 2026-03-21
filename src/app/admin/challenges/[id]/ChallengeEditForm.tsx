@@ -12,6 +12,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [gameType, setGameType] = useState(game.gameType);
+  const [startingLives, setStartingLives] = useState(game.startingLives ?? 5);
   const [quizCategoryId, setQuizCategoryId] = useState<number | null>(game.quizCategoryId ?? null);
   const [quizSubcategoryId, setQuizSubcategoryId] = useState<number | null>(game.quizSubcategoryId ?? null);
   const [dbCategories, setDbCategories] = useState<CategoryOption[]>([]);
@@ -43,6 +44,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       quizCategoryId:    quizCategoryId,
       quizSubcategoryId: quizSubcategoryId,
       quizQuestionLimit: fd.get("quizQuestionLimit") ? Number(fd.get("quizQuestionLimit")) : null,
+      startingLives:     startingLives,
     };
     const res = await fetch(`/api/admin/challenges/${game.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
@@ -109,6 +111,19 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
           <label className="block text-sm font-medium text-slate-700 mb-1">Sort Order</label>
           <input name="sortOrder" type="number" defaultValue={game.sortOrder} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
         </div>
+        {gameType === "chronology" && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Starting Lives <span className="text-slate-400 font-normal">(wrong placements allowed)</span></label>
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={startingLives}
+              onChange={(e) => setStartingLives(Math.max(1, Number(e.target.value)))}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
           <select name="available" defaultValue={String(game.available)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">

@@ -23,7 +23,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { id } = await params;
   const body = await req.json();
   const allowed = ["slug","gameType","icon","category","titleEn","titleNl","subtitleEn","subtitleNl","available","sortOrder",
-                   "quizCategoryId","quizSubcategoryId","quizQuestionLimit","quizQuestionIds"] as const;
+                   "quizCategoryId","quizSubcategoryId","quizQuestionLimit","quizQuestionIds","startingLives"] as const;
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];

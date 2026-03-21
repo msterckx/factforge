@@ -142,6 +142,7 @@ export const challengeGames = sqliteTable("challenge_games", {
   quizSubcategoryId: integer("quiz_subcategory_id").references(() => subcategories.id, { onDelete: "set null" }),
   quizQuestionLimit: integer("quiz_question_limit"), // null = all questions
   quizQuestionIds:   text("quiz_question_ids"),      // JSON array of question IDs; null = all
+  startingLives:     integer("starting_lives").notNull().default(5), // lives for chronology game
   createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
