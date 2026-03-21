@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Dictionary } from "@/i18n/en";
-import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
+import { useCompletedChallenges, type CompletedMap } from "@/hooks/useCompletedChallenges";
 
 export type GameCategory = "history" | "science" | "other";
 export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "other";
@@ -26,7 +26,7 @@ interface Props {
   scores: ScoreMap;
 }
 
-function GameCard({ game, completed }: { game: GameEntry; completed: Record<string, boolean> }) {
+function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMap }) {
   if (game.available) {
     return (
       <Link
