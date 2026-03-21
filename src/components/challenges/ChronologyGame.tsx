@@ -9,6 +9,7 @@ interface Props {
   items: ChronologyItem[];
   dict: Dictionary["challenges"];
   challengeId: string;
+  startingLives?: number;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -74,8 +75,57 @@ function GlitterBomb() {
   );
 }
 
+// ── Game Over overlay ─────────────────────────────────────────────────────────
+function GameOverOverlay() {
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center rounded-xl overflow-hidden">
+      <div
+        className="absolute inset-0 bg-red-950/75"
+        style={{ animation: "gameOverFade 0.35s ease-out forwards" }}
+      />
+      <div className="relative z-10 text-center px-4">
+        <p className="text-5xl mb-3" style={{ animation: "gameOverBounce 0.5s ease-out forwards" }}>
+          💔
+        </p>
+        <p
+          className="text-white font-bold text-xl tracking-wide"
+          style={{ animation: "gameOverSlideUp 0.35s ease-out 0.1s both" }}
+        >
+          Game Over
+        </p>
+        <p
+          className="text-red-300 text-sm mt-1"
+          style={{ animation: "gameOverSlideUp 0.35s ease-out 0.2s both" }}
+        >
+          No lives remaining
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Lives display ─────────────────────────────────────────────────────────────
+function Lives({ current, max }: { current: number; max: number }) {
+  return (
+    <div className="flex items-center gap-0.5 sm:gap-1">
+      {Array.from({ length: max }, (_, i) => (
+        <span
+          key={i}
+          className={`text-sm sm:text-base transition-all duration-300 ${
+            i < current ? "text-red-500" : "text-slate-200"
+          }`}
+          style={i >= current ? { filter: "grayscale(1)" } : undefined}
+        >
+          ♥
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ChronologyGame({ items, dict, challengeId }: Props) {
+export default function ChronologyGame({ items, dict, challengeId, startingLives = 5 }: Props) {
+  const maxLives = Math.max(1, startingLives);
   const { markComplete } = useCompletedChallenges();
   const [placed, setPlaced] = useState<Record<number, ChronologyItem>>({});
   const [pool, setPool] = useState<ChronologyItem[]>(() => shuffle(items));
@@ -83,11 +133,13 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
   const [infoItem, setInfoItem] = useState<ChronologyItem | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [wrongSlot, setWrongSlot] = useState<number | null>(null);
-  const [revealed, setRevealed] = useState(false);
   const [glitterActive, setGlitterActive] = useState(false);
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [playerPlaced, setPlayerPlaced] = useState(0);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [lives, setLives] = useState(maxLives);
+  const [hintedSlots, setHintedSlots] = useState<Set<number>>(new Set());
+  const [gameOver, setGameOver] = useState(false);
 
   // Pointer drag state
   const dragItem   = useRef<ChronologyItem | null>(null);
@@ -96,7 +148,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
   const ghostRef   = useRef<HTMLDivElement | null>(null);
 
   const placedCount = Object.keys(placed).length;
-  const allCorrect  = !revealed && placedCount === items.length;
+  const allCorrect  = placedCount === items.length && !gameOver;
   const maxScore    = items.length * 10;
   const currentScore = Math.max(0, playerPlaced * 10 - wrongAttempts * 2);
 
@@ -109,7 +161,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
   }, [allCorrect]);
 
   useEffect(() => {
-    if ((allCorrect || revealed) && !scoreSubmitted) {
+    if ((allCorrect || gameOver) && !scoreSubmitted) {
       setScoreSubmitted(true);
       if (allCorrect) markComplete(challengeId, currentScore, maxScore);
       fetch("/api/challenges/score", {
@@ -119,11 +171,11 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       }).catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allCorrect, revealed]);
+  }, [allCorrect, gameOver]);
 
-  // ── Core placement logic (ordered: next slot is always placedCount) ─────────
+  // ── Core placement logic ──────────────────────────────────────────────────
   function tryPlace(item: ChronologyItem, slotIndex: number) {
-    if (placed[slotIndex] !== undefined || revealed) return;
+    if (placed[slotIndex] !== undefined || gameOver || allCorrect) return;
     if (item.id === slotIndex + 1) {
       setPlaced((prev) => ({ ...prev, [slotIndex]: item }));
       setPool((prev) => prev.filter((c) => c.id !== item.id));
@@ -131,12 +183,33 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       setInfoItem(null);
       setPlayerPlaced((p) => p + 1);
     } else {
+      const newLives = lives - 1;
+      setLives(newLives);
       setWrongAttempts((w) => w + 1);
       setWrongSlot(slotIndex);
       setTimeout(() => setWrongSlot(null), 600);
       setSelectedItem(null);
       setInfoItem(null);
+      if (newLives <= 0) setGameOver(true);
     }
+  }
+
+  // ── Reveal next tile (costs 2 lives) ─────────────────────────────────────
+  function handleRevealNext() {
+    if (gameOver || allCorrect || lives < 2) return;
+    const item = items[placedCount];
+    if (!item) return;
+
+    const isLastItem = placedCount + 1 === items.length;
+    setPlaced((prev) => ({ ...prev, [placedCount]: item }));
+    setPool((prev) => prev.filter((c) => c.id !== item.id));
+    setHintedSlots((prev) => { const s = new Set(prev); s.add(placedCount); return s; });
+    setSelectedItem(null);
+    setInfoItem(null);
+
+    const newLives = Math.max(0, lives - 2);
+    setLives(newLives);
+    if (newLives === 0 && !isLastItem) setGameOver(true);
   }
 
   // ── Ghost helper ──────────────────────────────────────────────────────────
@@ -188,8 +261,9 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
     return idx >= 0 ? idx : null;
   }
 
-  // ── Pointer events (works on mouse + touch) ───────────────────────────────
+  // ── Pointer events ────────────────────────────────────────────────────────
   function handleChipPointerDown(e: React.PointerEvent, item: ChronologyItem) {
+    if (gameOver || allCorrect) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     dragItem.current = item;
     dragStart.current = { x: e.clientX, y: e.clientY };
@@ -242,32 +316,26 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
     isDragging.current = false;
   }
 
-  // ── Milestone card tap (tap selected chip first, then tap card to place) ──
+  // ── Milestone card tap ────────────────────────────────────────────────────
   function handleMilestoneClick(slotIndex: number) {
-    if (placed[slotIndex] !== undefined || revealed) return;
+    if (placed[slotIndex] !== undefined || gameOver || allCorrect) return;
     if (selectedItem) tryPlace(selectedItem, slotIndex);
   }
 
-  // ── Game controls ─────────────────────────────────────────────────────────
-  function handleReveal() {
-    const next: Record<number, ChronologyItem> = { ...placed };
-    pool.forEach((c) => { next[c.id - 1] = c; });
-    setPlaced(next);
-    setPool([]);
-    setRevealed(true);
-  }
-
+  // ── Reset ─────────────────────────────────────────────────────────────────
   function handleReset() {
     setPlaced({});
     setPool(shuffle(items));
     setSelectedItem(null);
     setInfoItem(null);
-    setRevealed(false);
     setWrongSlot(null);
     setGlitterActive(false);
     setWrongAttempts(0);
     setPlayerPlaced(0);
     setScoreSubmitted(false);
+    setLives(maxLives);
+    setHintedSlots(new Set());
+    setGameOver(false);
     removeGhost();
     dragItem.current = null;
     isDragging.current = false;
@@ -320,36 +388,65 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
           to   { opacity: 1; transform: translateY(0); }
         }
         .ms-appear { animation: msAppear 0.3s ease-out forwards; }
+        @keyframes gameOverFade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes gameOverBounce {
+          0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+          60%  { transform: scale(1.25) rotate(8deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes gameOverSlideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes heartLose {
+          0%   { transform: scale(1); }
+          30%  { transform: scale(1.4); }
+          60%  { transform: scale(0.8); }
+          100% { transform: scale(1); }
+        }
+        .heart-lose { animation: heartLose 0.4s ease-out forwards; }
       `}</style>
 
       {/* Status bar */}
-      <div className="flex items-center justify-between mb-3 min-h-[24px]">
-        {allCorrect ? (
-          <p className="text-sm font-semibold text-green-700">{dict.perfectOrder} 🎉</p>
-        ) : revealed ? (
-          <p className="text-sm text-slate-500">Answers revealed</p>
-        ) : (
-          <p className="text-sm text-slate-500">
-            <span className="font-semibold text-amber-700">{placedCount}/{items.length}</span> placed
-          </p>
-        )}
-        {selectedItem && !allCorrect && !revealed && (
-          <p className="text-xs text-amber-600 font-medium truncate ml-2">
-            &ldquo;{selectedItem.name}&rdquo; — tap the tile
-          </p>
-        )}
+      <div className="flex items-center justify-between mb-3 min-h-[28px]">
+        <div className="flex items-center gap-3">
+          {allCorrect ? (
+            <p className="text-sm font-semibold text-green-700">{dict.perfectOrder} 🎉</p>
+          ) : gameOver ? (
+            <p className="text-sm font-semibold text-red-600">Game Over</p>
+          ) : (
+            <p className="text-sm text-slate-500">
+              <span className="font-semibold text-amber-700">{placedCount}/{items.length}</span> placed
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {selectedItem && !allCorrect && !gameOver && (
+            <p className="text-xs text-amber-600 font-medium truncate max-w-[120px] sm:max-w-none">
+              &ldquo;{selectedItem.name}&rdquo; — tap tile
+            </p>
+          )}
+          {!allCorrect && (
+            <Lives current={lives} max={maxLives} />
+          )}
+        </div>
       </div>
 
       {/* Tile grid */}
       <div className="relative mb-4">
         {glitterActive && <GlitterBomb />}
+        {gameOver && <GameOverOverlay />}
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2">
 
           {/* Placed tiles */}
           {Array.from({ length: placedCount }, (_, i) => {
             const item = placed[i];
             if (!item) return null;
-            const wasPlayerPlaced = !revealed;
+            const wasHinted = hintedSlots.has(i);
+            const wasPlayerPlaced = !wasHinted;
             return (
               <div
                 key={`placed-${i}`}
@@ -365,6 +462,9 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
                 <div className="absolute top-1 left-1 z-20 bg-black/50 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
                   {i + 1}
                 </div>
+                {wasHinted && (
+                  <div className="absolute top-1 right-1 z-20 text-[9px] text-indigo-300 font-bold leading-none">💡</div>
+                )}
                 <div className="aspect-square w-full bg-stone-200 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
@@ -378,7 +478,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
           })}
 
           {/* Active milestone tile — shows clue, is the drop target */}
-          {!allCorrect && !revealed && (() => {
+          {!allCorrect && !gameOver && (() => {
             const activeItem = items[placedCount];
             if (!activeItem) return null;
             const isWrong = wrongSlot === placedCount;
@@ -414,7 +514,7 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       </div>
 
       {/* Chip pool */}
-      {pool.length > 0 && !allCorrect && !revealed && (
+      {pool.length > 0 && !allCorrect && !gameOver && (
         <div className="mb-4">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
             {dict.dragOrTap}
@@ -465,13 +565,15 @@ export default function ChronologyGame({ items, dict, challengeId }: Props) {
       )}
 
       {/* Buttons */}
-      <div className="flex gap-3">
-        {!allCorrect && !revealed && (
+      <div className="flex flex-wrap gap-2 sm:gap-3">
+        {!allCorrect && !gameOver && (
           <button
-            onClick={handleReveal}
-            className="px-4 sm:px-5 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+            onClick={handleRevealNext}
+            disabled={lives < 2 || pool.length === 0}
+            className="px-4 sm:px-5 py-2 border border-indigo-300 text-indigo-600 text-sm font-medium rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
-            {dict.revealAnswer}
+            💡 Reveal next
+            <span className="text-xs text-indigo-400 font-normal">−2 ♥</span>
           </button>
         )}
         <button
