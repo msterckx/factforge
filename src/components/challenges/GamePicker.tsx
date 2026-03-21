@@ -35,49 +35,54 @@ const categoryColors: Record<GameCategory, string> = {
   other:      "bg-slate-700",
 };
 
-function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMap }) {
+function CardInner({ game, isDone }: { game: GameEntry; isDone: boolean }) {
   const colorClass = categoryColors[game.category];
+  const isImage = game.icon?.startsWith("http");
+
+  return (
+    <div className={`relative aspect-[3/4] overflow-hidden rounded-xl ${colorClass}`}>
+      {isImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={game.icon}
+          alt={game.label}
+          className="absolute inset-0 w-full h-full object-contain"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-7xl">{game.icon}</span>
+        </div>
+      )}
+      {/* bottom label */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 pt-8 pb-3">
+        <p className="font-semibold text-white text-center text-sm leading-tight">{game.label}</p>
+      </div>
+      {isDone && (
+        <span className="absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm">
+          ✓ done
+        </span>
+      )}
+    </div>
+  );
+}
+
+function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMap }) {
   const isDone = !!completed[game.challengeId];
 
   if (game.available) {
     return (
       <Link
         href={game.href}
-        className={`relative flex flex-col overflow-hidden rounded-xl shadow-sm hover:shadow-lg hover:brightness-110 transition-all ${colorClass}`}
+        className="block rounded-xl shadow-sm hover:shadow-lg hover:brightness-110 transition-all"
       >
-        {isDone && (
-          <span className="absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">
-            ✓ done
-          </span>
-        )}
-        <div className="flex items-center justify-center py-7">
-          {game.icon?.startsWith("http") ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={game.icon} alt={game.label} className="w-20 h-20 rounded-lg object-cover shadow-md" />
-          ) : (
-            <span className="text-6xl">{game.icon}</span>
-          )}
-        </div>
-        <div className="bg-black/20 px-3 py-2">
-          <p className="font-semibold text-white text-center text-sm">{game.label}</p>
-        </div>
+        <CardInner game={game} isDone={isDone} />
       </Link>
     );
   }
 
   return (
-    <div className={`flex flex-col overflow-hidden rounded-xl opacity-40 grayscale ${colorClass}`}>
-      <div className="flex items-center justify-center py-7">
-        {game.icon?.startsWith("http") ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={game.icon} alt={game.label} className="w-20 h-20 rounded-lg object-cover shadow-md" />
-        ) : (
-          <span className="text-6xl">{game.icon}</span>
-        )}
-      </div>
-      <div className="bg-black/20 px-3 py-2">
-        <p className="font-semibold text-white text-center text-sm">{game.label}</p>
-      </div>
+    <div className="rounded-xl opacity-40 grayscale">
+      <CardInner game={game} isDone={false} />
     </div>
   );
 }
