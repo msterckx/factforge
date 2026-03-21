@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   description: "Test your knowledge across multiple categories",
   manifest: "/manifest.json",
   icons: {
-    icon: "/logos/got_micro.png",
-    apple: "/logos/got_micro.png",
+    icon: "/logos/g_micro.png",
+    apple: "/logos/g_micro.png",
   },
   appleWebApp: {
     capable: true,
