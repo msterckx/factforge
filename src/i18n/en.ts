@@ -92,6 +92,7 @@ export interface Dictionary {
     categoryScience: string;
     categorySports: string;
     gameTypeChronology: string;
+    gameTypeMatching: string;
     gameTypePuzzle: string;
     gameTypeQuiz: string;
     olympics: string;
@@ -223,6 +224,7 @@ export const en: Dictionary = {
     categoryScience: "Science",
     categorySports: "Sports",
     gameTypeChronology: "Chronology",
+    gameTypeMatching: "Matching",
     gameTypePuzzle: "Puzzle",
     gameTypeQuiz: "Quiz",
     olympics: "The Olympics",

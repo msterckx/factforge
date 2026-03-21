@@ -26,6 +26,14 @@ interface Props {
   scores: ScoreMap;
 }
 
+const gameTypeIcons: Record<GameType, string> = {
+  chronology: "⏳",
+  matching:   "🔗",
+  puzzle:     "🧩",
+  quiz:       "❓",
+  other:      "🎮",
+};
+
 const categoryColors: Record<GameCategory, string> = {
   geography:  "bg-emerald-700",
   history:    "bg-amber-800",
@@ -57,6 +65,10 @@ function CardInner({ game, isDone }: { game: GameEntry; isDone: boolean }) {
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 pt-8 pb-3">
         <p className="font-semibold text-white text-center text-sm leading-tight">{game.label}</p>
       </div>
+      {/* game type badge */}
+      <span className="absolute top-2 left-2 text-sm px-1.5 py-0.5 rounded-md bg-black/30 backdrop-blur-sm" title={game.gameType}>
+        {gameTypeIcons[game.gameType]}
+      </span>
       {isDone && (
         <span className="absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-sm">
           ✓ done
@@ -104,8 +116,29 @@ export default function GamePicker({ games, dict }: Props) {
     .map((cat) => ({ cat, items: games.filter((g) => g.category === cat) }))
     .filter(({ items }) => items.length > 0);
 
+  const gameTypeLabels: Record<GameType, string> = {
+    chronology: dict.gameTypeChronology,
+    matching:   dict.gameTypeMatching,
+    puzzle:     dict.gameTypePuzzle,
+    quiz:       dict.gameTypeQuiz,
+    other:      "Other",
+  };
+
+  const presentTypes = (["chronology", "matching", "puzzle", "quiz"] as GameType[])
+    .filter((t) => games.some((g) => g.gameType === t));
+
   return (
     <div className="space-y-10">
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3">
+        {presentTypes.map((t) => (
+          <span key={t} className="flex items-center gap-1.5 text-sm text-slate-600">
+            <span className="text-base">{gameTypeIcons[t]}</span>
+            {gameTypeLabels[t]}
+          </span>
+        ))}
+      </div>
+
       {grouped.map(({ cat, items }) => (
         <section key={cat}>
           {cat !== "other" && (
