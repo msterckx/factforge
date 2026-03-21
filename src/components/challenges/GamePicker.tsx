@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges, type CompletedMap } from "@/hooks/useCompletedChallenges";
 
-export type GameCategory = "history" | "science" | "other";
+export type GameCategory = "geography" | "history" | "television" | "science" | "sports" | "other";
 export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "other";
 
 export interface GameEntry {
@@ -68,12 +68,15 @@ export default function GamePicker({ games, dict }: Props) {
   const { completed } = useCompletedChallenges();
 
   const categoryLabels: Record<GameCategory, string> = {
-    history: dict.categoryHistory,
-    science: dict.categoryScience,
-    other: dict.filterAll,
+    geography:  dict.categoryGeography,
+    history:    dict.categoryHistory,
+    television: dict.categoryTelevision,
+    science:    dict.categoryScience,
+    sports:     dict.categorySports,
+    other:      dict.filterAll,
   };
 
-  const categories: GameCategory[] = ["history", "science", "other"];
+  const categories: GameCategory[] = ["geography", "history", "television", "science", "sports", "other"];
   const grouped = categories
     .map((cat) => ({ cat, items: games.filter((g) => g.category === cat) }))
     .filter(({ items }) => items.length > 0);

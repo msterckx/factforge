@@ -130,7 +130,7 @@ export const challengeGames = sqliteTable("challenge_games", {
   slug:        text("slug").notNull().unique(),
   gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz", "matching"] }).notNull(),
   icon:        text("icon").notNull().default("🎮"),
-  category:    text("category", { enum: ["history", "science", "other"] }).notNull().default("other"),
+  category:    text("category", { enum: ["geography", "history", "television", "science", "sports", "other"] }).notNull().default("other"),
   titleEn:     text("title_en").notNull(),
   titleNl:     text("title_nl").notNull(),
   subtitleEn:  text("subtitle_en").notNull().default(""),
