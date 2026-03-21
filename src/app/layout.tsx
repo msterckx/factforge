@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   title: "Game of Trivia",
   description: "Test your knowledge across multiple categories",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/logos/got_micro.png",
+    apple: "/logos/got_micro.png",
+  },
   appleWebApp: {
     capable: true,
     title: "Game of Trivia",
