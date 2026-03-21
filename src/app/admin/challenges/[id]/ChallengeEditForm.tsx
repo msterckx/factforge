@@ -111,7 +111,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
           <label className="block text-sm font-medium text-slate-700 mb-1">Sort Order</label>
           <input name="sortOrder" type="number" defaultValue={game.sortOrder} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
         </div>
-        {gameType === "chronology" && (
+        {(gameType === "chronology" || gameType === "matching") && (
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Starting Lives <span className="text-slate-400 font-normal">(wrong placements allowed)</span></label>
             <input
