@@ -86,8 +86,11 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
           <select name="category" defaultValue={game.category} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="geography">Geography</option>
             <option value="history">History</option>
+            <option value="television">Television</option>
             <option value="science">Science</option>
+            <option value="sports">Sports</option>
             <option value="other">Other</option>
           </select>
         </div>

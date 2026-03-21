@@ -86,8 +86,11 @@ export interface Dictionary {
     filterByCategory: string;
     filterByGameType: string;
     filterAll: string;
+    categoryGeography: string;
     categoryHistory: string;
+    categoryTelevision: string;
     categoryScience: string;
+    categorySports: string;
     gameTypeChronology: string;
     gameTypePuzzle: string;
     gameTypeQuiz: string;
@@ -214,8 +217,11 @@ export const en: Dictionary = {
     filterByCategory: "Category",
     filterByGameType: "Game Type",
     filterAll: "All",
+    categoryGeography: "Geography",
     categoryHistory: "History",
+    categoryTelevision: "Television",
     categoryScience: "Science",
+    categorySports: "Sports",
     gameTypeChronology: "Chronology",
     gameTypePuzzle: "Puzzle",
     gameTypeQuiz: "Quiz",
