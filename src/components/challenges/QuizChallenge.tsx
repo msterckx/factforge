@@ -93,19 +93,23 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAnswered, gameOver]);
 
-  // Game over → done after brief pause
+  // Submit score on game over
   useEffect(() => {
-    if (!gameOver || phase !== "playing") return;
-    const t = setTimeout(() => setPhase("done"), 1400);
-    return () => clearTimeout(t);
+    if (!gameOver || submitted) return;
+    setSubmitted(true);
+    fetch("/api/challenges/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ challengeId, score, maxScore }),
+    }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameOver]);
 
-  // Submit score when done
+  // Submit score + mark complete when win (all answered, lives > 0)
   useEffect(() => {
     if (phase !== "done" || submitted) return;
     setSubmitted(true);
-    if (allAnswered && !gameOver) markComplete(challengeId, score, maxScore);
+    markComplete(challengeId, score, maxScore);
     fetch("/api/challenges/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -271,6 +275,13 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
               >
                 No lives remaining
               </p>
+              <button
+                onClick={handlePlayAgain}
+                className="mt-5 px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors"
+                style={{ animation: "gameOverSlideUp 0.35s ease-out 0.35s both" }}
+              >
+                {d.playAgain}
+              </button>
             </div>
           </div>
         )}
