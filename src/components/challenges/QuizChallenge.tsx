@@ -190,6 +190,19 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
           100% { transform: scale(1) rotate(0deg); }
         }
         .square-win { animation: squarePop 0.5s ease-in-out forwards; }
+        @keyframes gameOverFade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes gameOverBounce {
+          0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+          60%  { transform: scale(1.25) rotate(8deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes gameOverSlideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       {/* Status bar */}
@@ -233,6 +246,34 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
           </button>
         ))}
       </div>
+
+      {/* Question area with game-over overlay */}
+      <div className="relative">
+        {gameOver && (
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center rounded-xl overflow-hidden">
+            <div
+              className="absolute inset-0 bg-red-950/75"
+              style={{ animation: "gameOverFade 0.35s ease-out forwards" }}
+            />
+            <div className="relative z-10 text-center px-4">
+              <p className="text-5xl mb-3" style={{ animation: "gameOverBounce 0.5s ease-out forwards" }}>
+                💔
+              </p>
+              <p
+                className="text-white font-bold text-xl tracking-wide"
+                style={{ animation: "gameOverSlideUp 0.35s ease-out 0.1s both" }}
+              >
+                Game Over
+              </p>
+              <p
+                className="text-red-300 text-sm mt-1"
+                style={{ animation: "gameOverSlideUp 0.35s ease-out 0.2s both" }}
+              >
+                No lives remaining
+              </p>
+            </div>
+          </div>
+        )}
 
       {/* Difficulty */}
       <div className="flex items-center gap-2 mb-4">
@@ -297,6 +338,8 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
           </button>
         </div>
       )}
+
+      </div>{/* end question area */}
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
