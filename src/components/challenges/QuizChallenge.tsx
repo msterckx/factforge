@@ -218,12 +218,12 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
                 ? status === "correct"
                   ? "bg-green-500 border-green-600 text-white ring-2 ring-green-300 ring-offset-1"
                   : status === "wrong"
-                    ? "bg-red-400 border-red-500 text-white ring-2 ring-red-300 ring-offset-1"
+                    ? "bg-green-200 border-green-300 text-green-700 ring-2 ring-green-200 ring-offset-1"
                     : "bg-white border-amber-500 text-amber-700 ring-2 ring-amber-300 ring-offset-1"
                 : status === "correct"
                   ? "bg-green-500 border-green-500 text-white"
                   : status === "wrong"
-                    ? "bg-red-200 border-red-300 text-red-500"
+                    ? "bg-green-100 border-green-200 text-green-600"
                     : "bg-white border-slate-300 text-slate-400 hover:border-amber-400",
               winAnim && status !== "unanswered" ? "square-win" : "",
             ].join(" ")}
