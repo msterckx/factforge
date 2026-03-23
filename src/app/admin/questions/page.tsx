@@ -271,17 +271,17 @@ export default function AdminQuestionsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-slate-600 w-12">Img</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Question</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600">Difficulty</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600">Subcategory</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600">NL</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 w-28">Difficulty</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 w-28">Category</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 w-40">Subcategory</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 w-16">NL</th>
+              <th className="text-right px-4 py-3 font-medium text-slate-600 w-28">Actions</th>
             </tr>
           </thead>
           <tbody>
