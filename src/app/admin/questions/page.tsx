@@ -29,12 +29,20 @@ interface Category {
   name: string;
 }
 
+interface Subcategory {
+  id: number;
+  name: string;
+  categoryId: number;
+}
+
 const PAGE_SIZE = 10;
 
 export default function AdminQuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [filterCategory, setFilterCategory] = useState<number | null>(null);
+  const [updatingSubcategory, setUpdatingSubcategory] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -53,10 +61,15 @@ export default function AdminQuestionsPage() {
   }, [filterCategory, searchQuery]);
 
   async function loadData() {
-    const res = await fetch("/api/admin/questions");
-    const data = await res.json();
-    setQuestions(data.questions);
-    setCategories(data.categories);
+    const [qRes, catRes] = await Promise.all([
+      fetch("/api/admin/questions"),
+      fetch("/api/admin/categories"),
+    ]);
+    const qData = await qRes.json();
+    const catData: { id: number; name: string; subcategories: Subcategory[] }[] = await catRes.json();
+    setQuestions(qData.questions);
+    setCategories(qData.categories);
+    setSubcategories(catData.flatMap((c) => c.subcategories));
   }
 
   function showMessage(type: "success" | "error", text: string) {
@@ -79,6 +92,40 @@ export default function AdminQuestionsPage() {
       showMessage("error", "Failed to connect to the server.");
     } finally {
       setAutoSubLoading(false);
+    }
+  }
+
+  async function handleSubcategoryChange(questionId: number, subcategoryId: number | null) {
+    setUpdatingSubcategory((prev) => new Set(prev).add(questionId));
+    try {
+      const res = await fetch(`/api/admin/questions/${questionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subcategoryId }),
+      });
+      if (!res.ok) {
+        showMessage("error", "Failed to update subcategory.");
+      } else {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === questionId
+              ? {
+                  ...q,
+                  subcategoryId,
+                  subcategoryName: subcategories.find((s) => s.id === subcategoryId)?.name ?? null,
+                }
+              : q
+          )
+        );
+      }
+    } catch {
+      showMessage("error", "Failed to connect to server.");
+    } finally {
+      setUpdatingSubcategory((prev) => {
+        const next = new Set(prev);
+        next.delete(questionId);
+        return next;
+      });
     }
   }
 
@@ -233,6 +280,7 @@ export default function AdminQuestionsPage() {
               <th className="text-left px-4 py-3 font-medium text-slate-600">Answer</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Difficulty</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600">Subcategory</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">NL</th>
               <th className="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
             </tr>
@@ -240,7 +288,7 @@ export default function AdminQuestionsPage() {
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-slate-400">
+                <td colSpan={8} className="text-center py-8 text-slate-400">
                   No questions yet.{" "}
                   <Link href="/admin/questions/new" className="text-amber-500 hover:underline">
                     Add one
@@ -277,6 +325,23 @@ export default function AdminQuestionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-500">{q.categoryName}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={q.subcategoryId ?? ""}
+                      disabled={updatingSubcategory.has(q.id)}
+                      onChange={(e) =>
+                        handleSubcategoryChange(q.id, e.target.value ? Number(e.target.value) : null)
+                      }
+                      className="text-xs border border-slate-200 rounded px-1.5 py-0.5 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-amber-400 disabled:opacity-50 max-w-[140px]"
+                    >
+                      <option value="">— none —</option>
+                      {subcategories
+                        .filter((s) => s.categoryId === q.categoryId)
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
+                  </td>
                   <td className="px-4 py-3">
                     {q.hasNlTranslation ? (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
