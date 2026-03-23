@@ -24,7 +24,7 @@ interface Props {
 
 type Phase = "playing" | "done";
 type QuestionStatus = "unanswered" | "correct" | "wrong";
-type FeedbackState = "idle" | "correct" | "incorrect";
+type FeedbackState = "idle" | "correct" | "revealed";
 
 const POINTS_CORRECT = 10;
 
@@ -58,47 +58,46 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
   const { markComplete } = useCompletedChallenges();
   const d = dict.challenges;
 
-  const [phase,      setPhase]     = useState<Phase>("playing");
-  const [index,      setIndex]     = useState(0);
-  const [userAnswer, setAnswer]    = useState("");
-  const [feedback,   setFeedback]  = useState<FeedbackState>("idle");
-  const [statuses,   setStatuses]  = useState<QuestionStatus[]>(Array(questions.length).fill("unanswered"));
-  const [lives,      setLives]     = useState(maxLives);
+  const [phase,      setPhase]    = useState<Phase>("playing");
+  const [index,      setIndex]    = useState(0);
+  const [userAnswer, setAnswer]   = useState("");
+  const [feedback,   setFeedback] = useState<FeedbackState>("idle");
+  const [statuses,   setStatuses] = useState<QuestionStatus[]>(Array(questions.length).fill("unanswered"));
+  const [lives,      setLives]    = useState(maxLives);
   const [submitted,  setSubmitted] = useState(false);
-  const [winAnim,    setWinAnim]   = useState(false);
+  const [winAnim,    setWinAnim]  = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const question  = questions[index];
-  const total     = questions.length;
-  const maxScore  = total * POINTS_CORRECT;
-  const score     = statuses.filter((s) => s === "correct").length * POINTS_CORRECT;
-  const gameOver  = lives <= 0;
-  const allCorrect = statuses.every((s) => s === "correct");
+  const question    = questions[index];
+  const total       = questions.length;
+  const maxScore    = total * POINTS_CORRECT;
+  const score       = statuses.filter((s) => s === "correct").length * POINTS_CORRECT;
+  const gameOver    = lives <= 0;
+  const allAnswered = statuses.every((s) => s !== "unanswered");
 
-  // Reset input/feedback when navigating
+  // Reset input/feedback when navigating to a question
   useEffect(() => {
     const s = statuses[index];
     setAnswer("");
-    setFeedback(s === "unanswered" ? "idle" : s === "correct" ? "correct" : "idle");
+    setFeedback(s === "correct" ? "correct" : s === "wrong" ? "revealed" : "idle");
     inputRef.current?.focus();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, phase]);
 
-  // Trigger win animation then done
+  // Win: all answered with lives remaining
   useEffect(() => {
-    if (!allCorrect || submitted) return;
+    if (!allAnswered || gameOver || submitted) return;
     setWinAnim(true);
-    const t = setTimeout(() => setPhase("done"), 2000);
+    const t = setTimeout(() => setPhase("done"), 2200);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allCorrect]);
+  }, [allAnswered, gameOver]);
 
-  // Game over → done
+  // Game over → done after brief pause
   useEffect(() => {
-    if (gameOver && phase === "playing") {
-      const t = setTimeout(() => setPhase("done"), 1200);
-      return () => clearTimeout(t);
-    }
+    if (!gameOver || phase !== "playing") return;
+    const t = setTimeout(() => setPhase("done"), 1400);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameOver]);
 
@@ -106,7 +105,7 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
   useEffect(() => {
     if (phase !== "done" || submitted) return;
     setSubmitted(true);
-    if (allCorrect) markComplete(challengeId, score, maxScore);
+    if (allAnswered && !gameOver) markComplete(challengeId, score, maxScore);
     fetch("/api/challenges/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -120,29 +119,33 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
   }
 
   function handleCheck() {
-    if (!userAnswer.trim() || feedback === "correct" || gameOver) return;
+    if (!userAnswer.trim() || feedback !== "idle" || gameOver) return;
+
     if (checkAnswer(userAnswer, question.answer)) {
       const next = [...statuses];
       next[index] = "correct";
       setStatuses(next);
       setFeedback("correct");
-      // auto-advance to next unanswered after short delay
-      const nextUnanswered = next.findIndex((s, i) => i !== index && s === "unanswered");
-      if (nextUnanswered !== -1) {
-        setTimeout(() => setIndex(nextUnanswered), 900);
-      }
+      // auto-advance to next unanswered
+      const nextIdx = next.findIndex((s, i) => i !== index && s === "unanswered");
+      if (nextIdx !== -1) setTimeout(() => setIndex(nextIdx), 900);
     } else {
-      setFeedback("incorrect");
       const newLives = lives - 1;
       setLives(newLives);
       const next = [...statuses];
-      if (next[index] === "unanswered") next[index] = "wrong";
+      next[index] = "wrong";
       setStatuses(next);
+      setFeedback("revealed");
+      // auto-advance to next unanswered (if lives remain)
+      if (newLives > 0) {
+        const nextIdx = next.findIndex((s, i) => i !== index && s === "unanswered");
+        if (nextIdx !== -1) setTimeout(() => setIndex(nextIdx), 1800);
+      }
     }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && feedback === "idle") handleCheck();
+    if (e.key === "Enter") handleCheck();
   }
 
   function handlePlayAgain() {
@@ -187,13 +190,6 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
           100% { transform: scale(1) rotate(0deg); }
         }
         .square-win { animation: squarePop 0.5s ease-in-out forwards; }
-        @keyframes heartLose {
-          0%   { transform: scale(1); }
-          30%  { transform: scale(1.4); }
-          60%  { transform: scale(0.8); }
-          100% { transform: scale(1); }
-        }
-        .heart-lose { animation: heartLose 0.4s ease-out forwards; }
       `}</style>
 
       {/* Status bar */}
@@ -204,9 +200,9 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
           </span>{" "}
           correct
         </p>
-        {!allCorrect && !gameOver && <Lives current={lives} max={maxLives} />}
+        {!gameOver && !winAnim && <Lives current={lives} max={maxLives} />}
         {gameOver && <p className="text-sm font-semibold text-red-600">No lives remaining</p>}
-        {allCorrect && <p className="text-sm font-semibold text-green-600">{d.finish} 🎉</p>}
+        {winAnim && <p className="text-sm font-semibold text-green-600">{d.finish} 🎉</p>}
       </div>
 
       {/* Question status squares */}
@@ -221,15 +217,17 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
               i === index
                 ? status === "correct"
                   ? "bg-green-500 border-green-600 text-white ring-2 ring-green-300 ring-offset-1"
-                  : "bg-white border-amber-500 text-amber-700 ring-2 ring-amber-300 ring-offset-1"
+                  : status === "wrong"
+                    ? "bg-green-200 border-green-300 text-green-700 ring-2 ring-green-200 ring-offset-1"
+                    : "bg-white border-amber-500 text-amber-700 ring-2 ring-amber-300 ring-offset-1"
                 : status === "correct"
                   ? "bg-green-500 border-green-500 text-white"
                   : status === "wrong"
-                    ? "bg-red-200 border-red-300 text-red-500"
+                    ? "bg-green-100 border-green-200 text-green-600"
                     : "bg-white border-slate-300 text-slate-400 hover:border-amber-400",
-              winAnim && status === "correct" ? "square-win" : "",
+              winAnim && status !== "unanswered" ? "square-win" : "",
             ].join(" ")}
-            style={winAnim && status === "correct" ? { animationDelay: `${i * 60}ms` } : undefined}
+            style={winAnim && status !== "unanswered" ? { animationDelay: `${i * 60}ms` } : undefined}
           >
             {i + 1}
           </button>
@@ -268,7 +266,7 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
           onChange={(e) => setAnswer(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={dict.quiz.typeYourAnswer}
-          disabled={feedback === "correct" || gameOver}
+          disabled={feedback !== "idle" || gameOver}
           className="w-full px-4 py-3.5 border border-slate-300 rounded-lg text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-400"
         />
       </div>
@@ -279,22 +277,16 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
           <p className="text-green-700 font-medium">{dict.quiz.correct}</p>
         </div>
       )}
-      {feedback === "incorrect" && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 font-medium">{dict.quiz.incorrect}</p>
-        </div>
-      )}
-
-      {/* Did you know */}
-      {feedback === "correct" && question.didYouKnow && (
-        <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-          <p className="text-sm font-semibold text-indigo-700 mb-1">{dict.quiz.didYouKnow}</p>
-          <p className="text-sm text-indigo-600">{question.didYouKnow}</p>
+      {feedback === "revealed" && (
+        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-amber-800">
+            {dict.quiz.theAnswerIs} <span className="font-bold">{question.answer}</span>
+          </p>
         </div>
       )}
 
       {/* Action button */}
-      {feedback !== "correct" && !gameOver && (
+      {feedback === "idle" && !gameOver && (
         <div className="mb-8">
           <button
             onClick={handleCheck}
