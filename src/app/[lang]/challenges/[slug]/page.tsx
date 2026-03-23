@@ -135,6 +135,7 @@ export default async function ChallengePage({ params }: Props) {
           questions={quizQuestions}
           dict={dict}
           challengeId={game.slug}
+          startingLives={game.startingLives ?? 5}
         />
       )}
       {game.gameType === "quiz" && quizQuestions.length === 0 && (
