@@ -6,12 +6,13 @@ import { eq } from "drizzle-orm";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const id = Number(params.id);
+  const { id: idParam } = await params;
+  const id = Number(idParam);
   if (isNaN(id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const body = await req.json();
