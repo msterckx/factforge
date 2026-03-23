@@ -277,7 +277,6 @@ export default function AdminQuestionsPage() {
             <tr>
               <th className="text-left px-4 py-3 font-medium text-slate-600 w-12">Img</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Question</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600">Answer</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Difficulty</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Category</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600">Subcategory</th>
@@ -288,7 +287,7 @@ export default function AdminQuestionsPage() {
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-8 text-slate-400">
+                <td colSpan={7} className="text-center py-8 text-slate-400">
                   No questions yet.{" "}
                   <Link href="/admin/questions/new" className="text-amber-500 hover:underline">
                     Add one
@@ -318,7 +317,6 @@ export default function AdminQuestionsPage() {
                   <td className="px-4 py-3 text-slate-800 max-w-xs truncate">
                     {q.questionText}
                   </td>
-                  <td className="px-4 py-3 text-slate-500 max-w-[150px] truncate">{q.answer}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${difficultyBadge[q.difficulty]}`}>
                       {q.difficulty}
