@@ -52,9 +52,9 @@ export default async function HomePage({ params }: Props) {
   }));
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-stone-100 mb-10 -mx-4 -mt-8">
+      <div className="relative overflow-hidden bg-stone-100 rounded-xl mb-10">
         {/* Capitol image — right-anchored, fades left */}
         <div className="absolute inset-y-0 right-0 w-full sm:w-4/5 md:w-3/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -68,12 +68,12 @@ export default async function HomePage({ params }: Props) {
         </div>
 
         {/* Text content */}
-        <div className="relative z-10 px-8 py-20 sm:py-32 max-w-xl">
+        <div className="relative z-10 px-10 py-20 sm:py-32 max-w-xl">
           <h1
-            className="text-6xl sm:text-7xl font-bold text-slate-800 leading-tight mb-5"
-            style={{ fontFamily: "var(--font-playfair), serif" }}
+            className="text-6xl sm:text-7xl font-bold leading-tight mb-5"
+            style={{ fontFamily: "var(--font-playfair), serif", color: "#28324E" }}
           >
-            Game<br /><span className="text-amber-500">of Trivia</span>
+            Game<br />of Trivia
           </h1>
           <p className="text-slate-600 text-lg mb-8 max-w-sm">{dict.home.subtitle}</p>
           <a
@@ -85,7 +85,7 @@ export default async function HomePage({ params }: Props) {
         </div>
       </div>
 
-      <div id="challenges" className="px-2">
+      <div id="challenges">
         <GamePicker games={games} dict={d} scores={scores} categoryNames={categoryNames} />
       </div>
     </div>

@@ -128,7 +128,7 @@ export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
     .filter((t) => games.some((g) => g.gameType === t));
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto">
+    <div className="space-y-10">
       {/* Legend */}
       <div className="flex flex-wrap gap-3">
         {presentTypes.map((t) => (
@@ -142,7 +142,10 @@ export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
       {grouped.map(({ cat, items }) => (
         <section key={cat}>
           {cat !== "other" && (
-            <h2 className="text-lg font-bold text-slate-700 mb-4">
+            <h2
+              className="text-lg font-bold mb-4"
+              style={{ fontFamily: "var(--font-playfair), serif", color: "#28324E" }}
+            >
               {getCategoryLabel(cat)}
             </h2>
           )}
