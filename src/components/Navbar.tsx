@@ -9,11 +9,11 @@ interface NavbarProps {
 export default function Navbar({ lang }: NavbarProps) {
   return (
     <nav className="bg-white border-b border-stone-200 shadow-sm">
-      <div className="px-6 py-3 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <Link
           href={`/${lang}`}
-          className="text-xl font-bold tracking-tight text-amber-500 hover:text-amber-600 transition-colors shrink-0"
-          style={{ fontFamily: "var(--font-playfair), serif" }}
+          className="text-xl font-bold tracking-tight transition-colors shrink-0"
+          style={{ fontFamily: "var(--font-playfair), serif", color: "#D7AA50" }}
         >
           Game of Trivia
         </Link>
