@@ -136,7 +136,7 @@ export const en: Dictionary = {
   },
   home: {
     welcomeTo: "Welcome to",
-    subtitle: "Challenge Your Knowledge.",
+    subtitle: "Refine your knowledge across history, science, and culture.",
     questionsAvailable: "questions available",
     categories: "categories",
     chooseCategory: "Choose a Quiz Category",
