@@ -13,7 +13,7 @@ export default function Navbar({ lang }: NavbarProps) {
         <Link
           href={`/${lang}`}
           className="text-xl font-bold tracking-tight transition-colors shrink-0"
-          style={{ fontFamily: "var(--font-playfair), serif", color: "#D7AA50" }}
+          style={{ fontFamily: "var(--font-cormorant), serif", color: "#D7AA50", fontWeight: 300 }}
         >
           Game of Trivia
         </Link>
