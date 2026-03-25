@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges, type CompletedMap } from "@/hooks/useCompletedChallenges";
 
-export type GameCategory = "geography" | "history" | "television" | "science" | "sports" | "other";
+export type GameCategory = string;
 export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "other";
 
 export interface GameEntry {
@@ -34,7 +34,7 @@ const gameTypeIcons: Record<GameType, string> = {
   other:      "🎮",
 };
 
-const categoryColors: Record<GameCategory, string> = {
+const categoryColors: Record<string, string> = {
   geography:  "bg-emerald-700",
   history:    "bg-amber-800",
   television: "bg-purple-700",
@@ -44,7 +44,7 @@ const categoryColors: Record<GameCategory, string> = {
 };
 
 function CardInner({ game, isDone }: { game: GameEntry; isDone: boolean }) {
-  const colorClass = categoryColors[game.category];
+  const colorClass = categoryColors[game.category] ?? "bg-slate-700";
   const isImage = game.icon?.startsWith("http");
 
   return (
@@ -102,7 +102,7 @@ function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMa
 export default function GamePicker({ games, dict }: Props) {
   const { completed } = useCompletedChallenges();
 
-  const categoryLabels: Record<GameCategory, string> = {
+  const categoryLabels: Record<string, string> = {
     geography:  dict.categoryGeography,
     history:    dict.categoryHistory,
     television: dict.categoryTelevision,
