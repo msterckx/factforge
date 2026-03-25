@@ -8,17 +8,21 @@ interface NavbarProps {
 
 export default function Navbar({ lang }: NavbarProps) {
   return (
-    <nav className="bg-slate-900 text-white shadow-lg">
-      <div className="px-4 py-3 flex items-center justify-between gap-4">
-        <Link href={`/${lang}`} className="text-xl sm:text-2xl font-bold tracking-tight hover:text-amber-400 transition-colors shrink-0">
+    <nav className="bg-white border-b border-stone-200 shadow-sm">
+      <div className="px-6 py-3 flex items-center justify-between gap-4">
+        <Link
+          href={`/${lang}`}
+          className="text-xl font-bold tracking-tight text-amber-500 hover:text-amber-600 transition-colors shrink-0"
+          style={{ fontFamily: "var(--font-playfair), serif" }}
+        >
           Game of Trivia
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-1">
-            <Link href={`/${lang}`} className="text-sm text-slate-300 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-800">
+            <Link href={`/${lang}`} className="text-sm text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5 rounded hover:bg-stone-100">
               Home
             </Link>
-            <Link href={`/${lang}/contact`} className="text-sm text-slate-300 hover:text-white transition-colors px-2 py-1 rounded hover:bg-slate-800">
+            <Link href={`/${lang}/contact`} className="text-sm text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5 rounded hover:bg-stone-100">
               Contact
             </Link>
           </div>
