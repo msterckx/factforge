@@ -5,6 +5,7 @@ import { checkAnswer } from "@/lib/utils";
 import Image from "next/image";
 import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
+import { trackChallengeStart, trackChallengeComplete, trackChallengeFail } from "@/lib/gtag";
 
 export interface QuizQuestion {
   id: number;
@@ -75,6 +76,9 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
   const gameOver    = lives <= 0;
   const allAnswered = statuses.every((s) => s !== "unanswered");
 
+  // Track challenge start on mount
+  useEffect(() => { trackChallengeStart(challengeId); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Reset input/feedback when navigating to a question
   useEffect(() => {
     const s = statuses[index];
@@ -97,6 +101,7 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
   useEffect(() => {
     if (!gameOver || submitted) return;
     setSubmitted(true);
+    trackChallengeFail(challengeId);
     fetch("/api/challenges/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -110,6 +115,7 @@ export default function QuizChallenge({ questions, dict, challengeId, startingLi
     if (phase !== "done" || submitted) return;
     setSubmitted(true);
     markComplete(challengeId, score, maxScore);
+    trackChallengeComplete(challengeId, score, maxScore);
     fetch("/api/challenges/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
