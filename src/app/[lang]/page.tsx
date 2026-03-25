@@ -73,12 +73,13 @@ export default async function HomePage({ params }: Props) {
             className="text-6xl sm:text-7xl font-bold leading-tight mb-5"
             style={{ fontFamily: "var(--font-playfair), serif", color: "#28324E" }}
           >
-            Game<br />of Trivia
+            Game of Trivia
           </h1>
           <p className="text-slate-600 text-lg mb-8 max-w-sm">{dict.home.subtitle}</p>
           <a
             href="#challenges"
-            className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            className="inline-block text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            style={{ backgroundColor: "#D7AA50" }}
           >
             {dict.home.startQuiz}
           </a>
