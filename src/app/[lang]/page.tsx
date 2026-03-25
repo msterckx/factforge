@@ -54,7 +54,7 @@ export default async function HomePage({ params }: Props) {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Hero */}
-      <div className="relative overflow-hidden bg-stone-100 rounded-xl mb-10">
+      <div className="relative overflow-hidden bg-[#FCF5F6] rounded-xl mb-10">
         {/* Capitol image — right-anchored, fades left */}
         <div className="absolute inset-y-0 right-0 w-full sm:w-4/5 md:w-3/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -63,8 +63,8 @@ export default async function HomePage({ params }: Props) {
             alt="US Capitol"
             className="w-full h-full object-cover object-left"
           />
-          {/* gradient fade from stone-100 on left */}
-          <div className="absolute inset-0 bg-gradient-to-r from-stone-100 via-stone-100/60 to-transparent" />
+          {/* gradient fade from background color on left */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#FCF5F6] via-[#FCF5F6]/60 to-transparent" />
         </div>
 
         {/* Text content */}
