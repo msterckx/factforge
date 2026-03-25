@@ -59,7 +59,7 @@ export default async function HomePage({ params }: Props) {
         <div className="absolute inset-y-0 right-0 w-full sm:w-3/4 md:w-2/3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logos/us_capital.png"
+            src="/logos/us_capitol.png"
             alt="US Capitol"
             className="w-full h-full object-cover object-left"
           />
