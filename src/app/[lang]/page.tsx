@@ -56,7 +56,7 @@ export default async function HomePage({ params }: Props) {
       {/* Hero */}
       <div className="relative overflow-hidden bg-stone-100 mb-10 -mx-4 -mt-8">
         {/* Capitol image — right-anchored, fades left */}
-        <div className="absolute inset-y-0 right-0 w-full sm:w-3/4 md:w-2/3">
+        <div className="absolute inset-y-0 right-0 w-full sm:w-4/5 md:w-3/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logos/us_capitol.png"
@@ -64,22 +64,28 @@ export default async function HomePage({ params }: Props) {
             className="w-full h-full object-cover object-left"
           />
           {/* gradient fade from stone-100 on left */}
-          <div className="absolute inset-0 bg-gradient-to-r from-stone-100 via-stone-100/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-stone-100 via-stone-100/60 to-transparent" />
         </div>
 
         {/* Text content */}
-        <div className="relative z-10 px-8 py-14 sm:py-20 max-w-lg">
+        <div className="relative z-10 px-8 py-20 sm:py-32 max-w-xl">
           <h1
-            className="text-5xl sm:text-6xl font-bold text-slate-800 leading-tight mb-4"
+            className="text-6xl sm:text-7xl font-bold text-slate-800 leading-tight mb-5"
             style={{ fontFamily: "var(--font-playfair), serif" }}
           >
-            Game <span className="text-amber-500">of Trivia</span>
+            Game<br /><span className="text-amber-500">of Trivia</span>
           </h1>
-          <p className="text-slate-600 text-lg mb-8">{dict.home.subtitle}</p>
+          <p className="text-slate-600 text-lg mb-8 max-w-sm">{dict.home.subtitle}</p>
+          <a
+            href="#challenges"
+            className="inline-block bg-amber-500 hover:bg-amber-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+          >
+            {dict.home.startQuiz}
+          </a>
         </div>
       </div>
 
-      <div className="px-2">
+      <div id="challenges" className="px-2">
         <GamePicker games={games} dict={d} scores={scores} categoryNames={categoryNames} />
       </div>
     </div>

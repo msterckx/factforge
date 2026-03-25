@@ -6,7 +6,7 @@ export const nl: Dictionary = {
   },
   home: {
     welcomeTo: "Welkom bij",
-    subtitle: "Daag je kennis uit.",
+    subtitle: "Verbreed je kennis over geschiedenis, wetenschap en cultuur.",
     questionsAvailable: "vragen beschikbaar",
     categories: "categorieën",
     chooseCategory: "Kies een quizcategorie",
