@@ -5,6 +5,8 @@ import { db } from "@/db";
 import { challengeScores } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAllChallengeGames } from "@/data/challengeGame";
+import { categories } from "@/db/schema";
+import { asc } from "drizzle-orm";
 import GamePicker from "@/components/challenges/GamePicker";
 import type { GameEntry, ScoreMap } from "@/components/challenges/GamePicker";
 
@@ -36,6 +38,8 @@ export default async function ChallengesPage({ params }: Props) {
   }
 
   const dbGames = getAllChallengeGames();
+  const dbCategories = db.select({ slug: categories.slug, name: categories.name }).from(categories).orderBy(asc(categories.name)).all();
+  const categoryNames: Record<string, string> = Object.fromEntries(dbCategories.map((c) => [c.slug, c.name]));
 
   const games: GameEntry[] = dbGames.map((game) => ({
     challengeId: game.slug,
@@ -53,7 +57,7 @@ export default async function ChallengesPage({ params }: Props) {
       <h1 className="text-3xl font-bold text-slate-800 mb-2">{d.title}</h1>
       <p className="text-slate-500 mb-8">{d.subtitle}</p>
 
-      <GamePicker games={games} dict={d} scores={scores} />
+      <GamePicker games={games} dict={d} scores={scores} categoryNames={categoryNames} />
     </div>
   );
 }

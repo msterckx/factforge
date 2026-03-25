@@ -24,6 +24,7 @@ interface Props {
   games: GameEntry[];
   dict: Dictionary["challenges"];
   scores: ScoreMap;
+  categoryNames?: Record<string, string>;
 }
 
 const gameTypeIcons: Record<GameType, string> = {
@@ -99,20 +100,19 @@ function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMa
   );
 }
 
-export default function GamePicker({ games, dict }: Props) {
+export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
   const { completed } = useCompletedChallenges();
 
-  const categoryLabels: Record<string, string> = {
-    geography:  dict.categoryGeography,
-    history:    dict.categoryHistory,
-    television: dict.categoryTelevision,
-    science:    dict.categoryScience,
-    sports:     dict.categorySports,
-    other:      dict.filterAll,
-  };
+  function getCategoryLabel(slug: string): string {
+    if (categoryNames[slug]) return categoryNames[slug];
+    // fallback: capitalize slug
+    return slug.charAt(0).toUpperCase() + slug.slice(1);
+  }
 
-  const categories: GameCategory[] = ["geography", "history", "television", "science", "sports", "other"];
-  const grouped = categories
+  // Derive unique categories from games, preserving first-seen order, "other" always last
+  const seenCats = Array.from(new Set(games.map((g) => g.category)));
+  const orderedCats = [...seenCats.filter((c) => c !== "other"), ...seenCats.filter((c) => c === "other")];
+  const grouped = orderedCats
     .map((cat) => ({ cat, items: games.filter((g) => g.category === cat) }))
     .filter(({ items }) => items.length > 0);
 
@@ -142,8 +142,8 @@ export default function GamePicker({ games, dict }: Props) {
       {grouped.map(({ cat, items }) => (
         <section key={cat}>
           {cat !== "other" && (
-            <h2 className="text-lg font-bold text-slate-700 mb-4 capitalize">
-              {categoryLabels[cat]}
+            <h2 className="text-lg font-bold text-slate-700 mb-4">
+              {getCategoryLabel(cat)}
             </h2>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
