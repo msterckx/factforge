@@ -38,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${playfair.variable} antialiased bg-stone-50 text-slate-900`}>
+      <body className={`${inter.className} ${playfair.variable} antialiased bg-[#FCF5F6] text-slate-900`}>
         {children}
         <Script id="sw-register" strategy="afterInteractive">{`
           if ('serviceWorker' in navigator) {
