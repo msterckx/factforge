@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { PuzzleSubject } from "@/types/puzzle";
 import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
+import { trackChallengeStart, trackChallengeComplete } from "@/lib/gtag";
 
 const GRID = 3;
 const TILE = 100; // px — each tile width & height
@@ -28,6 +29,7 @@ interface Props {
 
 export default function PuzzleGame({ subjects, dict, challengeId }: Props) {
   const { markComplete } = useCompletedChallenges();
+  useEffect(() => { trackChallengeStart(challengeId); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [current, setCurrent]           = useState(0);
   const [tiles, setTiles]               = useState<number[]>(() => scramble(GRID * GRID));
   const [selected, setSelected]         = useState<number | null>(null);
@@ -71,6 +73,7 @@ export default function PuzzleGame({ subjects, dict, challengeId }: Props) {
     if (current + 1 >= subjects.length) {
       setAllDone(true);
       markComplete(challengeId, newTotal, maxScore);
+      trackChallengeComplete(challengeId, newTotal, maxScore);
       fetch("/api/challenges/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

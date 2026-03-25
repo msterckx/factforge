@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import type { ChronologyItem } from "@/types/chronology";
 import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
+import { trackChallengeStart, trackChallengeComplete, trackChallengeFail } from "@/lib/gtag";
 
 interface Props {
   items: ChronologyItem[];
@@ -150,6 +151,8 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
   const maxScore     = items.length * 10;
   const currentScore = Math.max(0, playerPlaced * 10 - wrongAttempts * 2);
 
+  useEffect(() => { trackChallengeStart(challengeId); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (allCorrect) {
       setGlitterActive(true);
@@ -161,7 +164,8 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
   useEffect(() => {
     if ((allCorrect || gameOver) && !scoreSubmitted) {
       setScoreSubmitted(true);
-      if (allCorrect) markComplete(challengeId, currentScore, maxScore);
+      if (allCorrect) { markComplete(challengeId, currentScore, maxScore); trackChallengeComplete(challengeId, currentScore, maxScore); }
+      else { trackChallengeFail(challengeId); }
       fetch("/api/challenges/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
