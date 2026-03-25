@@ -188,6 +188,32 @@ export default function AdminQuestionsPage() {
     }
   }
 
+  function handleExportCsv() {
+    const exportRows = filterCategory
+      ? questions.filter((q) => q.categoryId === filterCategory)
+      : questions;
+    const categoryName = filterCategory
+      ? (categories.find((c) => c.id === filterCategory)?.name ?? "questions")
+      : "all-questions";
+    const escape = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    const header = ["Question", "Answer", "Category", "Subcategory", "Difficulty"];
+    const rows = exportRows.map((q) => [
+      escape(q.questionText),
+      escape(q.answer),
+      escape(q.categoryName),
+      escape(q.subcategoryName ?? ""),
+      escape(q.difficulty),
+    ]);
+    const csv = [header.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${categoryName}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const filtered = questions.filter((q) => {
     if (filterCategory && q.categoryId !== filterCategory) return false;
     if (searchQuery) {
@@ -223,6 +249,12 @@ export default function AdminQuestionsPage() {
             className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {autoSubLoading ? "Assigning..." : "Auto-assign Subcategories"}
+          </button>
+          <button
+            onClick={handleExportCsv}
+            className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
+          >
+            ↓ Export CSV{filterCategory ? ` (${categories.find((c) => c.id === filterCategory)?.name})` : ""}
           </button>
           <Link
             href="/admin/questions/new"
