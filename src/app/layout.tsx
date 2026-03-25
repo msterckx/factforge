@@ -12,7 +12,7 @@ const playfair = Playfair_Display({
 
 const spectral = Spectral({
   subsets: ["latin"],
-  weight: ["300"],
+  weight: ["400"],
   variable: "--font-cormorant",
 });
 

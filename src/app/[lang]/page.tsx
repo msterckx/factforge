@@ -71,7 +71,7 @@ export default async function HomePage({ params }: Props) {
         <div className="relative z-10 px-10 py-20 sm:py-32 max-w-xl">
           <h1
             className="text-6xl sm:text-7xl font-bold leading-tight mb-5"
-            style={{ fontFamily: "var(--font-cormorant), serif", color: "#28324E", fontWeight: 300 }}
+            style={{ fontFamily: "var(--font-cormorant), serif", color: "#28324E" }}
           >
             Game of Trivia
           </h1>

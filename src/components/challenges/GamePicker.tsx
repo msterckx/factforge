@@ -144,7 +144,7 @@ export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
           {cat !== "other" && (
             <h2
               className="text-lg font-bold mb-4"
-              style={{ fontFamily: "var(--font-cormorant), serif", color: "#28324E", fontWeight: 300 }}
+              style={{ fontFamily: "var(--font-cormorant), serif", color: "#28324E" }}
             >
               {getCategoryLabel(cat)}
             </h2>
