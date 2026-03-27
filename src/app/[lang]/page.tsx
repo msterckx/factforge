@@ -64,11 +64,11 @@ export default async function HomePage({ params }: Props) {
             className="w-full h-full object-cover object-left"
           />
           {/* gradient fade from background color on left */}
-          <div className="absolute inset-0 bg-[linear-gradient(110deg,#FCF5F6_20%,rgba(252,245,246,0.6)_42%,transparent_62%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_0%_100%,#FCF5F6_20%,rgba(252,245,246,0.55)_45%,transparent_65%)]" />
         </div>
 
         {/* Text content */}
-        <div className="relative z-10 px-10 py-20 sm:py-32 max-w-xl">
+        <div className="relative z-10 px-10 py-16 sm:py-24 max-w-xl">
           <h1
             className="text-6xl sm:text-7xl font-bold leading-tight mb-5"
             style={{ fontFamily: "var(--font-cormorant), serif", color: "#28324E" }}
