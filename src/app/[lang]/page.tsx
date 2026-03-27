@@ -64,7 +64,7 @@ export default async function HomePage({ params }: Props) {
             className="w-full h-full object-cover object-left"
           />
           {/* gradient fade from background color on left */}
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,#FCF5F6_30%,rgba(252,245,246,0.6)_55%,transparent_75%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(110deg,#FCF5F6_20%,rgba(252,245,246,0.6)_42%,transparent_62%)]" />
         </div>
 
         {/* Text content */}
