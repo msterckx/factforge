@@ -64,7 +64,7 @@ export default async function HomePage({ params }: Props) {
             className="w-full h-full object-cover object-left"
           />
           {/* gradient fade from background color on left */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_0%_100%,#FCF5F6_20%,rgba(252,245,246,0.55)_45%,transparent_65%)]" />
+          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 0% 100%, #FCF5F6 20%, rgba(252,245,246,0.55) 45%, transparent 65%)" }} />
         </div>
 
         {/* Text content */}
