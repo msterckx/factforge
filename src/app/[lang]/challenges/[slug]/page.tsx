@@ -96,12 +96,12 @@ export default async function ChallengePage({ params }: Props) {
   const items = game.gameType !== "quiz" ? getChallengeItems(game.id) : [];
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <Link
-        href={`/${lang}/challenges`}
+        href={`/${lang}`}
         className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-6 transition-colors"
       >
-        &larr; {d.backToChallenges}
+        &larr; {d.backToHome}
       </Link>
 
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{title}</h1>

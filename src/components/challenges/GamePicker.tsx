@@ -86,7 +86,7 @@ function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMa
     return (
       <Link
         href={game.href}
-        className="block rounded-xl shadow-sm hover:shadow-lg hover:brightness-110 transition-all"
+        className="block rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.28)] hover:brightness-110 transition-all"
       >
         <CardInner game={game} isDone={isDone} />
       </Link>
