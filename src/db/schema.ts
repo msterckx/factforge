@@ -143,6 +143,11 @@ export const challengeGames = sqliteTable("challenge_games", {
   quizQuestionLimit: integer("quiz_question_limit"), // null = all questions
   quizQuestionIds:   text("quiz_question_ids"),      // JSON array of question IDs; null = all
   startingLives:     integer("starting_lives").notNull().default(5), // lives for chronology game
+  // Connections-type column header labels (null = use default "Items" / "Answers")
+  connectionsLeftLabelEn:  text("connections_left_label_en"),
+  connectionsLeftLabelNl:  text("connections_left_label_nl"),
+  connectionsRightLabelEn: text("connections_right_label_en"),
+  connectionsRightLabelNl: text("connections_right_label_nl"),
   createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 

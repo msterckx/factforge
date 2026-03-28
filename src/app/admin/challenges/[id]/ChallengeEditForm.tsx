@@ -45,6 +45,10 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       quizSubcategoryId: quizSubcategoryId,
       quizQuestionLimit: fd.get("quizQuestionLimit") ? Number(fd.get("quizQuestionLimit")) : null,
       startingLives:     startingLives,
+      connectionsLeftLabelEn:  fd.get("connectionsLeftLabelEn")  || null,
+      connectionsLeftLabelNl:  fd.get("connectionsLeftLabelNl")  || null,
+      connectionsRightLabelEn: fd.get("connectionsRightLabelEn") || null,
+      connectionsRightLabelNl: fd.get("connectionsRightLabelNl") || null,
     };
     const res = await fetch(`/api/admin/challenges/${game.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
@@ -173,6 +177,31 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
                 placeholder="e.g. 10"
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Connections column labels */}
+      {gameType === "connections" && (
+        <div className="border border-violet-200 bg-violet-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-violet-800">Column Labels <span className="font-normal text-violet-600">(optional)</span></p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Left column (EN)</label>
+              <input name="connectionsLeftLabelEn" defaultValue={game.connectionsLeftLabelEn ?? ""} placeholder="e.g. Works of Art" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Left column (NL)</label>
+              <input name="connectionsLeftLabelNl" defaultValue={game.connectionsLeftLabelNl ?? ""} placeholder="e.g. Kunstwerken" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Right column (EN)</label>
+              <input name="connectionsRightLabelEn" defaultValue={game.connectionsRightLabelEn ?? ""} placeholder="e.g. Artists" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Right column (NL)</label>
+              <input name="connectionsRightLabelNl" defaultValue={game.connectionsRightLabelNl ?? ""} placeholder="e.g. Kunstenaars" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
           </div>
         </div>
