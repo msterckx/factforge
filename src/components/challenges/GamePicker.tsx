@@ -103,14 +103,21 @@ function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMa
 
 function CategoryRow({ items, completed }: { items: GameEntry[]; completed: CompletedMap }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollLeft, setCanScrollLeft]   = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [currentPage, setCurrentPage]       = useState(0);
+  const [totalPages, setTotalPages]         = useState(1);
 
   const update = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(Math.round(el.scrollLeft + el.clientWidth) < el.scrollWidth - 4);
+    const left  = el.scrollLeft;
+    const width = el.clientWidth;
+    const full  = el.scrollWidth;
+    setCanScrollLeft(left > 4);
+    setCanScrollRight(Math.round(left + width) < full - 4);
+    setTotalPages(Math.max(1, Math.ceil(full / width)));
+    setCurrentPage(Math.round(left / width));
   }, []);
 
   useEffect(() => {
@@ -132,39 +139,67 @@ function CategoryRow({ items, completed }: { items: GameEntry[]; completed: Comp
     el.scrollBy({ left: dir === "right" ? el.clientWidth : -el.clientWidth, behavior: "smooth" });
   };
 
+  const scrollToPage = (page: number) => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ left: page * el.clientWidth, behavior: "smooth" });
+  };
+
   return (
     <div className="relative">
+      {/* Left arrow — desktop only */}
       {canScrollLeft && (
         <button
           onClick={() => scroll("left")}
           aria-label="Scroll left"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-2xl leading-none text-slate-700 hover:bg-white transition-colors backdrop-blur-sm"
+          className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 shadow-lg items-center justify-center text-2xl leading-none text-slate-700 hover:bg-white transition-colors backdrop-blur-sm"
         >
           ‹
         </button>
       )}
+
+      {/* Scrollable row — native swipe on mobile, snap per page */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-hidden"
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
       >
         {items.map((game) => (
           <div
             key={game.challengeId}
-            className="flex-none w-full sm:w-[calc(50%-8px)] xl:w-[calc(33.333%-10.667px)] 2xl:w-[calc(25%-12px)]"
+            className="flex-none snap-start w-[calc(50%-8px)] xl:w-[calc(33.333%-10.667px)] 2xl:w-[calc(25%-12px)]"
           >
             <GameCard game={game} completed={completed} />
           </div>
         ))}
       </div>
+
+      {/* Right arrow — desktop only */}
       {canScrollRight && (
         <button
           onClick={() => scroll("right")}
           aria-label="Scroll right"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-2xl leading-none text-slate-700 hover:bg-white transition-colors backdrop-blur-sm"
+          className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 shadow-lg items-center justify-center text-2xl leading-none text-slate-700 hover:bg-white transition-colors backdrop-blur-sm"
         >
           ›
         </button>
+      )}
+
+      {/* Page dots */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-1.5 mt-3">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollToPage(i)}
+              aria-label={`Go to page ${i + 1}`}
+              className={`rounded-full transition-all duration-200 ${
+                i === currentPage
+                  ? "w-2.5 h-2.5 bg-[#D7AA50]"
+                  : "w-2 h-2 bg-slate-300 hover:bg-slate-400"
+              }`}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
