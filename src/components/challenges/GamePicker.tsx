@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState, useEffect, useCallback } from "react";
 import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges, type CompletedMap } from "@/hooks/useCompletedChallenges";
 
@@ -100,16 +101,83 @@ function GameCard({ game, completed }: { game: GameEntry; completed: CompletedMa
   );
 }
 
+function CategoryRow({ items, completed }: { items: GameEntry[]; completed: CompletedMap }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const update = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(Math.round(el.scrollLeft + el.clientWidth) < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, [update]);
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "right" ? el.clientWidth : -el.clientWidth, behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative">
+      {canScrollLeft && (
+        <button
+          onClick={() => scroll("left")}
+          aria-label="Scroll left"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-2xl leading-none text-slate-700 hover:bg-white transition-colors backdrop-blur-sm"
+        >
+          ‹
+        </button>
+      )}
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-hidden"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {items.map((game) => (
+          <div
+            key={game.challengeId}
+            className="flex-none w-full sm:w-[calc(50%-8px)] xl:w-[calc(33.333%-10.667px)] 2xl:w-[calc(25%-12px)]"
+          >
+            <GameCard game={game} completed={completed} />
+          </div>
+        ))}
+      </div>
+      {canScrollRight && (
+        <button
+          onClick={() => scroll("right")}
+          aria-label="Scroll right"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-2xl leading-none text-slate-700 hover:bg-white transition-colors backdrop-blur-sm"
+        >
+          ›
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
   const { completed } = useCompletedChallenges();
 
   function getCategoryLabel(slug: string): string {
     if (categoryNames[slug]) return categoryNames[slug];
-    // fallback: capitalize slug
     return slug.charAt(0).toUpperCase() + slug.slice(1);
   }
 
-  // Derive unique categories from games, preserving first-seen order, "other" always last
   const seenCats = Array.from(new Set(games.map((g) => g.category)));
   const orderedCats = [...seenCats.filter((c) => c !== "other"), ...seenCats.filter((c) => c === "other")];
   const grouped = orderedCats
@@ -149,11 +217,7 @@ export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
               {getCategoryLabel(cat)}
             </h2>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-            {items.map((game) => (
-              <GameCard key={game.label} game={game} completed={completed} />
-            ))}
-          </div>
+          <CategoryRow items={items} completed={completed} />
         </section>
       ))}
     </div>
