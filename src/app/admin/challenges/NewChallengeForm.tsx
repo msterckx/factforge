@@ -22,12 +22,18 @@ interface FormState {
   quizCategoryId: number | null;
   quizSubcategoryId: number | null;
   quizQuestionLimit: number | null;
+  connectionsLeftLabelEn: string;
+  connectionsLeftLabelNl: string;
+  connectionsRightLabelEn: string;
+  connectionsRightLabelNl: string;
 }
 
 const empty: FormState = {
   slug: "", gameType: "chronology", icon: "🎮", category: "history",
   titleEn: "", titleNl: "", subtitleEn: "", subtitleNl: "", sortOrder: 0, available: true,
   quizCategoryId: null, quizSubcategoryId: null, quizQuestionLimit: null,
+  connectionsLeftLabelEn: "", connectionsLeftLabelNl: "",
+  connectionsRightLabelEn: "", connectionsRightLabelNl: "",
 };
 
 export default function NewChallengeForm() {
@@ -81,6 +87,10 @@ export default function NewChallengeForm() {
         quizCategoryId:    null,
         quizSubcategoryId: null,
         quizQuestionLimit: null,
+        connectionsLeftLabelEn:  data.connectionsLeftLabelEn  ?? "",
+        connectionsLeftLabelNl:  data.connectionsLeftLabelNl  ?? "",
+        connectionsRightLabelEn: data.connectionsRightLabelEn ?? "",
+        connectionsRightLabelNl: data.connectionsRightLabelNl ?? "",
       });
       setItems((data.items ?? []).map((item: GeneratedChallengeItem, i: number) => ({ ...item, position: i + 1 })));
     } catch {
@@ -107,6 +117,10 @@ export default function NewChallengeForm() {
         quizCategoryId:    form.quizCategoryId    ?? null,
         quizSubcategoryId: form.quizSubcategoryId ?? null,
         quizQuestionLimit: form.quizQuestionLimit  ?? null,
+        connectionsLeftLabelEn:  form.connectionsLeftLabelEn  || null,
+        connectionsLeftLabelNl:  form.connectionsLeftLabelNl  || null,
+        connectionsRightLabelEn: form.connectionsRightLabelEn || null,
+        connectionsRightLabelNl: form.connectionsRightLabelNl || null,
       }),
     });
     if (!gameRes.ok) {
@@ -288,6 +302,19 @@ export default function NewChallengeForm() {
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Connections column labels ──────────────────────────────── */}
+      {form.gameType === "connections" && (
+        <div className="border border-violet-200 bg-violet-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-violet-800">Column Labels <span className="font-normal text-violet-600">(optional — shown above each column)</span></p>
+          <div className="grid grid-cols-2 gap-3">
+            {field("Left column (EN)", form.connectionsLeftLabelEn, (v) => set("connectionsLeftLabelEn", v), "e.g. Works of Art")}
+            {field("Left column (NL)", form.connectionsLeftLabelNl, (v) => set("connectionsLeftLabelNl", v), "e.g. Kunstwerken")}
+            {field("Right column (EN)", form.connectionsRightLabelEn, (v) => set("connectionsRightLabelEn", v), "e.g. Artists")}
+            {field("Right column (NL)", form.connectionsRightLabelNl, (v) => set("connectionsRightLabelNl", v), "e.g. Kunstenaars")}
           </div>
         </div>
       )}

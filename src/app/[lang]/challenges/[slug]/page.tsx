@@ -145,6 +145,12 @@ export default async function ChallengePage({ params }: Props) {
           items={mapToConnectionItems(items, lang)}
           dict={d}
           challengeId={game.slug}
+          leftLabel={lang === "nl"
+            ? (game.connectionsLeftLabelNl  || game.connectionsLeftLabelEn  || undefined)
+            : (game.connectionsLeftLabelEn  || undefined)}
+          rightLabel={lang === "nl"
+            ? (game.connectionsRightLabelNl || game.connectionsRightLabelEn || undefined)
+            : (game.connectionsRightLabelEn || undefined)}
         />
       )}
       {game.gameType === "quiz" && quizQuestions.length === 0 && (
