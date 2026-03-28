@@ -68,7 +68,7 @@ export default async function HomePage({ params }: Props) {
         </div>
 
         {/* Text content */}
-        <div className="relative z-10 px-10 py-16 sm:py-24 max-w-xl">
+        <div className="relative z-10 px-10 py-5 sm:py-12 max-w-xl">
           <h1
             className="text-6xl sm:text-7xl font-bold leading-tight mb-5"
             style={{ fontFamily: "var(--font-cormorant), serif", color: "#28324E" }}
