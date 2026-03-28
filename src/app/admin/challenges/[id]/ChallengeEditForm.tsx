@@ -77,6 +77,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
             <option value="matching">Matching</option>
             <option value="puzzle">Puzzle</option>
             <option value="quiz">Quiz</option>
+            <option value="connections">Connections</option>
           </select>
         </div>
         <div>

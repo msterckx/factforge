@@ -6,6 +6,7 @@ import {
   getChallengeItems,
   mapToChronologyItems,
   mapToPuzzleSubjects,
+  mapToConnectionItems,
 } from "@/data/challengeGame";
 import { db } from "@/db";
 import { questions, questionTranslations, subcategories, subcategoryTranslations } from "@/db/schema";
@@ -14,6 +15,7 @@ import ChronologyGame from "@/components/challenges/ChronologyGame";
 import MatchingGame from "@/components/challenges/MatchingGame";
 import PuzzleGame from "@/components/challenges/PuzzleGame";
 import QuizChallenge from "@/components/challenges/QuizChallenge";
+import ConnectionsGame from "@/components/challenges/ConnectionsGame";
 import type { QuizQuestion } from "@/components/challenges/QuizChallenge";
 
 interface Props {
@@ -92,7 +94,7 @@ export default async function ChallengePage({ params }: Props) {
     quizQuestions = game.quizQuestionLimit ? shuffled.slice(0, game.quizQuestionLimit) : shuffled;
   }
 
-  // ── Chronology / matching / puzzle items ──────────────────────────────────
+  // ── Chronology / matching / puzzle / connections items ───────────────────
   const items = game.gameType !== "quiz" ? getChallengeItems(game.id) : [];
 
   return (
@@ -136,6 +138,13 @@ export default async function ChallengePage({ params }: Props) {
           dict={dict}
           challengeId={game.slug}
           startingLives={game.startingLives ?? 5}
+        />
+      )}
+      {game.gameType === "connections" && (
+        <ConnectionsGame
+          items={mapToConnectionItems(items, lang)}
+          dict={d}
+          challengeId={game.slug}
         />
       )}
       {game.gameType === "quiz" && quizQuestions.length === 0 && (
