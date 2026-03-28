@@ -3,6 +3,7 @@ import { challengeGames, challengeItems } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import type { ChronologyItem } from "@/types/chronology";
 import type { PuzzleSubject } from "@/types/puzzle";
+import type { ConnectionItem } from "@/types/connections";
 
 export type ChallengeGame = typeof challengeGames.$inferSelect;
 export type ChallengeItem = typeof challengeItems.$inferSelect;
@@ -32,6 +33,18 @@ export function mapToChronologyItems(items: ChallengeItem[], lang: string): Chro
     clue:        lang === "nl"
       ? (item.clueNl || item.clueEn) ?? undefined
       : item.clueEn ?? undefined,
+  }));
+}
+
+export function mapToConnectionItems(items: ChallengeItem[], lang: string): ConnectionItem[] {
+  return items.map((item) => ({
+    id:          item.id,
+    name:        item.name,
+    imageUrl:    item.imageUrl,
+    match:       lang === "nl"
+      ? (item.clueNl || item.clueEn) ?? ""
+      : item.clueEn ?? "",
+    description: lang === "nl" ? item.descriptionNl || item.descriptionEn : item.descriptionEn,
   }));
 }
 

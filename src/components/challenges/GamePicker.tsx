@@ -6,7 +6,7 @@ import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges, type CompletedMap } from "@/hooks/useCompletedChallenges";
 
 export type GameCategory = string;
-export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "other";
+export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "other";
 
 export interface GameEntry {
   challengeId: string;
@@ -29,11 +29,12 @@ interface Props {
 }
 
 const gameTypeIcons: Record<GameType, string> = {
-  chronology: "⏳",
-  matching:   "🔗",
-  puzzle:     "🧩",
-  quiz:       "❓",
-  other:      "🎮",
+  chronology:  "⏳",
+  matching:    "🔗",
+  puzzle:      "🧩",
+  quiz:        "❓",
+  connections: "🔀",
+  other:       "🎮",
 };
 
 const categoryColors: Record<string, string> = {
@@ -220,14 +221,15 @@ export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
     .filter(({ items }) => items.length > 0);
 
   const gameTypeLabels: Record<GameType, string> = {
-    chronology: dict.gameTypeChronology,
-    matching:   dict.gameTypeMatching,
-    puzzle:     dict.gameTypePuzzle,
-    quiz:       dict.gameTypeQuiz,
-    other:      "Other",
+    chronology:  dict.gameTypeChronology,
+    matching:    dict.gameTypeMatching,
+    puzzle:      dict.gameTypePuzzle,
+    quiz:        dict.gameTypeQuiz,
+    connections: dict.gameTypeConnections,
+    other:       "Other",
   };
 
-  const presentTypes = (["chronology", "matching", "puzzle", "quiz"] as GameType[])
+  const presentTypes = (["chronology", "matching", "puzzle", "quiz", "connections"] as GameType[])
     .filter((t) => games.some((g) => g.gameType === t));
 
   return (

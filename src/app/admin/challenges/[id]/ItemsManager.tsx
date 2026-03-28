@@ -80,6 +80,8 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
           {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
           {gameType === "matching" && field("Clue EN", "clueEn", "Matching clue (English)", true)}
           {gameType === "matching" && field("Clue NL", "clueNl", "Matching clue (Dutch)", true)}
+          {gameType === "connections" && field("Answer / Match (EN)", "clueEn", "e.g. Leonardo da Vinci", true)}
+          {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
         </div>
@@ -150,6 +152,8 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
           {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
           {gameType === "matching" && field("Clue EN", "clueEn", "Matching clue (English)", true)}
           {gameType === "matching" && field("Clue NL", "clueNl", "Matching clue (Dutch)", true)}
+          {gameType === "connections" && field("Answer / Match (EN)", "clueEn", "e.g. Leonardo da Vinci", true)}
+          {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
         </div>

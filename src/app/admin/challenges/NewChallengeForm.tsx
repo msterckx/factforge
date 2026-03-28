@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { GeneratedChallengeItem } from "@/lib/openai";
 
-type GameType = "chronology" | "matching" | "puzzle" | "quiz";
+type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections";
 
 interface CategoryOption { id: number; name: string; slug: string; subcategories: { id: number; name: string }[] }
 
@@ -140,9 +140,10 @@ export default function NewChallengeForm() {
   function addItem() {
     const base = { position: items.length + 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "" };
     const extra =
-      form.gameType === "chronology" ? { dates: "", milestoneEn: "", milestoneNl: "" } :
-      form.gameType === "matching"   ? { dates: "", clueEn: "", clueNl: "" } :
-                                       { hint: "", achievement: "" };
+      form.gameType === "chronology"  ? { dates: "", milestoneEn: "", milestoneNl: "" } :
+      form.gameType === "matching"    ? { dates: "", clueEn: "", clueNl: "" } :
+      form.gameType === "connections" ? { clueEn: "", clueNl: "" } :
+                                        { hint: "", achievement: "" };
     setItems((prev) => [...prev, { ...base, ...extra }]);
   }
 
@@ -178,6 +179,7 @@ export default function NewChallengeForm() {
               <option value="matching">Matching — match names to clue tiles</option>
               <option value="puzzle">Puzzle — reassemble portrait images</option>
               <option value="quiz">Quiz — questions from an existing category</option>
+              <option value="connections">Connections — match items to their answers</option>
             </select>
           </div>
           <div>
@@ -321,6 +323,12 @@ export default function NewChallengeForm() {
                       <ItemInput label="Clue (NL)" value={item.clueNl ?? ""} onChange={(v) => updateItem(i, "clueNl", v)} placeholder="Matching clue (Dutch)" full />
                     </>
                   )}
+                  {form.gameType === "connections" && (
+                    <>
+                      <ItemInput label="Answer / Match (EN)" value={item.clueEn ?? ""} onChange={(v) => updateItem(i, "clueEn", v)} placeholder="e.g. Leonardo da Vinci" full />
+                      <ItemInput label="Answer / Match (NL)" value={item.clueNl ?? ""} onChange={(v) => updateItem(i, "clueNl", v)} placeholder="Dutch translation of answer" full />
+                    </>
+                  )}
                   {form.gameType === "puzzle" && (
                     <>
                       <ItemInput label="Hint" value={item.hint ?? ""} onChange={(v) => updateItem(i, "hint", v)} placeholder="e.g. Tennis · Switzerland" />
@@ -332,6 +340,9 @@ export default function NewChallengeForm() {
                       <ItemInput label="Description (EN)" value={item.descriptionEn} onChange={(v) => updateItem(i, "descriptionEn", v)} full />
                       <ItemInput label="Description (NL)" value={item.descriptionNl} onChange={(v) => updateItem(i, "descriptionNl", v)} full />
                     </>
+                  )}
+                  {form.gameType === "connections" && (
+                    <ItemInput label="Image URL (optional)" value={item.imageUrl} onChange={(v) => updateItem(i, "imageUrl", v)} placeholder="https://... (shows image next to item)" full />
                   )}
                 </div>
               </div>

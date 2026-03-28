@@ -152,7 +152,7 @@ export interface GeneratedChallengeItem {
   dates?: string;
   milestoneEn?: string;
   milestoneNl?: string;
-  // matching
+  // matching / connections (clue = the matching answer)
   clueEn?: string;
   clueNl?: string;
   // puzzle
@@ -173,10 +173,11 @@ export interface GeneratedChallenge {
 
 export async function generateChallenge(
   description: string,
-  gameType: "chronology" | "puzzle" | "matching"
+  gameType: "chronology" | "puzzle" | "matching" | "connections"
 ): Promise<GeneratedChallenge> {
-  const isChronology = gameType === "chronology";
-  const isMatching = gameType === "matching";
+  const isChronology  = gameType === "chronology";
+  const isMatching    = gameType === "matching";
+  const isConnections = gameType === "connections";
 
   const itemShape = isChronology
     ? `- "position": sequential integer (1 = earliest)
@@ -193,6 +194,14 @@ export async function generateChallenge(
 - "dates": their life or reign dates, e.g. "1451–1506" or "27 BC–14 AD"
 - "clueEn": one compact English clue displayed on the tile to help the player match the right name (e.g. "First to walk on the Moon · 1969" or "Painted the Sistine Chapel ceiling")
 - "clueNl": Dutch translation of clueEn
+- "imageUrl": leave as empty string ""`
+    : isConnections
+    ? `- "position": sequential integer
+- "name": the item to be matched (e.g. a work of art title, a country, a landmark)
+- "clueEn": the correct English answer the player must match to this item (e.g. the artist's name, the capital city, the composer)
+- "clueNl": Dutch translation of clueEn
+- "descriptionEn": 1–2 English sentences of interesting context shown after the game
+- "descriptionNl": Dutch translation of descriptionEn
 - "imageUrl": leave as empty string ""`
     : `- "position": sequential integer
 - "name": person's full name
@@ -218,7 +227,7 @@ The JSON must have:
 - "titleNl": Dutch translation of titleEn
 - "subtitleEn": one English sentence describing what the player does
 - "subtitleNl": Dutch translation of subtitleEn
-- "items": array of ${isChronology ? "people in correct chronological order" : isMatching ? "people/subjects with matching clues" : "people/subjects for the puzzle"}
+- "items": array of ${isChronology ? "people in correct chronological order" : isMatching ? "people/subjects with matching clues" : isConnections ? "items with their correct match answers" : "people/subjects for the puzzle"}
 
 Each item in the array must have:
 ${itemShape}

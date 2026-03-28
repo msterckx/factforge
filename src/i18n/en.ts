@@ -95,6 +95,15 @@ export interface Dictionary {
     gameTypeMatching: string;
     gameTypePuzzle: string;
     gameTypeQuiz: string;
+    gameTypeConnections: string;
+    connectionsInstruction: string;
+    connectionsCheckButton: string;
+    connectionsResults: string;
+    connectionsCorrect: string;
+    connectionsWrong: string;
+    connectionsScore: string;
+    connectionsReveal: string;
+    connectionsPlayAgain: string;
     olympics: string;
     olympicsSubtitle: string;
     puzzleProgress: string;
@@ -227,6 +236,15 @@ export const en: Dictionary = {
     gameTypeMatching: "Matching",
     gameTypePuzzle: "Puzzle",
     gameTypeQuiz: "Quiz",
+    gameTypeConnections: "Connections",
+    connectionsInstruction: "Match each item on the left to its correct answer on the right",
+    connectionsCheckButton: "Check My Connections",
+    connectionsResults: "Results",
+    connectionsCorrect: "Correct!",
+    connectionsWrong: "Wrong",
+    connectionsScore: "{correct} of {total} correct",
+    connectionsReveal: "Reveal Answers",
+    connectionsPlayAgain: "Play Again",
     olympics: "The Olympics",
     olympicsSubtitle: "Reassemble the puzzle to reveal the Olympic champion",
     puzzleProgress: "Puzzle",
