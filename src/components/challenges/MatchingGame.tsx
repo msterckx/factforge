@@ -5,6 +5,7 @@ import type { ChronologyItem } from "@/types/chronology";
 import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 import { trackChallengeStart, trackChallengeComplete, trackChallengeFail } from "@/lib/gtag";
+import { resolveImageUrl } from "@/lib/imageUrl";
 
 interface Props {
   items: ChronologyItem[];
@@ -455,7 +456,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
                   )}
                   <div className="aspect-square w-full bg-stone-200 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
+                    <img src={resolveImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
                   </div>
                   <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-center ${wasPlayerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
                     <p className="text-[10px] sm:text-[11px] font-semibold text-slate-800 leading-tight truncate">{item.name}</p>
@@ -535,7 +536,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
           <div className="flex gap-3 pr-6">
             {infoItem.imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={infoItem.imageUrl} alt={infoItem.name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover object-top flex-shrink-0" draggable={false} />
+              <img src={resolveImageUrl(infoItem.imageUrl)} alt={infoItem.name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover object-top flex-shrink-0" draggable={false} />
             )}
             <div className="min-w-0">
               <p className="font-semibold text-slate-800 text-sm leading-tight">{infoItem.name}</p>
