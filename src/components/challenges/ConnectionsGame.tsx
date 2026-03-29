@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import type { Dictionary } from "@/i18n/en";
 import type { ConnectionItem } from "@/types/connections";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
@@ -10,26 +10,11 @@ interface Props {
   items: ConnectionItem[];
   dict: Dictionary["challenges"];
   challengeId: string;
-  leftLabel?: string;   // e.g. "Works of Art"
-  rightLabel?: string;  // e.g. "Artists"
+  leftLabel?: string;
+  rightLabel?: string;
 }
 
 type Phase = "playing" | "checked" | "revealed";
-
-const PAIR_COLORS = [
-  { dot: "bg-violet-500",  card: "border-violet-300 bg-violet-50",  text: "text-violet-700"  },
-  { dot: "bg-sky-500",     card: "border-sky-300 bg-sky-50",        text: "text-sky-700"     },
-  { dot: "bg-rose-500",    card: "border-rose-300 bg-rose-50",      text: "text-rose-700"    },
-  { dot: "bg-emerald-500", card: "border-emerald-300 bg-emerald-50",text: "text-emerald-700" },
-  { dot: "bg-orange-500",  card: "border-orange-300 bg-orange-50",  text: "text-orange-700"  },
-  { dot: "bg-teal-500",    card: "border-teal-300 bg-teal-50",      text: "text-teal-700"    },
-  { dot: "bg-pink-500",    card: "border-pink-300 bg-pink-50",      text: "text-pink-700"    },
-  { dot: "bg-indigo-500",  card: "border-indigo-300 bg-indigo-50",  text: "text-indigo-700"  },
-  { dot: "bg-lime-500",    card: "border-lime-300 bg-lime-50",      text: "text-lime-700"    },
-  { dot: "bg-amber-500",   card: "border-amber-300 bg-amber-50",    text: "text-amber-700"   },
-  { dot: "bg-cyan-500",    card: "border-cyan-300 bg-cyan-50",      text: "text-cyan-700"    },
-  { dot: "bg-fuchsia-500", card: "border-fuchsia-300 bg-fuchsia-50",text: "text-fuchsia-700" },
-];
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -46,25 +31,28 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   const colLeft  = leftLabel  || "Items";
   const colRight = rightLabel || "Answers";
 
-  const shuffledItems   = useMemo(() => shuffle(items), [items]);
-  const shuffledAnswers = useMemo(() => shuffle(items.map((i) => i.match)), [items]);
+  // Left column: fixed shuffled order of items
+  const fixedItems = useMemo(() => shuffle(items), [items]);
 
-  const [connections, setConnections] = useState<Record<number, string>>({});
-  const [pairColors, setPairColors]   = useState<Record<number, number>>({});
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
-  const [phase, setPhase]       = useState<Phase>("playing");
+  // Right column: mutable ordered list of answer strings (drag to reorder)
+  const [answers, setAnswers] = useState<string[]>(() => shuffle(items.map((i) => i.match)));
+  const [phase, setPhase]     = useState<Phase>("playing");
   const [correctCount, setCorrectCount] = useState(0);
   const [lightbox, setLightbox] = useState<{ url: string; alt: string } | null>(null);
 
+  // Drag state
+  const dragIndex   = useRef<number | null>(null);
+  const dragStart   = useRef<{ x: number; y: number } | null>(null);
+  const isDragging  = useRef(false);
+  const ghostRef    = useRef<HTMLDivElement | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   useEffect(() => {
-    setConnections({});
-    setPairColors({});
-    setSelectedItemId(null);
+    setAnswers(shuffle(items.map((i) => i.match)));
     setPhase("playing");
     setCorrectCount(0);
   }, [items]);
 
-  // Close lightbox on Escape
   useEffect(() => {
     if (!lightbox) return;
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setLightbox(null); };
@@ -72,65 +60,129 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     return () => window.removeEventListener("keydown", handler);
   }, [lightbox]);
 
-  function nextColorIndex(current: Record<number, number>): number {
-    const used = new Set(Object.values(current));
-    for (let i = 0; i < PAIR_COLORS.length; i++) {
-      if (!used.has(i)) return i;
-    }
-    return 0;
-  }
-
-  function handleItemClick(itemId: number) {
-    if (phase !== "playing") return;
-    if (connections[itemId] !== undefined) {
-      setConnections((prev) => { const n = { ...prev }; delete n[itemId]; return n; });
-      setPairColors((prev)  => { const n = { ...prev }; delete n[itemId]; return n; });
-      setSelectedItemId(null);
-      return;
-    }
-    setSelectedItemId((prev) => (prev === itemId ? null : itemId));
-  }
-
-  function handleAnswerClick(answer: string) {
-    if (phase !== "playing" || selectedItemId === null) return;
-    setConnections((prev) => {
-      const next = { ...prev };
-      for (const [k, v] of Object.entries(next)) {
-        if (v === answer) {
-          delete next[Number(k)];
-          setPairColors((pc) => { const n = { ...pc }; delete n[Number(k)]; return n; });
-        }
-      }
-      next[selectedItemId] = answer;
-      return next;
+  // ── Ghost helpers ────────────────────────────────────────────────────────
+  function createGhost(text: string, x: number, y: number) {
+    const el = document.createElement("div");
+    Object.assign(el.style, {
+      position:      "fixed",
+      left:          `${x - 60}px`,
+      top:           `${y - 22}px`,
+      zIndex:        "9999",
+      pointerEvents: "none",
+      background:    "#fffbeb",
+      border:        "2px solid #f59e0b",
+      borderRadius:  "10px",
+      padding:       "6px 14px",
+      fontSize:      "13px",
+      fontWeight:    "600",
+      color:         "#92400e",
+      whiteSpace:    "nowrap",
+      maxWidth:      "200px",
+      overflow:      "hidden",
+      textOverflow:  "ellipsis",
+      boxShadow:     "0 4px 16px rgba(0,0,0,0.18)",
+      userSelect:    "none",
+      opacity:       "0.92",
     });
-    setPairColors((prev) => ({ ...prev, [selectedItemId]: nextColorIndex(prev) }));
-    setSelectedItemId(null);
+    el.textContent = text;
+    document.body.appendChild(el);
+    ghostRef.current = el;
   }
 
+  function moveGhost(x: number, y: number) {
+    if (ghostRef.current) {
+      ghostRef.current.style.left = `${x - 60}px`;
+      ghostRef.current.style.top  = `${y - 22}px`;
+    }
+  }
+
+  function removeGhost() {
+    if (ghostRef.current) {
+      document.body.removeChild(ghostRef.current);
+      ghostRef.current = null;
+    }
+  }
+
+  function rowUnderPoint(x: number, y: number): number | null {
+    if (ghostRef.current) ghostRef.current.style.display = "none";
+    const el = document.elementFromPoint(x, y);
+    if (ghostRef.current) ghostRef.current.style.display = "";
+    const row = el?.closest("[data-answer-row]");
+    if (!row) return null;
+    const idx = parseInt(row.getAttribute("data-answer-row") ?? "-1");
+    return idx >= 0 ? idx : null;
+  }
+
+  // ── Pointer events ───────────────────────────────────────────────────────
+  function handlePointerDown(e: React.PointerEvent, index: number) {
+    if (phase !== "playing") return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragIndex.current  = index;
+    dragStart.current  = { x: e.clientX, y: e.clientY };
+    isDragging.current = false;
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    if (dragIndex.current === null || !dragStart.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+
+    if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 6) {
+      isDragging.current = true;
+      createGhost(answers[dragIndex.current], e.clientX, e.clientY);
+    }
+
+    if (isDragging.current) {
+      moveGhost(e.clientX, e.clientY);
+      setDragOverIndex(rowUnderPoint(e.clientX, e.clientY));
+    }
+  }
+
+  function handlePointerUp(e: React.PointerEvent) {
+    if (isDragging.current) {
+      const target = rowUnderPoint(e.clientX, e.clientY);
+      removeGhost();
+      setDragOverIndex(null);
+      if (target !== null && target !== dragIndex.current && dragIndex.current !== null) {
+        setAnswers((prev) => {
+          const next = [...prev];
+          [next[dragIndex.current!], next[target]] = [next[target], next[dragIndex.current!]];
+          return next;
+        });
+      }
+    }
+    dragIndex.current  = null;
+    dragStart.current  = null;
+    isDragging.current = false;
+  }
+
+  function handlePointerCancel() {
+    removeGhost();
+    setDragOverIndex(null);
+    dragIndex.current  = null;
+    dragStart.current  = null;
+    isDragging.current = false;
+  }
+
+  // ── Game actions ─────────────────────────────────────────────────────────
   function handleCheck() {
-    const correct = items.filter((item) => connections[item.id] === item.match).length;
+    const correct = fixedItems.filter((item, i) => answers[i] === item.match).length;
     setCorrectCount(correct);
     setPhase("checked");
     if (correct === items.length) markComplete(challengeId, correct, items.length);
   }
 
   function handleReset() {
-    setConnections({});
-    setPairColors({});
-    setSelectedItemId(null);
+    setAnswers(shuffle(items.map((i) => i.match)));
     setPhase("playing");
     setCorrectCount(0);
   }
-
-  const allConnected = items.every((item) => connections[item.id] !== undefined);
-  const usedAnswers  = new Set(Object.values(connections));
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-slate-500">{dict.connectionsInstruction}</p>
 
-      {/* ── Lightbox ────────────────────────────────────────────────── */}
+      {/* ── Lightbox ──────────────────────────────────────────────────── */}
       {lightbox && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
@@ -138,166 +190,91 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
         >
           <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightbox.url}
-              alt={lightbox.alt}
-              className="w-full max-h-[80vh] object-contain rounded-xl shadow-2xl"
-            />
-            {lightbox.alt && (
-              <p className="text-center text-white/90 text-sm mt-3 font-medium">{lightbox.alt}</p>
-            )}
+            <img src={lightbox.url} alt={lightbox.alt} className="w-full max-h-[80vh] object-contain rounded-xl shadow-2xl" />
+            {lightbox.alt && <p className="text-center text-white/90 text-sm mt-3 font-medium">{lightbox.alt}</p>}
             <button
               onClick={() => setLightbox(null)}
               className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white text-slate-800 text-lg font-bold flex items-center justify-center shadow-lg hover:bg-slate-100"
-              aria-label="Close"
-            >
-              ×
-            </button>
+            >×</button>
           </div>
         </div>
       )}
 
-      {/* ── Playing / Checked view ──────────────────────────────────── */}
+      {/* ── Column headers ────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-4">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colLeft}</p>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colRight}</p>
+      </div>
+
+      {/* ── Playing / Checked rows ────────────────────────────────────── */}
       {phase !== "revealed" && (
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 md:gap-8">
+        <div className="space-y-2">
+          {fixedItems.map((item, i) => {
+            const answer    = answers[i];
+            const isCorrect = phase === "checked" && answer === item.match;
+            const isWrong   = phase === "checked" && answer !== item.match;
+            const isDragTarget = dragOverIndex === i;
+            const resolvedImg  = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
 
-          {/* Left column */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{colLeft}</p>
-            {shuffledItems.map((item) => {
-              const isSelected  = selectedItemId === item.id;
-              const colorIdx    = pairColors[item.id];
-              const isPaired    = colorIdx !== undefined;
-              const color       = isPaired ? PAIR_COLORS[colorIdx] : null;
-              const isCorrect   = phase === "checked" && connections[item.id] === item.match;
-              const isWrong     = phase === "checked" && isPaired && !isCorrect;
-
-              let borderCls = "border-slate-200 bg-white hover:border-slate-300";
-              if (isSelected)  borderCls = "border-amber-400 bg-amber-50 ring-2 ring-amber-300";
-              else if (isCorrect) borderCls = "border-emerald-400 bg-emerald-50";
-              else if (isWrong)   borderCls = "border-red-400 bg-red-50";
-              else if (color)     borderCls = color.card;
-
-              const resolvedImg = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
-
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleItemClick(item.id)}
-                  className={`flex items-center gap-1.5 sm:gap-2.5 border-2 rounded-xl p-1.5 sm:p-2.5 cursor-pointer transition-all select-none ${borderCls}`}
-                >
-                  {/* Color dot */}
-                  <div className="flex-shrink-0 w-2.5 sm:w-3 flex items-center justify-center">
-                    {isCorrect && <span className="text-emerald-500 text-xs sm:text-base leading-none">✓</span>}
-                    {isWrong   && <span className="text-red-500 text-xs sm:text-base leading-none">✗</span>}
-                    {!isCorrect && !isWrong && color && (
-                      <span className={`block w-2 h-2 sm:w-3 sm:h-3 rounded-full ${color.dot}`} />
-                    )}
-                  </div>
-
+            return (
+              <div
+                key={item.id}
+                className={`grid grid-cols-2 gap-2 sm:gap-4 rounded-xl transition-all ${isDragTarget ? "scale-[1.01]" : ""}`}
+              >
+                {/* Left: fixed item */}
+                <div className="flex items-center gap-1.5 sm:gap-2.5 border-2 border-slate-200 bg-white rounded-xl p-1.5 sm:p-2.5">
                   {resolvedImg && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={resolvedImg}
                       alt={item.name}
-                      onClick={(e) => { e.stopPropagation(); setLightbox({ url: resolvedImg, alt: item.name }); }}
+                      onClick={() => setLightbox({ url: resolvedImg, alt: item.name })}
                       className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0 cursor-zoom-in hover:opacity-90 hover:ring-2 hover:ring-amber-400 transition-all"
-                      title="Click to enlarge"
                     />
                   )}
+                  <p className="text-xs sm:text-sm font-medium text-slate-800 leading-tight">{item.name}</p>
+                </div>
+
+                {/* Right: draggable answer */}
+                <div
+                  data-answer-row={i}
+                  onPointerDown={(e) => handlePointerDown(e, i)}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerCancel}
+                  className={`
+                    flex items-center gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 transition-all select-none
+                    ${phase === "playing" ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
+                    ${isDragTarget && phase === "playing"
+                      ? "border-amber-400 bg-amber-50 scale-[1.02] shadow-md"
+                      : isCorrect
+                        ? "border-emerald-400 bg-emerald-50"
+                        : isWrong
+                          ? "border-red-300 bg-red-50"
+                          : "border-slate-200 bg-white hover:border-amber-200"
+                    }
+                  `}
+                >
+                  {/* Drag handle — only during play */}
+                  {phase === "playing" && (
+                    <span className="text-slate-300 flex-shrink-0 text-base leading-none select-none">⠿</span>
+                  )}
+                  {/* Result icon */}
+                  {isCorrect && <span className="text-emerald-500 flex-shrink-0 text-base">✓</span>}
+                  {isWrong   && <span className="text-red-400 flex-shrink-0 text-base">✗</span>}
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-800 text-xs sm:text-sm leading-tight">{item.name}</p>
-                    {isPaired && phase === "playing" && color && (
-                      <p className={`text-[10px] sm:text-xs mt-0.5 truncate font-medium ${color.text}`}>
-                        → {connections[item.id]}
+                    <p className="text-xs sm:text-sm font-medium leading-tight truncate
+                      ${isCorrect ? 'text-emerald-700' : isWrong ? 'text-red-600' : 'text-slate-700'}">
+                      {answer}
+                    </p>
+                    {/* Show correct answer below wrong guess */}
+                    {isWrong && (
+                      <p className="text-[10px] sm:text-xs text-emerald-700 font-medium mt-0.5 truncate">
+                        → {item.match}
                       </p>
                     )}
-                    {isCorrect && (
-                      <p className="text-[10px] sm:text-xs text-emerald-600 font-semibold mt-0.5 truncate">✓ {connections[item.id]}</p>
-                    )}
-                    {isWrong && (
-                      <div>
-                        <p className="text-[10px] sm:text-xs text-red-500 line-through mt-0.5 truncate">{connections[item.id]}</p>
-                        <p className="text-[10px] sm:text-xs text-emerald-700 font-medium truncate">{item.match}</p>
-                      </div>
-                    )}
                   </div>
-
-                  {isSelected && (
-                    <span className="hidden sm:inline text-amber-500 text-xs font-bold flex-shrink-0 whitespace-nowrap">◀ select</span>
-                  )}
-                  {isSelected && (
-                    <span className="sm:hidden text-amber-500 text-xs flex-shrink-0">◀</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Right column */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{colRight}</p>
-            {shuffledAnswers.map((answer) => {
-              const isUsed = usedAnswers.has(answer);
-              const connectedEntry = Object.entries(connections).find(([, v]) => v === answer);
-              const connectedItemId = connectedEntry ? Number(connectedEntry[0]) : null;
-              const colorIdx = connectedItemId !== null ? pairColors[connectedItemId] : undefined;
-              const color    = colorIdx !== undefined ? PAIR_COLORS[colorIdx] : null;
-              const connectedItem    = connectedItemId !== null ? items.find((i) => i.id === connectedItemId) : null;
-              const isCorrectAnswer  = phase === "checked" && connectedItem?.match === answer;
-              const isWrongAnswer    = phase === "checked" && isUsed && !isCorrectAnswer;
-              const isHighlightable  = selectedItemId !== null && !isUsed && phase === "playing";
-
-              let cls = "border-slate-200 bg-white text-slate-700";
-              if (isHighlightable)      cls = "border-amber-300 bg-amber-50 text-slate-800 hover:border-amber-500 hover:bg-amber-100";
-              else if (isCorrectAnswer) cls = "border-emerald-400 bg-emerald-50 text-emerald-700";
-              else if (isWrongAnswer)   cls = "border-red-300 bg-red-50 text-red-600";
-              else if (color)           cls = `${color.card} ${color.text}`;
-
-              return (
-                <div
-                  key={answer}
-                  onClick={() => isHighlightable ? handleAnswerClick(answer) : undefined}
-                  className={`flex items-center gap-1.5 sm:gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all select-none ${cls} ${isHighlightable ? "cursor-pointer" : "cursor-default"}`}
-                >
-                  <div className="flex-shrink-0 w-2.5 sm:w-3">
-                    {isCorrectAnswer && <span className="text-emerald-500 text-xs sm:text-base leading-none">✓</span>}
-                    {isWrongAnswer   && <span className="text-red-500 text-xs sm:text-base leading-none">✗</span>}
-                    {!isCorrectAnswer && !isWrongAnswer && color && (
-                      <span className={`block w-2 h-2 sm:w-3 sm:h-3 rounded-full ${color.dot}`} />
-                    )}
-                  </div>
-                  <span className="flex-1 leading-tight">{answer}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Revealed view ─────────────────────────────────────────── */}
-      {phase === "revealed" && (
-        <div className="space-y-3">
-          {items.map((item) => {
-            const resolvedImg = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
-            return (
-              <div key={item.id} className="flex items-start gap-4 border border-emerald-200 bg-emerald-50 rounded-xl p-4">
-                {resolvedImg && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={resolvedImg}
-                    alt={item.name}
-                    onClick={() => setLightbox({ url: resolvedImg, alt: item.name })}
-                    className="w-16 h-16 object-cover rounded-lg flex-shrink-0 cursor-zoom-in hover:opacity-90 hover:ring-2 hover:ring-emerald-400 transition-all"
-                  />
-                )}
-                <div>
-                  <p className="font-semibold text-slate-800">{item.name}</p>
-                  <p className="text-sm text-emerald-700 font-medium">→ {item.match}</p>
-                  {item.description && (
-                    <p className="text-xs text-slate-500 mt-1">{item.description}</p>
-                  )}
                 </div>
               </div>
             );
@@ -305,23 +282,42 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
         </div>
       )}
 
-      {/* ── Action bar ────────────────────────────────────────────── */}
+      {/* ── Revealed view ─────────────────────────────────────────────── */}
+      {phase === "revealed" && (
+        <div className="space-y-2">
+          {items.map((item) => {
+            const resolvedImg = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
+            return (
+              <div key={item.id} className="flex items-start gap-3 border border-emerald-200 bg-emerald-50 rounded-xl p-3">
+                {resolvedImg && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={resolvedImg}
+                    alt={item.name}
+                    onClick={() => setLightbox({ url: resolvedImg, alt: item.name })}
+                    className="w-14 h-14 object-cover rounded-lg flex-shrink-0 cursor-zoom-in hover:opacity-90 transition-all"
+                  />
+                )}
+                <div>
+                  <p className="font-semibold text-slate-800 text-sm">{item.name}</p>
+                  <p className="text-sm text-emerald-700 font-medium">→ {item.match}</p>
+                  {item.description && <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Action bar ────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
         {phase === "playing" && (
-          <>
-            <button
-              onClick={handleCheck}
-              disabled={!allConnected}
-              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded-xl text-sm font-semibold transition-colors"
-            >
-              {dict.connectionsCheckButton}
-            </button>
-            {Object.keys(connections).length > 0 && (
-              <span className="text-xs text-slate-400">
-                {Object.keys(connections).length}/{items.length} paired
-              </span>
-            )}
-          </>
+          <button
+            onClick={handleCheck}
+            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors"
+          >
+            {dict.connectionsCheckButton}
+          </button>
         )}
 
         {phase === "checked" && (

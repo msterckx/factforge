@@ -237,7 +237,7 @@ export const en: Dictionary = {
     gameTypePuzzle: "Puzzle",
     gameTypeQuiz: "Quiz",
     gameTypeConnections: "Connections",
-    connectionsInstruction: "Match each item on the left to its correct answer on the right",
+    connectionsInstruction: "Drag the answers on the right to match each item on the left",
     connectionsCheckButton: "Check My Connections",
     connectionsResults: "Results",
     connectionsCorrect: "Correct!",
