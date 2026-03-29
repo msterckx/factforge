@@ -98,7 +98,7 @@ export const nl: Dictionary = {
     gameTypePuzzle: "Puzzel",
     gameTypeQuiz: "Quiz",
     gameTypeConnections: "Verbindingen",
-    connectionsInstruction: "Koppel elk item links aan het juiste antwoord rechts",
+    connectionsInstruction: "Sleep de antwoorden rechts om ze te koppelen aan de items links",
     connectionsCheckButton: "Controleer mijn verbindingen",
     connectionsResults: "Resultaten",
     connectionsCorrect: "Goed!",
