@@ -216,13 +216,20 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
           [newAnswers[src], newAnswers[target]] = [newAnswers[target], newAnswers[src]];
           setAnswers(newAnswers);
 
-          // Check correctness for both positions that changed
           const targetCorrect = newAnswers[target] === fixedItems[target]?.match;
           const srcCorrect    = newAnswers[src]    === fixedItems[src]?.match;
 
           const newLocked = new Set(lockedPositions);
           if (targetCorrect) newLocked.add(target);
           if (srcCorrect)    newLocked.add(src);
+          // Scan all positions: auto-lock any that are correct. This handles the
+          // last-item edge case where the final answer is already in its correct
+          // row and the user has no valid drag target to confirm it.
+          for (let j = 0; j < fixedItems.length; j++) {
+            if (!newLocked.has(j) && newAnswers[j] === fixedItems[j]?.match) {
+              newLocked.add(j);
+            }
+          }
           if (newLocked.size !== lockedPositions.size) setLockedPositions(newLocked);
 
           if (targetCorrect) {
@@ -371,14 +378,12 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
             return (
               <div
                 key={item.id}
-                className={`flex transition-all duration-200 ${isLocked ? "gap-1.5" : "gap-6 sm:gap-8"}`}
+                className="flex gap-6 sm:gap-8"
               >
-                {/* Left: question card — slides right on hover, snaps back on wrong drop */}
+                {/* Left: question card — slides right on hover; stays there when locked; snaps back on wrong */}
                 <div
-                  // When snapping back the CSS animation controls transform; otherwise a CSS
-                  // transition slides the card right on hover and smoothly back on hover-out.
                   style={isSnappingBack ? undefined : {
-                    transform: isDragTarget ? "translateX(10px)" : "translateX(0)",
+                    transform: (isDragTarget || isLocked) ? "translateX(10px)" : "translateX(0)",
                     transition: "transform 0.15s ease-out",
                   }}
                   className={[
@@ -399,10 +404,11 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
                   <p className="text-xs sm:text-sm font-medium text-slate-800 leading-tight">{item.name}</p>
                 </div>
 
-                {/* Right: answer card */}
+                {/* Right: answer card — slides left to meet question card when locked */}
                 <div
                   ref={(el) => { answerRefs.current[i] = el; }}
                   onPointerDown={(e) => handlePointerDown(e, i)}
+                  style={isLocked ? { transform: "translateX(-10px)", transition: "transform 0.2s ease-out" } : undefined}
                   className={[
                     "relative flex flex-1 items-center gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 select-none touch-none overflow-hidden transition-colors",
                     isLocked     ? "border-emerald-400 bg-emerald-50 cursor-default"
