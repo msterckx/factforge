@@ -60,7 +60,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   const [lightbox,         setLightbox]           = useState<{ url: string; alt: string } | null>(null);
   const [wrongFlashIndex,   setWrongFlashIndex]   = useState<number | null>(null);
   const [correctFlashIndex, setCorrectFlashIndex] = useState<number | null>(null);
-  const [questionFlash,     setQuestionFlash]     = useState<{ index: number; type: "correct" | "wrong" } | null>(null);
+  const [questionSnapBack,  setQuestionSnapBack]  = useState<number | null>(null);
 
   // Derived
   const correctCount = lockedPositions.size;
@@ -227,8 +227,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
           if (targetCorrect) {
             setCorrectFlashIndex(target);
-            setQuestionFlash({ index: target, type: "correct" });
-            setTimeout(() => { setCorrectFlashIndex(null); setQuestionFlash(null); }, 850);
+            setTimeout(() => setCorrectFlashIndex(null), 850);
           } else {
             // Wrong placement: deduct a life
             const newLives = lives - 1;
@@ -236,8 +235,8 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
             setWrongAttempts((w) => w + 1);
             if (newLives <= 0) setGameOver(true);
             setWrongFlashIndex(target);
-            setQuestionFlash({ index: target, type: "wrong" });
-            setTimeout(() => { setWrongFlashIndex(null); setQuestionFlash(null); }, 700);
+            setQuestionSnapBack(target);
+            setTimeout(() => { setWrongFlashIndex(null); setQuestionSnapBack(null); }, 600);
           }
         }
       }
@@ -263,7 +262,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     setRevealed(false);
     setWrongFlashIndex(null);
     setCorrectFlashIndex(null);
-    setQuestionFlash(null);
+    setQuestionSnapBack(null);
     removeGhost();
     dragIndex.current  = null;
     isDragging.current = false;
@@ -274,25 +273,16 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   return (
     <div className="space-y-4">
       <style>{`
-        /* ── Question card: pops forward on correct drop, then settles ── */
-        @keyframes questionPopCorrect {
-          0%   { transform: translateY(0) scale(1); box-shadow: none; }
-          35%  { transform: translateY(-6px) scale(1.05); box-shadow: 0 12px 28px rgba(74,222,128,0.4); }
-          100% { transform: translateY(0) scale(1); box-shadow: none; }
+        /* ── Question card snaps back after a wrong drop ─────────────── */
+        @keyframes questionSnapBack {
+          0%   { transform: translateX(10px); }
+          45%  { transform: translateX(-3px); }
+          72%  { transform: translateX(1px); }
+          100% { transform: translateX(0); }
         }
-        .question-pop-correct { animation: questionPopCorrect 0.55s ease-out forwards; }
+        .question-snap-back { animation: questionSnapBack 0.38s ease-out forwards; }
 
-        /* ── Question card: pops forward then bounces back on wrong drop ─ */
-        @keyframes questionBounceBack {
-          0%   { transform: translateY(0) scale(1) rotate(0deg); }
-          25%  { transform: translateY(-6px) scale(1.05) rotate(0deg); }
-          55%  { transform: translateY(2px) scale(0.97) rotate(-2deg); }
-          78%  { transform: translateY(-1px) scale(1) rotate(0.8deg); }
-          100% { transform: translateY(0) scale(1) rotate(0deg); }
-        }
-        .question-pop-wrong { animation: questionBounceBack 0.65s ease-out forwards; }
-
-        /* ── Answer card: glow ring on correct drop ───────────────────── */
+        /* ── Answer card: glow ring + shimmer on correct drop ─────────── */
         @keyframes caesarGlow {
           0%   { box-shadow: 0 0 0 2px #4ade80, 0 0 8px 1px #4ade8088; }
           50%  { box-shadow: 0 0 0 2px #86efac, 0 0 16px 4px #4ade80bb; }
@@ -375,22 +365,26 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
             const isDragTarget   = dragOverIndex === i && gameActive && !isLocked;
             const isWrongFlash   = wrongFlashIndex === i;
             const isCorrectFlash = correctFlashIndex === i;
-            const qFlash         = questionFlash?.index === i ? questionFlash.type : null;
+            const isSnappingBack = questionSnapBack === i;
             const resolvedImg    = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
 
             return (
               <div
                 key={item.id}
-                // Locked rows snap close; unlocked rows stay clearly separated
                 className={`flex transition-all duration-200 ${isLocked ? "gap-1.5" : "gap-6 sm:gap-8"}`}
               >
-                {/* Left: question card — animates on every drop attempt */}
+                {/* Left: question card — slides right on hover, snaps back on wrong drop */}
                 <div
+                  // When snapping back the CSS animation controls transform; otherwise a CSS
+                  // transition slides the card right on hover and smoothly back on hover-out.
+                  style={isSnappingBack ? undefined : {
+                    transform: isDragTarget ? "translateX(10px)" : "translateX(0)",
+                    transition: "transform 0.15s ease-out",
+                  }}
                   className={[
                     "flex flex-1 items-center gap-1.5 sm:gap-2.5 border-2 rounded-xl p-1.5 sm:p-2.5 transition-colors",
                     isLocked ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white",
-                    qFlash === "correct" ? "question-pop-correct" : "",
-                    qFlash === "wrong"   ? "question-pop-wrong"   : "",
+                    isSnappingBack ? "question-snap-back" : "",
                   ].join(" ")}
                 >
                   {resolvedImg && (
