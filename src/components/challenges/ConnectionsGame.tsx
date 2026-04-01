@@ -5,6 +5,7 @@ import type { Dictionary } from "@/i18n/en";
 import type { ConnectionItem } from "@/types/connections";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 import { resolveImageUrl } from "@/lib/imageUrl";
+import { trackChallengeStart, trackChallengeComplete, trackChallengeFail } from "@/lib/gtag";
 
 interface Props {
   items: ConnectionItem[];
@@ -14,7 +15,7 @@ interface Props {
   rightLabel?: string;
 }
 
-type Phase = "playing" | "checked" | "revealed";
+const STARTING_LIVES = 5;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -25,6 +26,22 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function Lives({ current, max }: { current: number; max: number }) {
+  return (
+    <div className="flex items-center gap-0.5 sm:gap-1">
+      {Array.from({ length: max }, (_, i) => (
+        <span
+          key={i}
+          className={`text-sm sm:text-base transition-all duration-300 ${i < current ? "text-red-500" : "text-slate-200"}`}
+          style={i >= current ? { filter: "grayscale(1)" } : undefined}
+        >
+          ♥
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function ConnectionsGame({ items, dict, challengeId, leftLabel, rightLabel }: Props) {
   const { markComplete } = useCompletedChallenges();
 
@@ -32,19 +49,37 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   const colRight = rightLabel || "Answers";
 
   // Initialise unshuffled so SSR and hydration match, then shuffle on client mount
-  const [fixedItems, setFixedItems] = useState<ConnectionItem[]>(items);
-  const [answers,    setAnswers]    = useState<string[]>(items.map((i) => i.match));
-  const [phase,      setPhase]      = useState<Phase>("playing");
-  const [correctCount, setCorrectCount] = useState(0);
-  const [lightbox, setLightbox]    = useState<{ url: string; alt: string } | null>(null);
+  const [fixedItems,       setFixedItems]       = useState<ConnectionItem[]>(items);
+  const [answers,          setAnswers]           = useState<string[]>(items.map((i) => i.match));
+  const [lockedPositions,  setLockedPositions]   = useState<Set<number>>(new Set());
+  const [lives,            setLives]             = useState(STARTING_LIVES);
+  const [wrongAttempts,    setWrongAttempts]      = useState(0);
+  const [gameOver,         setGameOver]           = useState(false);
+  const [scoreSubmitted,   setScoreSubmitted]     = useState(false);
+  const [revealed,         setRevealed]           = useState(false);
+  const [lightbox,         setLightbox]           = useState<{ url: string; alt: string } | null>(null);
+  const [wrongFlashIndex,  setWrongFlashIndex]    = useState<number | null>(null);
+  const [correctFlashIndex, setCorrectFlashIndex] = useState<number | null>(null);
+
+  // Derived
+  const correctCount = lockedPositions.size;
+  const allCorrect   = correctCount === items.length;
+  const maxScore     = items.length * 10;
+  const currentScore = Math.max(0, correctCount * 10 - wrongAttempts * 2);
 
   // Re-shuffle on mount (client-only) and whenever items change
   useEffect(() => {
     setFixedItems(shuffle([...items]));
     setAnswers(shuffle(items.map((i) => i.match)));
-    setPhase("playing");
-    setCorrectCount(0);
+    setLockedPositions(new Set());
+    setLives(STARTING_LIVES);
+    setWrongAttempts(0);
+    setGameOver(false);
+    setScoreSubmitted(false);
+    setRevealed(false);
   }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { trackChallengeStart(challengeId); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!lightbox) return;
@@ -52,6 +87,25 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [lightbox]);
+
+  // Score submission
+  useEffect(() => {
+    if ((allCorrect || gameOver) && !scoreSubmitted) {
+      setScoreSubmitted(true);
+      if (allCorrect) {
+        markComplete(challengeId, currentScore, maxScore);
+        trackChallengeComplete(challengeId, currentScore, maxScore);
+      } else {
+        trackChallengeFail(challengeId);
+      }
+      fetch("/api/challenges/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeId, score: currentScore, maxScore }),
+      }).catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allCorrect, gameOver]);
 
   // ── Drag state ────────────────────────────────────────────────────────────
   const dragIndex   = useRef<number | null>(null);
@@ -61,7 +115,6 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   const answerRefs  = useRef<(HTMLDivElement | null)[]>([]);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Use bounding rects so we never rely on elementFromPoint or pointer-capture limits
   function getTargetIndex(clientY: number): number | null {
     let closest: number | null = null;
     let minDist = Infinity;
@@ -116,9 +169,11 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     if (ghostRef.current) { document.body.removeChild(ghostRef.current); ghostRef.current = null; }
   }
 
-  // ── Pointer down — attach window listeners so capture / element-hit don't matter
+  // ── Pointer down — attach window listeners ────────────────────────────────
+  // State values (answers, fixedItems, lockedPositions, lives) are captured via closure.
+  // This is safe because no state changes occur mid-drag; onMove only updates dragOverIndex.
   function handlePointerDown(e: React.PointerEvent, index: number) {
-    if (phase !== "playing") return;
+    if (gameOver || allCorrect || lockedPositions.has(index)) return;
     e.preventDefault();
 
     const startX = e.clientX;
@@ -134,9 +189,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
       if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 6) {
         isDragging.current = true;
-        // answers state is captured at drag start; read via ref closure
         const idx = dragIndex.current;
-        // We need the answer at drag time — read from latest state via the ref trick below
         createGhost(answerRefs.current[idx]?.querySelector("[data-answer-text]")?.textContent ?? "", ev.clientX, ev.clientY);
       }
 
@@ -155,12 +208,34 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
         removeGhost();
         setDragOverIndex(null);
         const src = dragIndex.current;
-        if (target !== null && src !== null && target !== src) {
-          setAnswers((prev) => {
-            const next = [...prev];
-            [next[src], next[target]] = [next[target], next[src]];
-            return next;
-          });
+
+        // Only allow drop onto unlocked, different positions
+        if (target !== null && src !== null && target !== src && !lockedPositions.has(target)) {
+          const newAnswers = [...answers];
+          [newAnswers[src], newAnswers[target]] = [newAnswers[target], newAnswers[src]];
+          setAnswers(newAnswers);
+
+          // Check correctness for both positions that changed
+          const targetCorrect = newAnswers[target] === fixedItems[target]?.match;
+          const srcCorrect    = newAnswers[src]    === fixedItems[src]?.match;
+
+          const newLocked = new Set(lockedPositions);
+          if (targetCorrect) newLocked.add(target);
+          if (srcCorrect)    newLocked.add(src);
+          if (newLocked.size !== lockedPositions.size) setLockedPositions(newLocked);
+
+          if (targetCorrect) {
+            setCorrectFlashIndex(target);
+            setTimeout(() => setCorrectFlashIndex(null), 700);
+          } else {
+            // Wrong placement: deduct a life
+            const newLives = lives - 1;
+            setLives(newLives);
+            setWrongAttempts((w) => w + 1);
+            if (newLives <= 0) setGameOver(true);
+            setWrongFlashIndex(target);
+            setTimeout(() => setWrongFlashIndex(null), 600);
+          }
         }
       }
 
@@ -173,23 +248,43 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     window.addEventListener("pointerup",   onUp);
   }
 
-  // ── Game actions ──────────────────────────────────────────────────────────
-  function handleCheck() {
-    const correct = fixedItems.filter((item, i) => answers[i] === item.match).length;
-    setCorrectCount(correct);
-    setPhase("checked");
-    if (correct === items.length) markComplete(challengeId, correct, items.length);
-  }
-
+  // ── Reset ─────────────────────────────────────────────────────────────────
   function handleReset() {
     setFixedItems(shuffle([...items]));
     setAnswers(shuffle(items.map((i) => i.match)));
-    setPhase("playing");
-    setCorrectCount(0);
+    setLockedPositions(new Set());
+    setLives(STARTING_LIVES);
+    setWrongAttempts(0);
+    setGameOver(false);
+    setScoreSubmitted(false);
+    setRevealed(false);
+    setWrongFlashIndex(null);
+    setCorrectFlashIndex(null);
+    removeGhost();
+    dragIndex.current  = null;
+    isDragging.current = false;
   }
+
+  const gameActive = !allCorrect && !gameOver;
 
   return (
     <div className="space-y-4">
+      <style>{`
+        @keyframes connectionsWrongFlash {
+          0%   { background-color: #fef2f2; border-color: #f87171; transform: translateX(0); }
+          25%  { transform: translateX(-4px); }
+          75%  { transform: translateX(4px); }
+          100% { background-color: transparent; border-color: inherit; transform: translateX(0); }
+        }
+        .conn-wrong { animation: connectionsWrongFlash 0.55s ease-out forwards; }
+        @keyframes connectionsCorrectPop {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        .conn-correct { animation: connectionsCorrectPop 0.35s ease-out forwards; }
+      `}</style>
+
       <p className="text-sm text-slate-500">{dict.connectionsInstruction}</p>
 
       {/* ── Lightbox ──────────────────────────────────────────────────── */}
@@ -204,26 +299,47 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
         </div>
       )}
 
-      {/* ── Column headers ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-4">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colLeft}</p>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colRight}</p>
+      {/* ── Status bar ────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between min-h-[28px]">
+        <div className="flex items-center gap-3">
+          {allCorrect ? (
+            <p className="text-sm font-semibold text-emerald-700">
+              {dict.connectionsScore.replace("{correct}", String(correctCount)).replace("{total}", String(items.length))} 🎉
+            </p>
+          ) : gameOver ? (
+            <p className="text-sm font-semibold text-red-600">Game Over</p>
+          ) : (
+            <p className="text-sm text-slate-500">
+              <span className="font-semibold text-amber-700">{correctCount}/{items.length}</span> correct
+            </p>
+          )}
+        </div>
+        {gameActive && <Lives current={lives} max={STARTING_LIVES} />}
       </div>
 
-      {/* ── Playing / Checked rows ────────────────────────────────────── */}
-      {phase !== "revealed" && (
+      {/* ── Column headers ────────────────────────────────────────────── */}
+      {!revealed && (
+        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colLeft}</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colRight}</p>
+        </div>
+      )}
+
+      {/* ── Playing rows ──────────────────────────────────────────────── */}
+      {!revealed && (
         <div className="space-y-2">
           {fixedItems.map((item, i) => {
             const answer       = answers[i];
-            const isCorrect    = phase === "checked" && answer === item.match;
-            const isWrong      = phase === "checked" && answer !== item.match;
-            const isDragTarget = dragOverIndex === i && phase === "playing";
+            const isLocked     = lockedPositions.has(i);
+            const isDragTarget = dragOverIndex === i && gameActive && !isLocked;
+            const isWrongFlash = wrongFlashIndex === i;
+            const isCorrectFlash = correctFlashIndex === i;
             const resolvedImg  = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
 
             return (
               <div key={item.id} className="grid grid-cols-2 gap-2 sm:gap-4">
                 {/* Left: fixed item */}
-                <div className="flex items-center gap-1.5 sm:gap-2.5 border-2 border-slate-200 bg-white rounded-xl p-1.5 sm:p-2.5">
+                <div className={`flex items-center gap-1.5 sm:gap-2.5 border-2 rounded-xl p-1.5 sm:p-2.5 transition-colors ${isLocked ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"}`}>
                   {resolvedImg && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -240,30 +356,29 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
                 <div
                   ref={(el) => { answerRefs.current[i] = el; }}
                   onPointerDown={(e) => handlePointerDown(e, i)}
-                  className={`flex items-center gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 transition-colors select-none touch-none
-                    ${phase === "playing" ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
-                    ${isDragTarget    ? "border-amber-400 bg-amber-50"
-                    : isCorrect       ? "border-emerald-400 bg-emerald-50"
-                    : isWrong         ? "border-red-300 bg-red-50"
-                    :                   "border-slate-200 bg-white hover:border-amber-200"}`}
+                  className={[
+                    "flex items-center gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 transition-colors select-none touch-none",
+                    isLocked        ? "border-emerald-400 bg-emerald-50 cursor-default"
+                    : gameActive    ? "cursor-grab active:cursor-grabbing"
+                    :                 "cursor-default",
+                    isWrongFlash    ? "conn-wrong"
+                    : isCorrectFlash ? "conn-correct border-emerald-400 bg-emerald-50"
+                    : isDragTarget  ? "border-amber-400 bg-amber-50"
+                    : isLocked      ? ""
+                    :                 "border-slate-200 bg-white hover:border-amber-200",
+                  ].join(" ")}
                 >
-                  {phase === "playing" && (
+                  {gameActive && !isLocked && (
                     <span className="text-slate-300 flex-shrink-0 leading-none select-none">⠿</span>
                   )}
-                  {isCorrect && <span className="text-emerald-500 flex-shrink-0">✓</span>}
-                  {isWrong   && <span className="text-red-400 flex-shrink-0">✗</span>}
+                  {isLocked && <span className="text-emerald-500 flex-shrink-0">✓</span>}
 
-                  <div className="flex-1 min-w-0">
-                    <p
-                      data-answer-text
-                      className={`text-xs sm:text-sm font-medium leading-tight truncate ${isCorrect ? "text-emerald-700" : isWrong ? "text-red-600" : "text-slate-700"}`}
-                    >
-                      {answer}
-                    </p>
-                    {isWrong && (
-                      <p className="text-[10px] sm:text-xs text-emerald-700 font-medium mt-0.5 truncate">→ {item.match}</p>
-                    )}
-                  </div>
+                  <p
+                    data-answer-text
+                    className={`flex-1 min-w-0 text-xs sm:text-sm font-medium leading-tight truncate ${isLocked ? "text-emerald-700" : "text-slate-700"}`}
+                  >
+                    {answer}
+                  </p>
                 </div>
               </div>
             );
@@ -272,7 +387,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
       )}
 
       {/* ── Revealed view ─────────────────────────────────────────────── */}
-      {phase === "revealed" && (
+      {revealed && (
         <div className="space-y-2">
           {items.map((item) => {
             const resolvedImg = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
@@ -295,27 +410,26 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
       {/* ── Action bar ────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
-        {phase === "playing" && (
-          <button onClick={handleCheck} className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold transition-colors">
-            {dict.connectionsCheckButton}
-          </button>
-        )}
-
-        {phase === "checked" && (
+        {!gameActive && !revealed && (
           <>
             <div className="flex items-center gap-2">
-              <span className={`text-lg font-bold ${correctCount === items.length ? "text-emerald-600" : "text-slate-700"}`}>
-                {dict.connectionsScore.replace("{correct}", String(correctCount)).replace("{total}", String(items.length))}
+              <span className={`text-base font-bold ${allCorrect ? "text-emerald-600" : "text-slate-700"}`}>
+                Score: {currentScore}/{maxScore}
               </span>
-              {correctCount === items.length && <span className="text-xl">🎉</span>}
             </div>
-            <button onClick={() => setPhase("revealed")} className="px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">{dict.connectionsReveal}</button>
-            <button onClick={handleReset} className="px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">{dict.connectionsPlayAgain}</button>
+            <button onClick={() => setRevealed(true)} className="px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">
+              {dict.connectionsReveal}
+            </button>
+            <button onClick={handleReset} className="px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">
+              {dict.connectionsPlayAgain}
+            </button>
           </>
         )}
 
-        {phase === "revealed" && (
-          <button onClick={handleReset} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition-colors">{dict.connectionsPlayAgain}</button>
+        {revealed && (
+          <button onClick={handleReset} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition-colors">
+            {dict.connectionsPlayAgain}
+          </button>
         )}
       </div>
     </div>
