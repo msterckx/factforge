@@ -270,19 +270,40 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   return (
     <div className="space-y-4">
       <style>{`
-        @keyframes connectionsWrongFlash {
+        @keyframes caesarPop {
+          0%   { transform: scale(1); }
+          35%  { transform: scale(1.04); }
+          100% { transform: scale(1); }
+        }
+        @keyframes caesarGlow {
+          0%   { box-shadow: 0 0 0 2px #4ade80, 0 0 8px 1px #4ade8088; }
+          50%  { box-shadow: 0 0 0 2px #86efac, 0 0 16px 4px #4ade80bb; }
+          100% { box-shadow: 0 0 0 2px #4ade80, 0 0 6px 1px #4ade8033; }
+        }
+        @keyframes caesarShine {
+          0%   { left: -80%; }
+          100% { left: 130%; }
+        }
+        .conn-correct {
+          animation: caesarPop 0.35s ease-out, caesarGlow 1.4s ease-in-out 0.35s 1 forwards;
+          outline: 2px solid #4ade80;
+        }
+        .conn-correct-shine::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);
+          animation: caesarShine 0.9s ease-in-out 0.35s 1 forwards;
+          pointer-events: none;
+          border-radius: inherit;
+        }
+        @keyframes wrongFlash {
           0%   { background-color: #fef2f2; border-color: #f87171; transform: translateX(0); }
           25%  { transform: translateX(-4px); }
           75%  { transform: translateX(4px); }
           100% { background-color: transparent; border-color: inherit; transform: translateX(0); }
         }
-        .conn-wrong { animation: connectionsWrongFlash 0.55s ease-out forwards; }
-        @keyframes connectionsCorrectPop {
-          0%   { transform: scale(1); }
-          40%  { transform: scale(1.05); }
-          100% { transform: scale(1); }
-        }
-        .conn-correct { animation: connectionsCorrectPop 0.35s ease-out forwards; }
+        .conn-wrong { animation: wrongFlash 0.55s ease-out forwards; }
       `}</style>
 
       <p className="text-sm text-slate-500">{dict.connectionsInstruction}</p>
@@ -319,9 +340,9 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
       {/* ── Column headers ────────────────────────────────────────────── */}
       {!revealed && (
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colLeft}</p>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{colRight}</p>
+        <div className="flex gap-6 sm:gap-8">
+          <p className="flex-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{colLeft}</p>
+          <p className="flex-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{colRight}</p>
         </div>
       )}
 
@@ -329,17 +350,54 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
       {!revealed && (
         <div className="space-y-2">
           {fixedItems.map((item, i) => {
-            const answer       = answers[i];
-            const isLocked     = lockedPositions.has(i);
-            const isDragTarget = dragOverIndex === i && gameActive && !isLocked;
-            const isWrongFlash = wrongFlashIndex === i;
+            const answer         = answers[i];
+            const isLocked       = lockedPositions.has(i);
+            const isDragTarget   = dragOverIndex === i && gameActive && !isLocked;
+            const isWrongFlash   = wrongFlashIndex === i;
             const isCorrectFlash = correctFlashIndex === i;
-            const resolvedImg  = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
+            const resolvedImg    = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
 
+            // ── Locked: seamless connected pair ───────────────────────
+            if (isLocked) {
+              return (
+                <div
+                  key={item.id}
+                  className={`relative flex overflow-hidden rounded-xl border-2 border-emerald-400 bg-emerald-50 ${isCorrectFlash ? "conn-correct conn-correct-shine" : ""}`}
+                >
+                  {/* Left half */}
+                  <div className="flex flex-1 items-center gap-1.5 sm:gap-2.5 p-1.5 sm:p-2.5">
+                    {resolvedImg && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={resolvedImg}
+                        alt={item.name}
+                        onClick={() => setLightbox({ url: resolvedImg, alt: item.name })}
+                        className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0 cursor-zoom-in hover:opacity-90 hover:ring-2 hover:ring-amber-400 transition-all"
+                      />
+                    )}
+                    <p className="text-xs sm:text-sm font-medium text-slate-800 leading-tight">{item.name}</p>
+                  </div>
+                  {/* Divider */}
+                  <div className="w-px self-stretch bg-emerald-200" />
+                  {/* Right half — keep ref for drag-target detection */}
+                  <div
+                    ref={(el) => { answerRefs.current[i] = el; }}
+                    className="flex flex-1 items-center gap-2 px-2 sm:px-3 py-2 sm:py-2.5"
+                  >
+                    <span className="text-emerald-500 flex-shrink-0">✓</span>
+                    <p data-answer-text className="flex-1 min-w-0 text-xs sm:text-sm font-medium leading-tight truncate text-emerald-700">
+                      {answer}
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+
+            // ── Unlocked: two separate cards with a clear gap ─────────
             return (
-              <div key={item.id} className="grid grid-cols-2 gap-2 sm:gap-4">
+              <div key={item.id} className="flex gap-6 sm:gap-8">
                 {/* Left: fixed item */}
-                <div className={`flex items-center gap-1.5 sm:gap-2.5 border-2 rounded-xl p-1.5 sm:p-2.5 transition-colors ${isLocked ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                <div className="flex flex-1 items-center gap-1.5 sm:gap-2.5 border-2 border-slate-200 bg-white rounded-xl p-1.5 sm:p-2.5">
                   {resolvedImg && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -357,26 +415,15 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
                   ref={(el) => { answerRefs.current[i] = el; }}
                   onPointerDown={(e) => handlePointerDown(e, i)}
                   className={[
-                    "flex items-center gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 transition-colors select-none touch-none",
-                    isLocked        ? "border-emerald-400 bg-emerald-50 cursor-default"
-                    : gameActive    ? "cursor-grab active:cursor-grabbing"
-                    :                 "cursor-default",
-                    isWrongFlash    ? "conn-wrong"
-                    : isCorrectFlash ? "conn-correct border-emerald-400 bg-emerald-50"
-                    : isDragTarget  ? "border-amber-400 bg-amber-50"
-                    : isLocked      ? ""
-                    :                 "border-slate-200 bg-white hover:border-amber-200",
+                    "flex flex-1 items-center gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 select-none touch-none",
+                    gameActive ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+                    isWrongFlash  ? "conn-wrong"
+                    : isDragTarget ? "border-amber-400 bg-amber-50"
+                    :                "border-slate-200 bg-white hover:border-amber-200",
                   ].join(" ")}
                 >
-                  {gameActive && !isLocked && (
-                    <span className="text-slate-300 flex-shrink-0 leading-none select-none">⠿</span>
-                  )}
-                  {isLocked && <span className="text-emerald-500 flex-shrink-0">✓</span>}
-
-                  <p
-                    data-answer-text
-                    className={`flex-1 min-w-0 text-xs sm:text-sm font-medium leading-tight truncate ${isLocked ? "text-emerald-700" : "text-slate-700"}`}
-                  >
+                  {gameActive && <span className="text-slate-300 flex-shrink-0 leading-none select-none">⠿</span>}
+                  <p data-answer-text className="flex-1 min-w-0 text-xs sm:text-sm font-medium leading-tight truncate text-slate-700">
                     {answer}
                   </p>
                 </div>
