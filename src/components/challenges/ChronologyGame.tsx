@@ -504,7 +504,7 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
                   {placedCount + 1}
                 </div>
                 <div className="aspect-square w-full flex items-center justify-center p-2">
-                  <p className="text-center text-[10px] sm:text-[11px] font-medium text-amber-800 leading-snug">
+                  <p className="text-center text-sm sm:text-base font-semibold text-amber-800 leading-snug">
                     {activeItem.milestone || "?"}
                   </p>
                 </div>
