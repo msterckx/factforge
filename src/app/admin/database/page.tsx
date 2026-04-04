@@ -3,65 +3,92 @@ export const dynamic = "force-dynamic";
 import { getRawDb } from "@/db/raw";
 import Link from "next/link";
 import DatabaseActions from "@/components/DatabaseActions";
+import DatabaseTableClient from "@/components/DatabaseTableClient";
 
 const PAGE_SIZE = 50;
 
+// Tables that support category/subcategory filtering and inline editing
+const EDITABLE_TABLES = ["questions", "question_translations"];
+
 interface Props {
-  searchParams: Promise<{ table?: string; page?: string }>;
+  searchParams: Promise<{
+    table?:       string;
+    page?:        string;
+    category?:    string;
+    subcategory?: string;
+  }>;
 }
 
 export default async function DatabasePage({ searchParams }: Props) {
-  const { table: selectedTable, page: pageParam } = await searchParams;
+  const { table: selectedTable, page: pageParam, category, subcategory } = await searchParams;
   const db = getRawDb();
 
-  // Get all user tables (exclude drizzle internal)
+  // All user tables (exclude drizzle internals)
   const tables = (
     db
-      .prepare(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE '__drizzle%' ORDER BY name`
-      )
+      .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE '__drizzle%' ORDER BY name`)
       .all() as { name: string }[]
   ).map((r) => r.name);
 
-  const activeTable = selectedTable && tables.includes(selectedTable) ? selectedTable : tables[0];
+  const activeTable  = selectedTable && tables.includes(selectedTable) ? selectedTable : tables[0];
+  const currentPage  = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const offset       = (currentPage - 1) * PAGE_SIZE;
+  const filterCatId  = category    ? Number(category)    : null;
+  const filterSubId  = subcategory ? Number(subcategory) : null;
+  const canEdit      = EDITABLE_TABLES.includes(activeTable ?? "");
 
-  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
-  const offset = (currentPage - 1) * PAGE_SIZE;
-
-  let columns: string[] = [];
-  let rows: Record<string, unknown>[] = [];
-  let totalRows = 0;
+  let columns:      string[]                                    = [];
+  let rows:         Record<string, unknown>[]                   = [];
+  let totalRows     = 0;
+  let categories:   { id: number; name: string }[]             = [];
+  let subcategories: { id: number; name: string; categoryId: number }[] = [];
 
   if (activeTable) {
-    // Get column names via PRAGMA
-    const colInfo = db.prepare(`PRAGMA table_info("${activeTable}")`).all() as {
-      name: string;
-    }[];
+    const colInfo = db.prepare(`PRAGMA table_info("${activeTable}")`).all() as { name: string }[];
     columns = colInfo.map((c) => c.name);
 
-    totalRows = (
-      db.prepare(`SELECT COUNT(*) as cnt FROM "${activeTable}"`).get() as { cnt: number }
-    ).cnt;
+    // Fetch category/subcategory lists for filterable tables
+    if (canEdit) {
+      categories    = db.prepare(`SELECT id, name FROM categories ORDER BY name`).all() as typeof categories;
+      subcategories = db
+        .prepare(`SELECT id, name, category_id AS categoryId FROM subcategories ORDER BY name`)
+        .all() as typeof subcategories;
+    }
 
-    rows = db
-      .prepare(`SELECT * FROM "${activeTable}" LIMIT ${PAGE_SIZE} OFFSET ${offset}`)
-      .all() as Record<string, unknown>[];
+    if (activeTable === "questions") {
+      const where  = buildWhere({ catId: filterCatId, subId: filterSubId });
+      totalRows    = (db.prepare(`SELECT COUNT(*) AS cnt FROM questions${where.sql}`).get(...where.params) as { cnt: number }).cnt;
+      rows         = db.prepare(`SELECT * FROM questions${where.sql} LIMIT ${PAGE_SIZE} OFFSET ${offset}`).all(...where.params) as typeof rows;
+
+    } else if (activeTable === "question_translations") {
+      // Join with questions so we can filter by category/subcategory
+      const where  = buildWhere({ catId: filterCatId, subId: filterSubId, prefix: "q." });
+      const join   = `FROM question_translations qt JOIN questions q ON q.id = qt.question_id${where.sql}`;
+      totalRows    = (db.prepare(`SELECT COUNT(*) AS cnt ${join}`).get(...where.params) as { cnt: number }).cnt;
+      rows         = db.prepare(`SELECT qt.* ${join} LIMIT ${PAGE_SIZE} OFFSET ${offset}`).all(...where.params) as typeof rows;
+
+    } else {
+      totalRows = (db.prepare(`SELECT COUNT(*) AS cnt FROM "${activeTable}"`).get() as { cnt: number }).cnt;
+      rows      = db.prepare(`SELECT * FROM "${activeTable}" LIMIT ${PAGE_SIZE} OFFSET ${offset}`).all() as typeof rows;
+    }
   }
 
   const totalPages = Math.ceil(totalRows / PAGE_SIZE);
-
-  function pageHref(p: number) {
-    return `/admin/database?table=${activeTable}&page=${p}`;
-  }
 
   return (
     <div>
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-3">
           <h1 className="text-2xl font-bold text-slate-800">Database Browser</h1>
-          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">
-            Read-only
-          </span>
+          {canEdit ? (
+            <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+              Editable
+            </span>
+          ) : (
+            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              Read-only
+            </span>
+          )}
         </div>
         <DatabaseActions />
       </div>
@@ -84,108 +111,40 @@ export default async function DatabasePage({ searchParams }: Props) {
       </div>
 
       {activeTable && (
-        <>
-          {/* Meta row */}
-          <div className="flex items-center justify-between mb-3 text-sm text-slate-500">
-            <span>
-              <span className="font-medium text-slate-700">{totalRows.toLocaleString()}</span> rows
-              {totalPages > 1 && (
-                <> &mdash; page <span className="font-medium text-slate-700">{currentPage}</span> of {totalPages}</>
-              )}
-            </span>
-            <span>{columns.length} columns</span>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  {columns.map((col) => (
-                    <th
-                      key={col}
-                      className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-4 py-10 text-center text-slate-400"
-                    >
-                      No rows
-                    </td>
-                  </tr>
-                ) : (
-                  rows.map((row, i) => (
-                    <tr
-                      key={i}
-                      className={`border-b border-slate-100 last:border-0 ${
-                        i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
-                      }`}
-                    >
-                      {columns.map((col) => {
-                        const val = row[col];
-                        const display =
-                          val === null || val === undefined
-                            ? null
-                            : String(val);
-                        return (
-                          <td
-                            key={col}
-                            className="px-4 py-2 text-slate-700 whitespace-nowrap max-w-xs truncate align-top"
-                            title={display ?? ""}
-                          >
-                            {display === null ? (
-                              <span className="text-slate-300 italic">null</span>
-                            ) : (
-                              display
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <Link
-                href={pageHref(currentPage - 1)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg border border-slate-300 transition-colors ${
-                  currentPage === 1
-                    ? "opacity-40 pointer-events-none bg-white text-slate-400"
-                    : "bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                Previous
-              </Link>
-              <span className="text-sm text-slate-500">
-                {currentPage} / {totalPages}
-              </span>
-              <Link
-                href={pageHref(currentPage + 1)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg border border-slate-300 transition-colors ${
-                  currentPage === totalPages
-                    ? "opacity-40 pointer-events-none bg-white text-slate-400"
-                    : "bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                Next
-              </Link>
-            </div>
-          )}
-        </>
+        <DatabaseTableClient
+          key={`${activeTable}-${filterCatId}-${filterSubId}-${currentPage}`}
+          tableName={activeTable}
+          columns={columns}
+          rows={rows}
+          totalRows={totalRows}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          canEdit={canEdit}
+          categories={categories}
+          subcategoriesData={subcategories}
+          filterCategory={filterCatId}
+          filterSubcategory={filterSubId}
+        />
       )}
     </div>
   );
+}
+
+// ── SQL WHERE builder ────────────────────────────────────────────────────────
+function buildWhere(opts: {
+  catId:  number | null;
+  subId:  number | null;
+  prefix?: string;        // e.g. "q." for joined queries
+}): { sql: string; params: number[] } {
+  const { catId, subId, prefix = "" } = opts;
+  const clauses: string[] = [];
+  const params:  number[] = [];
+
+  if (catId) { clauses.push(`${prefix}category_id = ?`);    params.push(catId); }
+  if (subId) { clauses.push(`${prefix}subcategory_id = ?`); params.push(subId); }
+
+  return {
+    sql:    clauses.length ? ` WHERE ${clauses.join(" AND ")}` : "",
+    params,
+  };
 }
