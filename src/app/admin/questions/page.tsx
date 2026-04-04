@@ -42,6 +42,7 @@ export default function AdminQuestionsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [filterCategory, setFilterCategory] = useState<number | null>(null);
+  const [filterSubcategory, setFilterSubcategory] = useState<number | null>(null);
   const [updatingSubcategory, setUpdatingSubcategory] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,10 +56,15 @@ export default function AdminQuestionsPage() {
     loadData();
   }, []);
 
-  // Reset to page 1 when filter changes
+  // Reset subcategory filter when category changes
+  useEffect(() => {
+    setFilterSubcategory(null);
+  }, [filterCategory]);
+
+  // Reset to page 1 when any filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterCategory, searchQuery]);
+  }, [filterCategory, filterSubcategory, searchQuery]);
 
   async function loadData() {
     const [qRes, catRes] = await Promise.all([
@@ -189,15 +195,9 @@ export default function AdminQuestionsPage() {
   }
 
   function handleExportCsv() {
-    const exportRows = filterCategory
-      ? questions.filter((q) => q.categoryId === filterCategory)
-      : questions;
-    const categoryName = filterCategory
-      ? (categories.find((c) => c.id === filterCategory)?.name ?? "questions")
-      : "all-questions";
     const escape = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const header = ["Question", "Answer", "Category", "Subcategory", "Difficulty"];
-    const rows = exportRows.map((q) => [
+    const rows = filtered.map((q) => [
       escape(q.questionText),
       escape(q.answer),
       escape(q.categoryName),
@@ -209,13 +209,17 @@ export default function AdminQuestionsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${categoryName}.csv`;
+    const catName = filterCategory ? (categories.find((c) => c.id === filterCategory)?.name ?? "questions") : null;
+    const subName = filterSubcategory ? (subcategories.find((s) => s.id === filterSubcategory)?.name ?? null) : null;
+    const filename = [catName, subName].filter(Boolean).join("-") || "all-questions";
+    a.download = `${filename}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   const filtered = questions.filter((q) => {
     if (filterCategory && q.categoryId !== filterCategory) return false;
+    if (filterSubcategory && q.subcategoryId !== filterSubcategory) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -254,7 +258,13 @@ export default function AdminQuestionsPage() {
             onClick={handleExportCsv}
             className="px-4 py-2 bg-slate-600 text-white text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors"
           >
-            ↓ Export CSV{filterCategory ? ` (${categories.find((c) => c.id === filterCategory)?.name})` : ""}
+            ↓ Export CSV{(() => {
+              const parts = [
+                filterCategory ? categories.find((c) => c.id === filterCategory)?.name : null,
+                filterSubcategory ? subcategories.find((s) => s.id === filterSubcategory)?.name : null,
+              ].filter(Boolean);
+              return parts.length ? ` (${parts.join(" › ")})` : "";
+            })()}
           </button>
           <Link
             href="/admin/questions/new"
@@ -286,6 +296,20 @@ export default function AdminQuestionsPage() {
             </option>
           ))}
         </select>
+        {filterCategory && (
+          <select
+            value={filterSubcategory || ""}
+            onChange={(e) => setFilterSubcategory(e.target.value ? Number(e.target.value) : null)}
+            className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          >
+            <option value="">All Subcategories</option>
+            {subcategories
+              .filter((s) => s.categoryId === filterCategory)
+              .map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+          </select>
+        )}
         <span className="text-sm text-slate-500">
           {filtered.length} question{filtered.length !== 1 ? "s" : ""}
         </span>
