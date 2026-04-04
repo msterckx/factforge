@@ -122,7 +122,6 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   const [wrongAttempts,        setWrongAttempts]         = useState(0);
   const [gameOver,             setGameOver]              = useState(false);
   const [scoreSubmitted,       setScoreSubmitted]        = useState(false);
-  const [revealed,             setRevealed]              = useState(false);
   const [lightbox,             setLightbox]              = useState<{ url: string; alt: string } | null>(null);
   const [wrongFlashQuestion,   setWrongFlashQuestion]    = useState<number | null>(null);
   const [correctFlashQuestion, setCorrectFlashQuestion]  = useState<number | null>(null);
@@ -142,7 +141,6 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     setWrongAttempts(0);
     setGameOver(false);
     setScoreSubmitted(false);
-    setRevealed(false);
   }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { trackChallengeStart(challengeId); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -308,7 +306,6 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     setWrongAttempts(0);
     setGameOver(false);
     setScoreSubmitted(false);
-    setRevealed(false);
     setWrongFlashQuestion(null);
     setCorrectFlashQuestion(null);
     setGlitterActive(false);
@@ -418,8 +415,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
       </div>
 
       {/* ── Playing area ─────────────────────────────────────────────── */}
-      {!revealed && (
-        <div className="relative">
+      <div className="relative">
           {glitterActive && <GlitterBomb />}
           {gameOver && <GameOverOverlay />}
 
@@ -535,49 +531,19 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
           </div>
         </div>
-      )}
-
-      {/* ── Revealed view ─────────────────────────────────────────────── */}
-      {revealed && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {items.map((item) => {
-            const resolvedImg = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
-            return (
-              <div key={item.id} className="flex items-start gap-3 border border-emerald-200 bg-emerald-50 rounded-xl p-3">
-                {resolvedImg && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={resolvedImg} alt={item.name} onClick={() => setLightbox({ url: resolvedImg, alt: item.name })} className="w-14 h-14 object-cover rounded-lg flex-shrink-0 cursor-zoom-in hover:opacity-90 transition-all" />
-                )}
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm truncate">{item.name}</p>
-                  <p className="text-sm text-emerald-700 font-medium truncate">→ {item.match}</p>
-                  {item.description && <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{item.description}</p>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      </div>
 
       {/* ── Action bar ────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
-        {!gameActive && !revealed && (
+        {!gameActive && (
           <>
             <span className={`text-base font-bold ${allCorrect ? "text-emerald-600" : "text-slate-700"}`}>
               Score: {currentScore}/{maxScore}
             </span>
-            <button onClick={() => setRevealed(true)} className="px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">
-              {dict.connectionsReveal}
-            </button>
-            <button onClick={handleReset} className="px-4 py-2 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors">
+            <button onClick={handleReset} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition-colors">
               {dict.connectionsPlayAgain}
             </button>
           </>
-        )}
-        {revealed && (
-          <button onClick={handleReset} className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium transition-colors">
-            {dict.connectionsPlayAgain}
-          </button>
         )}
       </div>
     </div>
