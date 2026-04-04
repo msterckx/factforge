@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import type { Dictionary } from "@/i18n/en";
 import type { ConnectionItem } from "@/types/connections";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
@@ -24,6 +24,89 @@ function shuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+// ── Glitter bomb overlay ──────────────────────────────────────────────────────
+const GLITTER_COLORS = ["#fbbf24", "#4ade80", "#f59e0b", "#86efac", "#fde68a", "#a3e635", "#34d399", "#fcd34d"];
+const GLITTER_SHAPES = ["50%", "0%", "2px"];
+
+interface Particle {
+  id: number; x: number; y: number; size: number; color: string;
+  radius: string; delay: number; duration: number; dx: number; dy: number; rot: number;
+}
+
+function GlitterBomb() {
+  const particles = useMemo<Particle[]>(() =>
+    Array.from({ length: 80 }, (_, id) => ({
+      id,
+      x: 10 + Math.random() * 80,
+      y: 20 + Math.random() * 60,
+      size: 4 + Math.random() * 7,
+      color: GLITTER_COLORS[Math.floor(Math.random() * GLITTER_COLORS.length)],
+      radius: GLITTER_SHAPES[Math.floor(Math.random() * GLITTER_SHAPES.length)],
+      delay: Math.random() * 0.4,
+      duration: 0.9 + Math.random() * 0.8,
+      dx: (Math.random() - 0.5) * 260,
+      dy: -(80 + Math.random() * 180),
+      rot: (Math.random() - 0.5) * 720,
+    }))
+  , []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl z-30">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          style={{
+            position: "absolute",
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            borderRadius: p.radius,
+            animationName: "glitterFly",
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+            animationTimingFunction: "ease-out",
+            animationFillMode: "forwards",
+            ["--dx" as string]: `${p.dx}px`,
+            ["--dy" as string]: `${p.dy}px`,
+            ["--rot" as string]: `${p.rot}deg`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Game Over overlay ─────────────────────────────────────────────────────────
+function GameOverOverlay() {
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col items-center justify-center rounded-xl overflow-hidden">
+      <div
+        className="absolute inset-0 bg-red-950/75"
+        style={{ animation: "gameOverFade 0.35s ease-out forwards" }}
+      />
+      <div className="relative z-10 text-center px-4">
+        <p className="text-5xl mb-3" style={{ animation: "gameOverBounce 0.5s ease-out forwards" }}>
+          💔
+        </p>
+        <p
+          className="text-white font-bold text-xl tracking-wide"
+          style={{ animation: "gameOverSlideUp 0.35s ease-out 0.1s both" }}
+        >
+          Game Over
+        </p>
+        <p
+          className="text-red-300 text-sm mt-1"
+          style={{ animation: "gameOverSlideUp 0.35s ease-out 0.2s both" }}
+        >
+          No lives remaining
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function Lives({ current, max }: { current: number; max: number }) {
@@ -62,6 +145,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   const [wrongFlashQuestion,  setWrongFlashQuestion]   = useState<number | null>(null);
   const [correctFlashQuestion,setCorrectFlashQuestion] = useState<number | null>(null);
   const [dragOverQuestion,    setDragOverQuestion]     = useState<number | null>(null);
+  const [glitterActive,       setGlitterActive]        = useState(false);
 
   // Derived
   const correctCount = Object.keys(lockedMap).length;
@@ -108,6 +192,14 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allCorrect, gameOver]);
+
+  useEffect(() => {
+    if (allCorrect) {
+      setGlitterActive(true);
+      const t = setTimeout(() => setGlitterActive(false), 2200);
+      return () => clearTimeout(t);
+    }
+  }, [allCorrect]);
 
   // ── Drag state ────────────────────────────────────────────────────────────
   const dragAnswer   = useRef<string | null>(null);
@@ -251,6 +343,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     setRevealed(false);
     setWrongFlashQuestion(null);
     setCorrectFlashQuestion(null);
+    setGlitterActive(false);
     removeGhost();
     dragAnswer.current  = null;
     isDragging.current  = false;
@@ -293,6 +386,25 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
           100% { background-color: transparent; border-color: inherit; transform: translateX(0); }
         }
         .conn-wrong { animation: wrongFlash 0.55s ease-out forwards; }
+
+        /* ── Glitter + game-over overlay animations ───────────────────── */
+        @keyframes glitterFly {
+          0%   { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+          100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+        }
+        @keyframes gameOverFade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes gameOverBounce {
+          0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+          60%  { transform: scale(1.25) rotate(8deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes gameOverSlideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       <p className="text-sm text-slate-500">{dict.connectionsInstruction}</p>
@@ -329,6 +441,9 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
       {/* ── Playing area: questions left, answer bank right ───────────── */}
       {!revealed && (
+        <div className="relative">
+          {glitterActive && <GlitterBomb />}
+          {gameOver && <GameOverOverlay />}
         <div className="flex gap-3 sm:gap-4 items-start">
 
           {/* Left: question rows — also act as drop targets */}
@@ -407,6 +522,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
             </div>
           </div>
 
+        </div>
         </div>
       )}
 
