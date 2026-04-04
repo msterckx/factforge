@@ -193,14 +193,6 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allCorrect, gameOver]);
 
-  useEffect(() => {
-    if (allCorrect) {
-      setGlitterActive(true);
-      const t = setTimeout(() => setGlitterActive(false), 2200);
-      return () => clearTimeout(t);
-    }
-  }, [allCorrect]);
-
   // ── Drag state ────────────────────────────────────────────────────────────
   const dragAnswer   = useRef<string | null>(null);
   const dragStart    = useRef<{ x: number; y: number } | null>(null);
@@ -306,10 +298,16 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
           const correct = fixedItems[questionIdx]?.match === ans;
 
           if (correct) {
-            setLockedMap((prev) => ({ ...prev, [questionIdx]: ans }));
+            const newLockedMap = { ...lockedMap, [questionIdx]: ans };
+            setLockedMap(newLockedMap);
             setAnswerBank((bank) => bank.filter((a) => a !== ans));
             setCorrectFlashQuestion(questionIdx);
             setTimeout(() => setCorrectFlashQuestion(null), 850);
+            // Fire glitter directly when the last answer is placed
+            if (Object.keys(newLockedMap).length === fixedItems.length) {
+              setGlitterActive(true);
+              setTimeout(() => setGlitterActive(false), 2200);
+            }
           } else {
             // Wrong: flash the question row; answer stays in bank
             const newLives = lives - 1;
