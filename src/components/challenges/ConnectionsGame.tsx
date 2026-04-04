@@ -319,6 +319,10 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
   const gameActive = !allCorrect && !gameOver;
 
+  // Square grid: rows === cols. Pad with empty slots if n isn't a perfect square.
+  const cols       = Math.ceil(Math.sqrt(fixedItems.length || 1));
+  const emptySlots = cols * cols - fixedItems.length;
+
   return (
     <div className="space-y-4">
       <style>{`
@@ -421,8 +425,11 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
           <div className="flex gap-3 sm:gap-4 items-start">
 
-            {/* Question tile grid — multi-column, square tiles */}
-            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+            {/* Question tile grid — cols × cols square arrangement */}
+            <div
+              className="flex-1 grid gap-1.5"
+              style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+            >
               {fixedItems.map((item, i) => {
                 const isLocked      = i in lockedMap;
                 const matchedAnswer = lockedMap[i];
@@ -493,6 +500,10 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
                   </div>
                 );
               })}
+              {/* Pad to cols×cols so the grid is always perfectly square */}
+              {Array.from({ length: emptySlots }, (_, k) => (
+                <div key={`pad-${k}`} style={{ aspectRatio: "1" }} className="rounded-xl border-2 border-dashed border-slate-100 bg-slate-50/30" />
+              ))}
             </div>
 
             {/* Answer bank — vertical chip list */}
