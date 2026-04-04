@@ -531,7 +531,6 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
 
           </div>
         </div>
-      </div>
 
       {/* ── Action bar ────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
