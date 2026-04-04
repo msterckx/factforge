@@ -48,22 +48,23 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   const colLeft  = leftLabel  || "Items";
   const colRight = rightLabel || "Answers";
 
-  // Initialise unshuffled so SSR and hydration match, then shuffle on client mount
-  const [fixedItems,       setFixedItems]       = useState<ConnectionItem[]>(items);
-  const [answers,          setAnswers]           = useState<string[]>(items.map((i) => i.match));
-  const [lockedPositions,  setLockedPositions]   = useState<Set<number>>(new Set());
-  const [lives,            setLives]             = useState(STARTING_LIVES);
-  const [wrongAttempts,    setWrongAttempts]      = useState(0);
-  const [gameOver,         setGameOver]           = useState(false);
-  const [scoreSubmitted,   setScoreSubmitted]     = useState(false);
-  const [revealed,         setRevealed]           = useState(false);
-  const [lightbox,         setLightbox]           = useState<{ url: string; alt: string } | null>(null);
-  const [wrongFlashIndex,   setWrongFlashIndex]   = useState<number | null>(null);
-  const [correctFlashIndex, setCorrectFlashIndex] = useState<number | null>(null);
-  const [questionSnapBack,  setQuestionSnapBack]  = useState<number | null>(null);
+  // Questions are fixed; answers live in a bank until matched
+  const [fixedItems,          setFixedItems]          = useState<ConnectionItem[]>(items);
+  const [answerBank,          setAnswerBank]           = useState<string[]>(items.map((i) => i.match));
+  // lockedMap: questionIndex → matched answer string
+  const [lockedMap,           setLockedMap]            = useState<Record<number, string>>({});
+  const [lives,               setLives]                = useState(STARTING_LIVES);
+  const [wrongAttempts,       setWrongAttempts]        = useState(0);
+  const [gameOver,            setGameOver]             = useState(false);
+  const [scoreSubmitted,      setScoreSubmitted]       = useState(false);
+  const [revealed,            setRevealed]             = useState(false);
+  const [lightbox,            setLightbox]             = useState<{ url: string; alt: string } | null>(null);
+  const [wrongFlashQuestion,  setWrongFlashQuestion]   = useState<number | null>(null);
+  const [correctFlashQuestion,setCorrectFlashQuestion] = useState<number | null>(null);
+  const [dragOverQuestion,    setDragOverQuestion]     = useState<number | null>(null);
 
   // Derived
-  const correctCount = lockedPositions.size;
+  const correctCount = Object.keys(lockedMap).length;
   const allCorrect   = correctCount === items.length;
   const maxScore     = items.length * 10;
   const currentScore = Math.max(0, correctCount * 10 - wrongAttempts * 2);
@@ -71,8 +72,8 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   // Re-shuffle on mount (client-only) and whenever items change
   useEffect(() => {
     setFixedItems(shuffle([...items]));
-    setAnswers(shuffle(items.map((i) => i.match)));
-    setLockedPositions(new Set());
+    setAnswerBank(shuffle(items.map((i) => i.match)));
+    setLockedMap({});
     setLives(STARTING_LIVES);
     setWrongAttempts(0);
     setGameOver(false);
@@ -109,20 +110,19 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   }, [allCorrect, gameOver]);
 
   // ── Drag state ────────────────────────────────────────────────────────────
-  const dragIndex   = useRef<number | null>(null);
-  const dragStart   = useRef<{ x: number; y: number } | null>(null);
-  const isDragging  = useRef(false);
-  const ghostRef    = useRef<HTMLDivElement | null>(null);
-  const answerRefs  = useRef<(HTMLDivElement | null)[]>([]);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragAnswer   = useRef<string | null>(null);
+  const dragStart    = useRef<{ x: number; y: number } | null>(null);
+  const isDragging   = useRef(false);
+  const ghostRef     = useRef<HTMLDivElement | null>(null);
+  const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  function getTargetIndex(clientY: number): number | null {
+  function getHoveredQuestion(clientY: number): number | null {
     let closest: number | null = null;
     let minDist = Infinity;
-    for (let i = 0; i < answerRefs.current.length; i++) {
-      const el = answerRefs.current[i];
+    for (let i = 0; i < questionRefs.current.length; i++) {
+      const el = questionRefs.current[i];
       if (!el) continue;
-      const rect = el.getBoundingClientRect();
+      const rect   = el.getBoundingClientRect();
       if (clientY >= rect.top && clientY <= rect.bottom) return i;
       const center = (rect.top + rect.bottom) / 2;
       const dist   = Math.abs(clientY - center);
@@ -143,11 +143,11 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
       background:    "#fffbeb",
       border:        "2px solid #f59e0b",
       borderRadius:  "10px",
-      padding:       "5px 14px",
-      fontSize:      "13px",
+      padding:       "4px 12px",
+      fontSize:      "12px",
       fontWeight:    "600",
       color:         "#92400e",
-      maxWidth:      "220px",
+      maxWidth:      "200px",
       overflow:      "hidden",
       textOverflow:  "ellipsis",
       whiteSpace:    "nowrap",
@@ -156,7 +156,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     });
     el.textContent = text;
     document.body.appendChild(el);
-    ghostRef.current = el;
+    ghostRef.current = el as unknown as HTMLDivElement;
   }
 
   function moveGhost(x: number, y: number) {
@@ -170,33 +170,32 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
     if (ghostRef.current) { document.body.removeChild(ghostRef.current); ghostRef.current = null; }
   }
 
-  // ── Pointer down — attach window listeners ────────────────────────────────
-  // State values (answers, fixedItems, lockedPositions, lives) are captured via closure.
-  // This is safe because no state changes occur mid-drag; onMove only updates dragOverIndex.
-  function handlePointerDown(e: React.PointerEvent, index: number) {
-    if (gameOver || allCorrect || lockedPositions.has(index)) return;
+  // ── Pointer down on an answer chip ───────────────────────────────────────
+  // State values captured via closure are safe here: no state changes mid-drag;
+  // only dragOverQuestion is updated during pointermove.
+  function handleAnswerPointerDown(e: React.PointerEvent, answer: string) {
+    if (gameOver || allCorrect) return;
     e.preventDefault();
 
     const startX = e.clientX;
     const startY = e.clientY;
-    dragIndex.current  = index;
-    dragStart.current  = { x: startX, y: startY };
-    isDragging.current = false;
+    dragAnswer.current  = answer;
+    dragStart.current   = { x: startX, y: startY };
+    isDragging.current  = false;
 
     function onMove(ev: PointerEvent) {
-      if (dragIndex.current === null) return;
+      if (!dragAnswer.current) return;
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
 
       if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 6) {
         isDragging.current = true;
-        const idx = dragIndex.current;
-        createGhost(answerRefs.current[idx]?.querySelector("[data-answer-text]")?.textContent ?? "", ev.clientX, ev.clientY);
+        createGhost(dragAnswer.current, ev.clientX, ev.clientY);
       }
 
       if (isDragging.current) {
         moveGhost(ev.clientX, ev.clientY);
-        setDragOverIndex(getTargetIndex(ev.clientY));
+        setDragOverQuestion(getHoveredQuestion(ev.clientY));
       }
     }
 
@@ -205,52 +204,35 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
       window.removeEventListener("pointerup",   onUp);
 
       if (isDragging.current) {
-        const target = getTargetIndex(ev.clientY);
         removeGhost();
-        setDragOverIndex(null);
-        const src = dragIndex.current;
+        setDragOverQuestion(null);
 
-        // Only allow drop onto unlocked, different positions
-        if (target !== null && src !== null && target !== src && !lockedPositions.has(target)) {
-          const newAnswers = [...answers];
-          [newAnswers[src], newAnswers[target]] = [newAnswers[target], newAnswers[src]];
-          setAnswers(newAnswers);
+        const ans         = dragAnswer.current;
+        const questionIdx = getHoveredQuestion(ev.clientY);
 
-          const targetCorrect = newAnswers[target] === fixedItems[target]?.match;
-          const srcCorrect    = newAnswers[src]    === fixedItems[src]?.match;
+        if (ans !== null && questionIdx !== null && !(questionIdx in lockedMap)) {
+          const correct = fixedItems[questionIdx]?.match === ans;
 
-          const newLocked = new Set(lockedPositions);
-          if (targetCorrect) newLocked.add(target);
-          if (srcCorrect)    newLocked.add(src);
-          // Scan all positions: auto-lock any that are correct. This handles the
-          // last-item edge case where the final answer is already in its correct
-          // row and the user has no valid drag target to confirm it.
-          for (let j = 0; j < fixedItems.length; j++) {
-            if (!newLocked.has(j) && newAnswers[j] === fixedItems[j]?.match) {
-              newLocked.add(j);
-            }
-          }
-          if (newLocked.size !== lockedPositions.size) setLockedPositions(newLocked);
-
-          if (targetCorrect) {
-            setCorrectFlashIndex(target);
-            setTimeout(() => setCorrectFlashIndex(null), 850);
+          if (correct) {
+            setLockedMap((prev) => ({ ...prev, [questionIdx]: ans }));
+            setAnswerBank((bank) => bank.filter((a) => a !== ans));
+            setCorrectFlashQuestion(questionIdx);
+            setTimeout(() => setCorrectFlashQuestion(null), 850);
           } else {
-            // Wrong placement: deduct a life
+            // Wrong: flash the question row; answer stays in bank
             const newLives = lives - 1;
             setLives(newLives);
             setWrongAttempts((w) => w + 1);
             if (newLives <= 0) setGameOver(true);
-            setWrongFlashIndex(target);
-            setQuestionSnapBack(target);
-            setTimeout(() => { setWrongFlashIndex(null); setQuestionSnapBack(null); }, 600);
+            setWrongFlashQuestion(questionIdx);
+            setTimeout(() => setWrongFlashQuestion(null), 600);
           }
         }
       }
 
-      dragIndex.current  = null;
-      dragStart.current  = null;
-      isDragging.current = false;
+      dragAnswer.current  = null;
+      dragStart.current   = null;
+      isDragging.current  = false;
     }
 
     window.addEventListener("pointermove", onMove);
@@ -260,19 +242,18 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   // ── Reset ─────────────────────────────────────────────────────────────────
   function handleReset() {
     setFixedItems(shuffle([...items]));
-    setAnswers(shuffle(items.map((i) => i.match)));
-    setLockedPositions(new Set());
+    setAnswerBank(shuffle(items.map((i) => i.match)));
+    setLockedMap({});
     setLives(STARTING_LIVES);
     setWrongAttempts(0);
     setGameOver(false);
     setScoreSubmitted(false);
     setRevealed(false);
-    setWrongFlashIndex(null);
-    setCorrectFlashIndex(null);
-    setQuestionSnapBack(null);
+    setWrongFlashQuestion(null);
+    setCorrectFlashQuestion(null);
     removeGhost();
-    dragIndex.current  = null;
-    isDragging.current = false;
+    dragAnswer.current  = null;
+    isDragging.current  = false;
   }
 
   const gameActive = !allCorrect && !gameOver;
@@ -280,16 +261,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
   return (
     <div className="space-y-4">
       <style>{`
-        /* ── Question card snaps back after a wrong drop ─────────────── */
-        @keyframes questionSnapBack {
-          0%   { transform: translateX(10px); }
-          45%  { transform: translateX(-3px); }
-          72%  { transform: translateX(1px); }
-          100% { transform: translateX(0); }
-        }
-        .question-snap-back { animation: questionSnapBack 0.38s ease-out forwards; }
-
-        /* ── Answer card: glow ring + shimmer on correct drop ─────────── */
+        /* ── Correct: glow ring + shimmer ────────────────────────────── */
         @keyframes caesarGlow {
           0%   { box-shadow: 0 0 0 2px #4ade80, 0 0 8px 1px #4ade8088; }
           50%  { box-shadow: 0 0 0 2px #86efac, 0 0 16px 4px #4ade80bb; }
@@ -313,7 +285,7 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
           border-radius: inherit;
         }
 
-        /* ── Answer card: shake on wrong drop ─────────────────────────── */
+        /* ── Wrong: shake on question row ────────────────────────────── */
         @keyframes wrongFlash {
           0%   { background-color: #fef2f2; border-color: #f87171; transform: translateX(0); }
           25%  { transform: translateX(-4px); }
@@ -355,41 +327,34 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
         {gameActive && <Lives current={lives} max={STARTING_LIVES} />}
       </div>
 
-      {/* ── Column headers ────────────────────────────────────────────── */}
+      {/* ── Playing area: questions left, answer bank right ───────────── */}
       {!revealed && (
-        <div className="flex gap-6 sm:gap-8">
-          <p className="flex-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{colLeft}</p>
-          <p className="flex-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{colRight}</p>
-        </div>
-      )}
+        <div className="flex gap-3 sm:gap-4 items-start">
 
-      {/* ── Playing rows ──────────────────────────────────────────────── */}
-      {!revealed && (
-        <div className="space-y-2">
-          {fixedItems.map((item, i) => {
-            const answer         = answers[i];
-            const isLocked       = lockedPositions.has(i);
-            const isDragTarget   = dragOverIndex === i && gameActive && !isLocked;
-            const isWrongFlash   = wrongFlashIndex === i;
-            const isCorrectFlash = correctFlashIndex === i;
-            const isSnappingBack = questionSnapBack === i;
-            const resolvedImg    = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
+          {/* Left: question rows — also act as drop targets */}
+          <div className="flex-1 space-y-1.5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{colLeft}</p>
+            {fixedItems.map((item, i) => {
+              const isLocked       = i in lockedMap;
+              const matchedAnswer  = lockedMap[i];
+              const isDragTarget   = dragOverQuestion === i && gameActive && !isLocked;
+              const isWrong        = wrongFlashQuestion === i;
+              const isCorrect      = correctFlashQuestion === i;
+              const resolvedImg    = item.imageUrl ? resolveImageUrl(item.imageUrl) : "";
 
-            return (
-              <div
-                key={item.id}
-                className="flex gap-6 sm:gap-8"
-              >
-                {/* Left: question card — slides right on hover; stays there when locked; snaps back on wrong */}
+              return (
                 <div
-                  style={isSnappingBack ? undefined : {
-                    transform: (isDragTarget || isLocked) ? "translateX(10px)" : "translateX(0)",
-                    transition: "transform 0.15s ease-out",
-                  }}
+                  key={item.id}
+                  ref={(el) => { questionRefs.current[i] = el; }}
                   className={[
-                    "flex flex-1 items-center gap-1.5 sm:gap-2.5 border-2 rounded-xl p-1.5 sm:p-2.5 transition-colors",
-                    isLocked ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white",
-                    isSnappingBack ? "question-snap-back" : "",
+                    "relative flex items-center gap-1.5 border-2 rounded-lg p-1.5 overflow-hidden transition-colors",
+                    isLocked
+                      ? "border-emerald-300 bg-emerald-50"
+                      : isDragTarget
+                      ? "border-amber-400 bg-amber-50"
+                      : "border-slate-200 bg-white",
+                    isWrong   ? "conn-wrong"   : "",
+                    isCorrect ? "conn-correct" : "",
                   ].join(" ")}
                 >
                   {resolvedImg && (
@@ -398,43 +363,50 @@ export default function ConnectionsGame({ items, dict, challengeId, leftLabel, r
                       src={resolvedImg}
                       alt={item.name}
                       onClick={() => setLightbox({ url: resolvedImg, alt: item.name })}
-                      className="w-9 h-9 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0 cursor-zoom-in hover:opacity-90 hover:ring-2 hover:ring-amber-400 transition-all"
+                      className="w-7 h-7 sm:w-9 sm:h-9 object-cover rounded flex-shrink-0 cursor-zoom-in hover:opacity-90 hover:ring-2 hover:ring-amber-400 transition-all"
                     />
                   )}
-                  <p className="text-xs sm:text-sm font-medium text-slate-800 leading-tight">{item.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-800 leading-tight truncate">{item.name}</p>
+                    {isLocked && matchedAnswer && (
+                      <p className="text-xs text-emerald-700 font-medium leading-tight truncate mt-0.5">✓ {matchedAnswer}</p>
+                    )}
+                  </div>
+                  {isDragTarget && (
+                    <span className="text-amber-400 text-xs flex-shrink-0">↙</span>
+                  )}
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Right: answer card — slides left to meet question card when locked */}
+          {/* Right: answer bank — chips to drag from */}
+          <div className="w-32 sm:w-40 flex-shrink-0">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{colRight}</p>
+            <div className="flex flex-col gap-1.5">
+              {answerBank.map((answer) => (
                 <div
-                  ref={(el) => { answerRefs.current[i] = el; }}
-                  onPointerDown={(e) => handlePointerDown(e, i)}
-                  style={isLocked ? { transform: "translateX(-10px)", transition: "transform 0.2s ease-out" } : undefined}
+                  key={answer}
+                  onPointerDown={(e) => handleAnswerPointerDown(e, answer)}
                   className={[
-                    "relative flex flex-1 items-center gap-2 border-2 rounded-xl px-2 sm:px-3 py-2 sm:py-2.5 select-none touch-none overflow-hidden transition-colors",
-                    isLocked     ? "border-emerald-400 bg-emerald-50 cursor-default"
-                    : gameActive ? "cursor-grab active:cursor-grabbing"
-                    :              "cursor-default",
-                    isWrongFlash    ? "conn-wrong"
-                    : isCorrectFlash ? "conn-correct"
-                    : isDragTarget  ? "border-amber-400 bg-amber-50"
-                    : isLocked      ? ""
-                    :                 "border-slate-200 bg-white hover:border-amber-200",
+                    "flex items-center gap-1 border-2 rounded-lg px-2 py-1 select-none touch-none transition-colors",
+                    gameActive
+                      ? "border-slate-200 bg-white cursor-grab active:cursor-grabbing hover:border-amber-300 hover:bg-amber-50"
+                      : "border-slate-100 bg-slate-50 cursor-default",
                   ].join(" ")}
                 >
-                  {isLocked
-                    ? <span className="text-emerald-500 flex-shrink-0">✓</span>
-                    : gameActive && <span className="text-slate-300 flex-shrink-0 leading-none select-none">⠿</span>
-                  }
-                  <p
-                    data-answer-text
-                    className={`flex-1 min-w-0 text-xs sm:text-sm font-medium leading-tight truncate ${isLocked ? "text-emerald-700" : "text-slate-700"}`}
-                  >
-                    {answer}
-                  </p>
+                  {gameActive && (
+                    <span className="text-slate-300 flex-shrink-0 text-xs leading-none select-none">⠿</span>
+                  )}
+                  <p className="text-xs font-medium text-slate-700 leading-tight">{answer}</p>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+              {answerBank.length === 0 && gameActive && (
+                <p className="text-xs text-slate-400 italic">All placed!</p>
+              )}
+            </div>
+          </div>
+
         </div>
       )}
 
