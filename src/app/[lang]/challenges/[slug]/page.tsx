@@ -7,6 +7,7 @@ import {
   mapToChronologyItems,
   mapToPuzzleSubjects,
   mapToConnectionItems,
+  getMapRegions,
 } from "@/data/challengeGame";
 import { db } from "@/db";
 import { questions, questionTranslations, subcategories, subcategoryTranslations } from "@/db/schema";
@@ -16,6 +17,7 @@ import MatchingGame from "@/components/challenges/MatchingGame";
 import PuzzleGame from "@/components/challenges/PuzzleGame";
 import QuizChallenge from "@/components/challenges/QuizChallenge";
 import ConnectionsGame from "@/components/challenges/ConnectionsGame";
+import MapChallenge from "@/components/challenges/MapChallenge";
 import type { QuizQuestion } from "@/components/challenges/QuizChallenge";
 
 interface Props {
@@ -95,7 +97,10 @@ export default async function ChallengePage({ params }: Props) {
   }
 
   // ── Chronology / matching / puzzle / connections items ───────────────────
-  const items = game.gameType !== "quiz" ? getChallengeItems(game.id) : [];
+  const items = (game.gameType !== "quiz" && game.gameType !== "map") ? getChallengeItems(game.id) : [];
+
+  // ── Map regions ───────────────────────────────────────────────────────────
+  const mapRegions = game.gameType === "map" ? getMapRegions(game.id) : [];
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -151,6 +156,15 @@ export default async function ChallengePage({ params }: Props) {
           rightLabel={lang === "nl"
             ? (game.connectionsRightLabelNl || game.connectionsRightLabelEn || undefined)
             : (game.connectionsRightLabelEn || undefined)}
+        />
+      )}
+      {game.gameType === "map" && (
+        <MapChallenge
+          regions={mapRegions}
+          game={game}
+          dict={d}
+          challengeId={game.slug}
+          lang={lang}
         />
       )}
       {game.gameType === "quiz" && quizQuestions.length === 0 && (

@@ -49,6 +49,8 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       connectionsLeftLabelNl:  fd.get("connectionsLeftLabelNl")  || null,
       connectionsRightLabelEn: fd.get("connectionsRightLabelEn") || null,
       connectionsRightLabelNl: fd.get("connectionsRightLabelNl") || null,
+      mapSvg:                  fd.get("mapSvg")       || null,
+      mapLabelMode:            fd.get("mapLabelMode") || null,
     };
     const res = await fetch(`/api/admin/challenges/${game.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
@@ -82,6 +84,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
             <option value="puzzle">Puzzle</option>
             <option value="quiz">Quiz</option>
             <option value="connections">Connections</option>
+            <option value="map">Map</option>
           </select>
         </div>
         <div>
@@ -204,6 +207,41 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
               <input name="connectionsRightLabelNl" defaultValue={game.connectionsRightLabelNl ?? ""} placeholder="e.g. Kunstenaars" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Map config */}
+      {gameType === "map" && (
+        <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-emerald-800">Map Settings</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">SVG path <span className="text-slate-400 font-normal">(relative to /public)</span></label>
+              <input
+                name="mapSvg"
+                defaultValue={game.mapSvg ?? "/maps/africa.svg"}
+                placeholder="/maps/africa.svg"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Label mode</label>
+              <select
+                name="mapLabelMode"
+                defaultValue={game.mapLabelMode ?? "country"}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="country">Country names</option>
+                <option value="capital">Capitals</option>
+                <option value="both">Both (country + capital chips)</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-xs text-emerald-700">
+            Regions are managed via <strong>CSV import</strong> at{" "}
+            <code className="bg-emerald-100 px-1 rounded">/api/admin/map-regions/import</code>{" "}
+            (POST with <code className="bg-emerald-100 px-1 rounded">gameId</code> and a CSV file).
+          </p>
         </div>
       )}
 

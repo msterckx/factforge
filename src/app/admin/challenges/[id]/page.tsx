@@ -1,12 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/db";
-import { challengeGames, challengeItems } from "@/db/schema";
+import { challengeGames, challengeItems, mapRegions } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import Link from "next/link";
 import ChallengeEditForm from "./ChallengeEditForm";
 import ItemsManager from "./ItemsManager";
 import QuizQuestionSelector from "./QuizQuestionSelector";
+import MapRegionsManager from "./MapRegionsManager";
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -19,6 +20,9 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
   if (!game) notFound();
 
   const items = db.select().from(challengeItems).where(eq(challengeItems.gameId, game.id)).orderBy(asc(challengeItems.position)).all();
+  const regions = game.gameType === "map"
+    ? db.select().from(mapRegions).where(eq(mapRegions.gameId, game.id)).orderBy(asc(mapRegions.regionKey)).all()
+    : [];
 
   return (
     <div>
@@ -36,16 +40,17 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
         <ChallengeEditForm game={game} />
       </div>
 
-      {game.gameType !== "quiz" && game.gameType !== "matching" && (
+      {game.gameType !== "quiz" && game.gameType !== "map" && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
           <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} />
         </div>
       )}
-      {game.gameType === "matching" && (
+      {game.gameType === "map" && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
-          <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} />
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">Map Regions ({regions.length})</h2>
+          <p className="text-sm text-slate-400 mb-4">Import a CSV to define the clickable map regions and their labels.</p>
+          <MapRegionsManager gameId={game.id} initialRegions={regions} />
         </div>
       )}
       {game.gameType === "quiz" && (

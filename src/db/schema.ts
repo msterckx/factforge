@@ -128,7 +128,7 @@ export const questionTranslations = sqliteTable(
 export const challengeGames = sqliteTable("challenge_games", {
   id:          integer("id").primaryKey({ autoIncrement: true }),
   slug:        text("slug").notNull().unique(),
-  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz", "matching", "connections"] }).notNull(),
+  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz", "matching", "connections", "map"] }).notNull(),
   icon:        text("icon").notNull().default("🎮"),
   category:    text("category").notNull().default("other"),
   titleEn:     text("title_en").notNull(),
@@ -148,7 +148,21 @@ export const challengeGames = sqliteTable("challenge_games", {
   connectionsLeftLabelNl:  text("connections_left_label_nl"),
   connectionsRightLabelEn: text("connections_right_label_en"),
   connectionsRightLabelNl: text("connections_right_label_nl"),
+  // Map-type specific
+  mapSvg:            text("map_svg"),        // path like "/maps/africa.svg"
+  mapLabelMode:      text("map_label_mode"), // "country" | "capital" | "both"
   createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export const mapRegions = sqliteTable("map_regions", {
+  id:         integer("id").primaryKey({ autoIncrement: true }),
+  gameId:     integer("game_id").notNull().references(() => challengeGames.id, { onDelete: "cascade" }),
+  regionKey:  text("region_key").notNull(),  // matches SVG path id, e.g. "NG"
+  labelEn:    text("label_en").notNull(),    // country name in English
+  labelNl:    text("label_nl").notNull(),    // country name in Dutch
+  capitalEn:  text("capital_en"),            // capital city in English
+  capitalNl:  text("capital_nl"),            // capital city in Dutch
+  createdAt:  text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 export const challengeItems = sqliteTable("challenge_items", {
