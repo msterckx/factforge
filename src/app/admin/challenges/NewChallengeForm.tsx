@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { GeneratedChallengeItem } from "@/lib/openai";
 
-type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections";
+type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "map";
 
 interface CategoryOption { id: number; name: string; slug: string; subcategories: { id: number; name: string }[] }
 
@@ -26,6 +26,8 @@ interface FormState {
   connectionsLeftLabelNl: string;
   connectionsRightLabelEn: string;
   connectionsRightLabelNl: string;
+  mapSvg: string;
+  mapLabelMode: string;
 }
 
 const empty: FormState = {
@@ -34,6 +36,7 @@ const empty: FormState = {
   quizCategoryId: null, quizSubcategoryId: null, quizQuestionLimit: null,
   connectionsLeftLabelEn: "", connectionsLeftLabelNl: "",
   connectionsRightLabelEn: "", connectionsRightLabelNl: "",
+  mapSvg: "/maps/africa.svg", mapLabelMode: "country",
 };
 
 export default function NewChallengeForm() {
@@ -91,6 +94,8 @@ export default function NewChallengeForm() {
         connectionsLeftLabelNl:  data.connectionsLeftLabelNl  ?? "",
         connectionsRightLabelEn: data.connectionsRightLabelEn ?? "",
         connectionsRightLabelNl: data.connectionsRightLabelNl ?? "",
+        mapSvg: "/maps/africa.svg",
+        mapLabelMode: "country",
       });
       setItems((data.items ?? []).map((item: GeneratedChallengeItem, i: number) => ({ ...item, position: i + 1 })));
     } catch {
@@ -121,6 +126,8 @@ export default function NewChallengeForm() {
         connectionsLeftLabelNl:  form.connectionsLeftLabelNl  || null,
         connectionsRightLabelEn: form.connectionsRightLabelEn || null,
         connectionsRightLabelNl: form.connectionsRightLabelNl || null,
+        mapSvg:       form.mapSvg       || null,
+        mapLabelMode: form.mapLabelMode || null,
       }),
     });
     if (!gameRes.ok) {
@@ -194,6 +201,7 @@ export default function NewChallengeForm() {
               <option value="puzzle">Puzzle — reassemble portrait images</option>
               <option value="quiz">Quiz — questions from an existing category</option>
               <option value="connections">Connections — match items to their answers</option>
+              <option value="map">Map — drag labels onto SVG map regions</option>
             </select>
           </div>
           <div>
@@ -316,6 +324,39 @@ export default function NewChallengeForm() {
             {field("Right column (EN)", form.connectionsRightLabelEn, (v) => set("connectionsRightLabelEn", v), "e.g. Artists")}
             {field("Right column (NL)", form.connectionsRightLabelNl, (v) => set("connectionsRightLabelNl", v), "e.g. Kunstenaars")}
           </div>
+        </div>
+      )}
+
+      {/* ── Map config ────────────────────────────────────────────── */}
+      {form.gameType === "map" && (
+        <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-emerald-800">Map Settings</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">SVG path <span className="text-slate-400 font-normal">(relative to /public)</span></label>
+              <input
+                value={form.mapSvg}
+                onChange={(e) => set("mapSvg", e.target.value)}
+                placeholder="/maps/africa.svg"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Label mode</label>
+              <select
+                value={form.mapLabelMode}
+                onChange={(e) => set("mapLabelMode", e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="country">Country names</option>
+                <option value="capital">Capitals</option>
+                <option value="both">Both (country + capital chips)</option>
+              </select>
+            </div>
+          </div>
+          <p className="text-xs text-emerald-700">
+            After creating, import region data via the <strong>Map Regions</strong> section on the challenge detail page.
+          </p>
         </div>
       )}
 
