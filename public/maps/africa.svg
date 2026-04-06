@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 720" role="img" aria-label="Map of Africa">
+  <title>Africa</title>
+  <style>
+    path { stroke: #fff; stroke-width: 1.5; fill: #94a3b8; cursor: pointer; transition: fill 0.15s; }
+    path:hover { fill: #64748b; }
+    path.correct { fill: #22c55e; }
+    path.wrong { fill: #ef4444; }
+    path.target { fill: #fbbf24; stroke: #f59e0b; stroke-width: 2.5; }
+  </style>
+
+  <!-- North Africa -->
+  <path id="MA" d="M 34,10 L 145,10 L 145,88 L 102,90 L 34,90 Z"/>          <!-- Morocco -->
+  <path id="EH" d="M 34,90 L 102,90 L 102,145 L 34,145 Z"/>                  <!-- W. Sahara -->
+  <path id="DZ" d="M 136,0 L 221,0 L 255,60 L 255,190 L 136,190 L 136,90 L 145,88 L 145,10 Z"/> <!-- Algeria -->
+  <path id="TN" d="M 221,0 L 255,0 L 255,60 Z"/>                              <!-- Tunisia -->
+  <path id="LY" d="M 255,0 L 366,0 L 366,170 L 255,190 Z"/>                  <!-- Libya -->
+  <path id="EG" d="M 366,0 L 476,40 L 476,150 L 366,170 Z"/>                 <!-- Egypt -->
+
+  <!-- West Africa -->
+  <path id="MR" d="M 9,90 L 136,90 L 136,190 L 9,230 Z"/>                    <!-- Mauritania -->
+  <path id="SN" d="M 9,210 L 51,210 L 51,250 L 9,250 Z"/>                    <!-- Senegal -->
+  <path id="GM" d="M 9,218 L 51,218 L 51,226 L 9,226 Z"/>                    <!-- Gambia (thin strip) -->
+  <path id="GW" d="M 17,250 L 34,250 L 34,260 L 17,260 Z"/>                  <!-- Guinea-Bissau -->
+  <path id="GN" d="M 25,250 L 85,250 L 85,290 L 25,290 Z"/>                  <!-- Guinea -->
+  <path id="SL" d="M 42,270 L 68,270 L 68,300 L 42,300 Z"/>                  <!-- Sierra Leone -->
+  <path id="LR" d="M 59,285 L 93,285 L 93,330 L 59,330 Z"/>                  <!-- Liberia -->
+  <path id="CI" d="M 85,260 L 136,260 L 136,330 L 85,330 Z"/>                <!-- Ivory Coast -->
+  <path id="GH" d="M 127,260 L 162,260 L 162,320 L 127,320 Z"/>              <!-- Ghana -->
+  <path id="TG" d="M 153,260 L 170,260 L 170,310 L 153,310 Z"/>              <!-- Togo -->
+  <path id="BJ" d="M 162,240 L 187,240 L 187,310 L 162,310 Z"/>              <!-- Benin -->
+  <path id="NG" d="M 178,230 L 280,230 L 280,330 L 178,330 Z"/>              <!-- Nigeria -->
+
+  <!-- Sahel / Central-North -->
+  <path id="ML" d="M 102,145 L 196,145 L 196,270 L 102,270 Z"/>              <!-- Mali -->
+  <path id="BF" d="M 111,220 L 178,220 L 178,280 L 111,280 Z"/>              <!-- Burkina Faso -->
+  <path id="NE" d="M 170,130 L 340,130 L 340,250 L 170,250 Z"/>              <!-- Niger -->
+  <path id="TD" d="M 255,130 L 366,130 L 366,290 L 255,290 Z"/>              <!-- Chad -->
+
+  <!-- East Africa - North -->
+  <path id="SD" d="M 340,130 L 476,130 L 476,280 L 340,280 Z"/>              <!-- Sudan -->
+  <path id="SS" d="M 357,240 L 459,240 L 459,340 L 357,340 Z"/>              <!-- South Sudan -->
+  <path id="ER" d="M 467,170 L 518,170 L 518,250 L 467,250 Z"/>              <!-- Eritrea -->
+  <path id="ET" d="M 433,220 L 561,220 L 561,340 L 433,340 Z"/>              <!-- Ethiopia -->
+  <path id="DJ" d="M 510,248 L 527,248 L 527,262 L 510,262 Z"/>              <!-- Djibouti -->
+  <path id="SO" d="M 501,248 L 587,248 L 587,390 L 501,390 Z"/>              <!-- Somalia -->
+
+  <!-- Central Africa -->
+  <path id="CM" d="M 221,240 L 289,240 L 289,350 L 221,350 Z"/>              <!-- Cameroon -->
+  <path id="CF" d="M 272,260 L 382,260 L 382,340 L 272,340 Z"/>              <!-- CAR -->
+  <path id="GA" d="M 221,340 L 272,340 L 272,410 L 221,410 Z"/>              <!-- Gabon -->
+  <path id="CG" d="M 246,330 L 314,330 L 314,420 L 246,420 Z"/>              <!-- Congo -->
+  <path id="CD" d="M 255,320 L 425,320 L 425,510 L 255,510 Z"/>              <!-- DRC -->
+  <path id="GQ" d="M 215,350 L 235,350 L 235,360 L 215,360 Z"/>              <!-- Eq. Guinea -->
+
+  <!-- East Africa -->
+  <path id="UG" d="M 399,320 L 450,320 L 450,390 L 399,390 Z"/>              <!-- Uganda -->
+  <path id="KE" d="M 442,310 L 510,310 L 510,420 L 442,420 Z"/>              <!-- Kenya -->
+  <path id="RW" d="M 399,378 L 416,378 L 416,395 L 399,395 Z"/>              <!-- Rwanda -->
+  <path id="BI" d="M 399,395 L 416,395 L 416,412 L 399,412 Z"/>              <!-- Burundi -->
+  <path id="TZ" d="M 399,390 L 493,390 L 493,490 L 399,490 Z"/>              <!-- Tanzania -->
+  <path id="MW" d="M 433,460 L 459,460 L 459,540 L 433,540 Z"/>              <!-- Malawi -->
+
+  <!-- Southern Africa -->
+  <path id="AO" d="M 255,420 L 365,420 L 365,550 L 255,550 Z"/>              <!-- Angola -->
+  <path id="ZM" d="M 331,450 L 442,450 L 442,560 L 331,560 Z"/>              <!-- Zambia -->
+  <path id="ZW" d="M 365,510 L 442,510 L 442,600 L 365,600 Z"/>              <!-- Zimbabwe -->
+  <path id="MZ" d="M 408,470 L 501,470 L 501,640 L 408,640 Z"/>              <!-- Mozambique -->
+  <path id="BW" d="M 323,550 L 399,550 L 399,640 L 323,640 Z"/>              <!-- Botswana -->
+  <path id="NA" d="M 246,540 L 365,540 L 365,660 L 246,660 Z"/>              <!-- Namibia -->
+  <path id="ZA" d="M 289,590 L 433,590 L 433,720 L 289,720 Z"/>              <!-- South Africa -->
+  <path id="LS" d="M 355,640 L 375,640 L 375,655 L 355,655 Z"/>              <!-- Lesotho -->
+  <path id="SZ" d="M 405,605 L 420,605 L 420,618 L 405,618 Z"/>              <!-- Eswatini -->
+
+  <!-- Island nations -->
+  <path id="MG" d="M 527,470 L 572,470 L 572,630 L 527,630 Z"/>              <!-- Madagascar -->
+  <path id="CV" d="M 10,205 L 22,205 L 22,218 L 10,218 Z"/>                  <!-- Cape Verde (approx) -->
+</svg>

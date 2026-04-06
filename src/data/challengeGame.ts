@@ -1,9 +1,11 @@
 import { db } from "@/db";
-import { challengeGames, challengeItems } from "@/db/schema";
+import { challengeGames, challengeItems, mapRegions } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import type { ChronologyItem } from "@/types/chronology";
 import type { PuzzleSubject } from "@/types/puzzle";
 import type { ConnectionItem } from "@/types/connections";
+
+export type MapRegion = typeof mapRegions.$inferSelect;
 
 export type ChallengeGame = typeof challengeGames.$inferSelect;
 export type ChallengeItem = typeof challengeItems.$inferSelect;
@@ -45,6 +47,26 @@ export function mapToConnectionItems(items: ChallengeItem[], lang: string): Conn
       ? (item.clueNl || item.clueEn) ?? ""
       : item.clueEn ?? "",
     description: lang === "nl" ? item.descriptionNl || item.descriptionEn : item.descriptionEn,
+  }));
+}
+
+export function getMapRegions(gameId: number): MapRegion[] {
+  return db.select().from(mapRegions).where(eq(mapRegions.gameId, gameId)).orderBy(asc(mapRegions.regionKey)).all();
+}
+
+export type MapChip = {
+  regionKey: string;
+  label: string;      // what's printed on the draggable chip
+  answer: string;     // correct regionKey to match
+};
+
+export function mapToMapChips(regions: MapRegion[], lang: string, mode: string): MapChip[] {
+  return regions.map((r) => ({
+    regionKey: r.regionKey,
+    label: mode === "capital"
+      ? (lang === "nl" ? r.capitalNl ?? r.capitalEn ?? r.labelEn : r.capitalEn ?? r.labelEn)
+      : (lang === "nl" ? r.labelNl : r.labelEn),
+    answer: r.regionKey,
   }));
 }
 

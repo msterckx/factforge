@@ -96,6 +96,7 @@ export interface Dictionary {
     gameTypePuzzle: string;
     gameTypeQuiz: string;
     gameTypeConnections: string;
+    gameTypeMap: string;
     connectionsInstruction: string;
     connectionsCheckButton: string;
     connectionsResults: string;
@@ -237,6 +238,7 @@ export const en: Dictionary = {
     gameTypePuzzle: "Puzzle",
     gameTypeQuiz: "Quiz",
     gameTypeConnections: "Connections",
+    gameTypeMap: "Map",
     connectionsInstruction: "Drag the answers on the right to match each item on the left",
     connectionsCheckButton: "Check My Connections",
     connectionsResults: "Results",
