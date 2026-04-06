@@ -397,7 +397,7 @@ function buildSvgInner(
       .replace(/\s+stroke-width="[^"]*"/g, "")
       .replace(/\s+class="[^"]*"/g, "");
 
-    return `<path id="${id}"${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" style="cursor:pointer;transition:fill 0.12s">`;
+    return `<path id="${id}"${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" style="cursor:pointer;transition:fill 0.12s"/>`;
   });
 }
 
