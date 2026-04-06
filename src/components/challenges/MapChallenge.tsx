@@ -382,15 +382,19 @@ function buildSvgInner(
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
 
   return noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
-    let fill = "#94a3b8";
-    let stroke = "#ffffff";
-    let strokeWidth = "1";
+    // Transparent by default — the image underneath shows the map
+    let fill        = "transparent";
+    let stroke      = "transparent";
+    let strokeWidth = "0";
 
-    if (placed[id])          { fill = "#22c55e"; }
-    else if (id === wrongKey) { fill = "#ef4444"; }
-    else if (id === hoverKey) { fill = "#fbbf24"; stroke = "#f59e0b"; strokeWidth = "2.5"; }
+    if (placed[id]) {
+      fill = "rgba(34,197,94,0.45)"; stroke = "#16a34a"; strokeWidth = "1.5";
+    } else if (id === wrongKey) {
+      fill = "rgba(239,68,68,0.45)"; stroke = "#dc2626"; strokeWidth = "1.5";
+    } else if (id === hoverKey) {
+      fill = "rgba(251,191,36,0.40)"; stroke = "#f59e0b"; strokeWidth = "2";
+    }
 
-    // Remove any existing fill / stroke / class attrs so ours win
     const cleaned = rest
       .replace(/\s+fill="[^"]*"/g, "")
       .replace(/\s+stroke="[^"]*"/g, "")

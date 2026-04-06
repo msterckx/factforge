@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 730" role="img" aria-label="Map of Africa">
   <title>Africa</title>
-  <!-- Ocean background -->
-  <rect width="700" height="730" fill="#bfdbfe"/>
+  <!-- Page background -->
+  <rect width="700" height="730" fill="#f8fafc"/>
+  <!-- Realistic map image — SVG paths above are transparent overlays for hit detection -->
+  <image href="/maps/africa-map.jpg" x="0" y="0" width="700" height="730" preserveAspectRatio="xMidYMid meet"/>
 
   <!-- x = (lon + 18) * 10 ,  y = (37 - lat) * 10 -->
 
