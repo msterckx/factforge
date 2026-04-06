@@ -126,6 +126,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
   // SVG inline content
   const [svgContent, setSvgContent]   = useState<string | null>(null);
+  const [svgReady, setSvgReady]       = useState(false);
   const svgRef                        = useRef<SVGSVGElement | null>(null);
   const containerRef                  = useRef<HTMLDivElement>(null);
 
@@ -136,9 +137,10 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     fetch(svgPath)
       .then((r) => r.text())
       .then((text) => {
-        // Strip outer <svg> tag so we can inject it inline, keeping inner content
         const inner = text.replace(/<\/?svg[^>]*>/gi, "").trim();
         setSvgContent(inner);
+        // Wait one frame for dangerouslySetInnerHTML to flush before labels query the DOM
+        requestAnimationFrame(() => setSvgReady(true));
       })
       .catch(console.error);
   }, [svgPath]);
@@ -324,6 +326,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                     label={placed[r.regionKey]}
                     svgRef={svgRef}
                     viewBox={viewBox}
+                    svgReady={svgReady}
                   />
                 );
               })}
@@ -368,43 +371,54 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-/** Inject CSS classes onto SVG paths based on game state */
+/** Apply fill/stroke directly on each path element — no CSS classes needed */
 function buildSvgInner(
   raw: string,
   placed: Record<string, string>,
   wrongKey: string | null,
   hoverKey: string | null,
 ): string {
-  // We modify class attributes on <path id="XX" ...> elements
-  return raw.replace(/<path\s+id="([^"]+)"([^>]*)\/?>/g, (match, id, rest) => {
-    const classes: string[] = [];
-    if (placed[id])     classes.push("correct");
-    else if (id === wrongKey)  classes.push("wrong");
-    else if (id === hoverKey)  classes.push("target");
+  // Strip any <style> block that would leak globally
+  const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
 
-    // Remove existing class attr if any
-    const cleaned = rest.replace(/\s+class="[^"]*"/, "");
-    const classAttr = classes.length ? ` class="${classes.join(" ")}"` : "";
-    return `<path id="${id}"${classAttr}${cleaned}>`;
+  return noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
+    let fill = "#94a3b8";
+    let stroke = "#ffffff";
+    let strokeWidth = "1";
+
+    if (placed[id])          { fill = "#22c55e"; }
+    else if (id === wrongKey) { fill = "#ef4444"; }
+    else if (id === hoverKey) { fill = "#fbbf24"; stroke = "#f59e0b"; strokeWidth = "2.5"; }
+
+    // Remove any existing fill / stroke / class attrs so ours win
+    const cleaned = rest
+      .replace(/\s+fill="[^"]*"/g, "")
+      .replace(/\s+stroke="[^"]*"/g, "")
+      .replace(/\s+stroke-width="[^"]*"/g, "")
+      .replace(/\s+class="[^"]*"/g, "");
+
+    return `<path id="${id}"${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" style="cursor:pointer;transition:fill 0.12s">`;
   });
 }
 
 /** Render a text label centred on the path's bounding box */
 function RegionLabel({
-  regionKey, label, svgRef, viewBox,
+  regionKey, label, svgRef, viewBox, svgReady,
 }: {
-  regionKey: string; label: string; svgRef: React.RefObject<SVGSVGElement | null>; viewBox: string;
+  regionKey: string; label: string; svgRef: React.RefObject<SVGSVGElement | null>; viewBox: string; svgReady: boolean;
 }) {
   const [center, setCenter] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    if (!svgRef.current) return;
-    const path = svgRef.current.querySelector<SVGGeometryElement>(`#${regionKey}`);
+    if (!svgReady || !svgRef.current) return;
+    const path = svgRef.current.querySelector<SVGGeometryElement>(`#${CSS.escape(regionKey)}`);
     if (!path) return;
 
     const svgEl  = svgRef.current;
     const svgBox = svgEl.getBoundingClientRect();
     const pBox   = path.getBoundingClientRect();
+
+    if (svgBox.width === 0) return;
 
     // Convert pixel position to viewBox coordinates
     const [vbMinX, vbMinY, vbWidth, vbHeight] = viewBox.split(" ").map(Number);
@@ -414,7 +428,7 @@ function RegionLabel({
     const cx = vbMinX + (pBox.left + pBox.width  / 2 - svgBox.left) * scaleX;
     const cy = vbMinY + (pBox.top  + pBox.height / 2 - svgBox.top)  * scaleY;
     setCenter({ x: cx, y: cy });
-  }, [regionKey, svgRef, viewBox]);
+  }, [regionKey, svgRef, viewBox, svgReady]);
 
   if (!center) return null;
 
