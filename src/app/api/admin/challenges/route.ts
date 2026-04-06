@@ -20,7 +20,8 @@ export async function POST(req: Request) {
   const { slug, gameType, icon, category, titleEn, titleNl, subtitleEn, subtitleNl, available, sortOrder,
           quizCategoryId, quizSubcategoryId, quizQuestionLimit,
           connectionsLeftLabelEn, connectionsLeftLabelNl,
-          connectionsRightLabelEn, connectionsRightLabelNl } = body;
+          connectionsRightLabelEn, connectionsRightLabelNl,
+          mapSvg, mapLabelMode } = body;
 
   if (!slug || !gameType || !titleEn || !titleNl) {
     return NextResponse.json({ error: "slug, gameType, titleEn, titleNl are required" }, { status: 400 });
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
       connectionsLeftLabelNl:  connectionsLeftLabelNl  ?? null,
       connectionsRightLabelEn: connectionsRightLabelEn ?? null,
       connectionsRightLabelNl: connectionsRightLabelNl ?? null,
+      mapSvg:       mapSvg       ?? null,
+      mapLabelMode: mapLabelMode ?? null,
     })
     .returning()
     .all();
