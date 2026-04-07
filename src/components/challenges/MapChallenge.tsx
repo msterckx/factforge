@@ -100,6 +100,7 @@ function GameOverOverlay({ message }: { message: string }) {
 export default function MapChallenge({ regions, game, dict, challengeId, lang }: Props) {
   const mode = game.mapLabelMode ?? "country";
   const svgPath = game.mapSvg ?? "/maps/africa.svg";
+  const pngPath = svgPath.replace(/\.svg$/i, ".png");
 
   // Build chips from regions
   const allChips = useMemo<Chip[]>(() => {
@@ -146,15 +147,23 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   }, [svgPath]);
 
   // Extract viewBox from fetched SVG text
-  const [viewBox, setViewBox] = useState("0 0 600 720");
+  const [viewBox, setViewBox] = useState("0 0 239.05701 217.31789");
   useEffect(() => {
     if (!svgContent) return;
-    // We need the original viewBox from the file
     fetch(svgPath)
       .then((r) => r.text())
       .then((text) => {
-        const m = text.match(/viewBox="([^"]+)"/);
-        if (m) setViewBox(m[1]);
+        const vbMatch = text.match(/viewBox="([^"]+)"/);
+        if (vbMatch) {
+          setViewBox(vbMatch[1]);
+        } else {
+          // Fall back to width/height attributes (e.g. Inkscape SVGs)
+          const wMatch = text.match(/\bwidth="([^"a-z%]+)"/);
+          const hMatch = text.match(/\bheight="([^"a-z%]+)"/);
+          if (wMatch && hMatch) {
+            setViewBox(`0 0 ${parseFloat(wMatch[1])} ${parseFloat(hMatch[1])}`);
+          }
+        }
       });
   }, [svgContent, svgPath]);
 
@@ -304,13 +313,13 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ── SVG map ────────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0">
-          <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
+          <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-white">
             <svg
               ref={svgRef}
               viewBox={viewBox}
               className="w-full h-auto"
               style={{ display: "block" }}
-              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, hoverKey) }}
+              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, hoverKey, pngPath, viewBox) }}
             />
             {/* Labels for correctly placed chips */}
             <svg
@@ -377,11 +386,21 @@ function buildSvgInner(
   placed: Record<string, string>,
   wrongKey: string | null,
   hoverKey: string | null,
+  pngPath?: string,
+  viewBox?: string,
 ): string {
   // Strip any <style> block that would leak globally
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
 
-  return noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
+  // PNG image layer — renders behind the transparent hit-area paths
+  let imageTag = "";
+  if (pngPath && viewBox) {
+    const parts = viewBox.split(" ").map(Number);
+    const [vbX, vbY, vbW, vbH] = parts;
+    imageTag = `<image href="${pngPath}" x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" preserveAspectRatio="xMidYMid meet"/>`;
+  }
+
+  const paths = noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
     // Transparent by default — the image underneath shows the map
     let fill        = "transparent";
     let stroke      = "transparent";
@@ -403,6 +422,8 @@ function buildSvgInner(
 
     return `<path id="${id}"${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" style="cursor:pointer;transition:fill 0.12s"/>`;
   });
+
+  return imageTag + paths;
 }
 
 /** Render a text label centred on the path's bounding box */
