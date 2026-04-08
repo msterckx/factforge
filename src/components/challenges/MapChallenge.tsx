@@ -100,7 +100,6 @@ function GameOverOverlay({ message }: { message: string }) {
 export default function MapChallenge({ regions, game, dict, challengeId, lang }: Props) {
   const mode = game.mapLabelMode ?? "country";
   const svgPath = game.mapSvg ?? "/maps/africa.svg";
-  const pngPath = svgPath.replace(/\.svg$/i, ".png");  // visual layer
 
   // Build chips from regions
   const allChips = useMemo<Chip[]>(() => {
@@ -315,23 +314,13 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ── SVG map ────────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0">
-          <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-white">
-            {/* PNG visual layer */}
-            <img
-              src={pngPath}
-              alt=""
-              className="w-full h-auto block"
-              draggable={false}
-              style={{ userSelect: "none" }}
-            />
-            {/* SVG hit areas — absolutely positioned over the PNG */}
+          <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-700">
             <svg
               ref={svgRef}
               viewBox={viewBox}
-              className="absolute inset-0 w-full h-full"
-              style={{ display: "block" }}
+              className="w-full h-auto block"
               onPointerOver={(e) => {
-                if (dragging.current) return; // drag move handles hover during drag
+                if (dragging.current) return;
                 let cur: Element | null = e.target as Element;
                 while (cur && cur !== e.currentTarget) {
                   if (cur.tagName === "path" && (cur as Element).id) {
@@ -345,7 +334,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 if (dragging.current) return;
                 let cur: Element | null = e.relatedTarget as Element | null;
                 while (cur) {
-                  if (cur === e.currentTarget) return; // still inside SVG
+                  if (cur === e.currentTarget) return;
                   cur = cur.parentElement;
                 }
                 setMouseHoverKey(null);
@@ -356,6 +345,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
             <svg
               viewBox={viewBox}
               className="absolute inset-0 w-full h-full pointer-events-none"
+              style={{ top: 0, left: 0 }}
             >
               {regions.map((r) => {
                 if (!placed[r.regionKey]) return null;
@@ -423,22 +413,23 @@ function buildSvgInner(
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
 
   const paths = noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
-    // Transparent by default — the PNG underneath shows the map
-    let fill        = "transparent";
-    let stroke      = "transparent";
-    let strokeWidth = "0";
+    // Default: neutral land colour with visible border
+    let fill        = "#c8d8b4";   // muted sage green — classic map land colour
+    let stroke      = "#6b7c52";   // darker green border
+    let strokeWidth = "0.4";
 
     if (placed[id]) {
-      // Definitive correct-drop colour — solid green tint
-      fill = "rgba(34,197,94,0.55)"; stroke = "#15803d"; strokeWidth = "2";
+      // Correct drop — solid emerald, stays permanently
+      fill = "#4ade80"; stroke = "#15803d"; strokeWidth = "0.8";
     } else if (id === wrongKey) {
-      fill = "rgba(239,68,68,0.50)"; stroke = "#dc2626"; strokeWidth = "2";
+      // Wrong drop — brief red flash
+      fill = "#f87171"; stroke = "#dc2626"; strokeWidth = "0.8";
     } else if (id === dragHoverKey) {
-      // Drop target during drag — strong yellow highlight
-      fill = "rgba(251,191,36,0.55)"; stroke = "#d97706"; strokeWidth = "2";
+      // Active drop target during drag — strong amber
+      fill = "#fbbf24"; stroke = "#d97706"; strokeWidth = "0.8";
     } else if (id === mouseHoverKey) {
-      // Idle mouse hover — subtle blue tint
-      fill = "rgba(99,179,237,0.40)"; stroke = "#3b82f6"; strokeWidth = "1.5";
+      // Idle hover — light sky blue
+      fill = "#93c5fd"; stroke = "#2563eb"; strokeWidth = "0.8";
     }
 
     const cleaned = rest
