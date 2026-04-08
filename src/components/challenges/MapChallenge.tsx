@@ -123,6 +123,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   const [glitterActive, setGlitterActive] = useState(false);
   const [wrongKey, setWrongKey]       = useState<string | null>(null);    // briefly flash red
   const [hoverKey, setHoverKey]       = useState<string | null>(null);    // SVG path hover during drag
+  const [mouseHoverKey, setMouseHoverKey] = useState<string | null>(null); // SVG path hover (idle)
   const [started, setStarted]         = useState(false);
 
   // SVG inline content
@@ -284,6 +285,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     setGameWon(false);
     setGameLost(false);
     setGlitterActive(false);
+    setMouseHoverKey(null);
     setStarted(false);
   }
 
@@ -328,7 +330,27 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
               viewBox={viewBox}
               className="absolute inset-0 w-full h-full"
               style={{ display: "block" }}
-              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, hoverKey) }}
+              onPointerOver={(e) => {
+                if (dragging.current) return; // drag move handles hover during drag
+                let cur: Element | null = e.target as Element;
+                while (cur && cur !== e.currentTarget) {
+                  if (cur.tagName === "path" && (cur as Element).id) {
+                    setMouseHoverKey((cur as Element).id);
+                    return;
+                  }
+                  cur = cur.parentElement;
+                }
+              }}
+              onPointerOut={(e) => {
+                if (dragging.current) return;
+                let cur: Element | null = e.relatedTarget as Element | null;
+                while (cur) {
+                  if (cur === e.currentTarget) return; // still inside SVG
+                  cur = cur.parentElement;
+                }
+                setMouseHoverKey(null);
+              }}
+              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, hoverKey, mouseHoverKey) }}
             />
             {/* Labels for correctly placed chips */}
             <svg
@@ -394,23 +416,29 @@ function buildSvgInner(
   raw: string,
   placed: Record<string, string>,
   wrongKey: string | null,
-  hoverKey: string | null,
+  dragHoverKey: string | null,
+  mouseHoverKey: string | null,
 ): string {
   // Strip any <style> block that would leak globally
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
 
   const paths = noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
-    // Transparent by default — the image underneath shows the map
+    // Transparent by default — the PNG underneath shows the map
     let fill        = "transparent";
     let stroke      = "transparent";
     let strokeWidth = "0";
 
     if (placed[id]) {
-      fill = "rgba(34,197,94,0.45)"; stroke = "#16a34a"; strokeWidth = "1.5";
+      // Definitive correct-drop colour — solid green tint
+      fill = "rgba(34,197,94,0.55)"; stroke = "#15803d"; strokeWidth = "2";
     } else if (id === wrongKey) {
-      fill = "rgba(239,68,68,0.45)"; stroke = "#dc2626"; strokeWidth = "1.5";
-    } else if (id === hoverKey) {
-      fill = "rgba(251,191,36,0.40)"; stroke = "#f59e0b"; strokeWidth = "2";
+      fill = "rgba(239,68,68,0.50)"; stroke = "#dc2626"; strokeWidth = "2";
+    } else if (id === dragHoverKey) {
+      // Drop target during drag — strong yellow highlight
+      fill = "rgba(251,191,36,0.55)"; stroke = "#d97706"; strokeWidth = "2";
+    } else if (id === mouseHoverKey) {
+      // Idle mouse hover — subtle blue tint
+      fill = "rgba(99,179,237,0.40)"; stroke = "#3b82f6"; strokeWidth = "1.5";
     }
 
     const cleaned = rest
