@@ -162,6 +162,7 @@ export const mapRegions = sqliteTable("map_regions", {
   labelNl:    text("label_nl").notNull(),    // country name in Dutch
   capitalEn:  text("capital_en"),            // capital city in English
   capitalNl:  text("capital_nl"),            // capital city in Dutch
+  enabled:    integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt:  text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
