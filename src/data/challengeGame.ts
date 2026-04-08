@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { challengeGames, challengeItems, mapRegions } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import type { ChronologyItem } from "@/types/chronology";
 import type { PuzzleSubject } from "@/types/puzzle";
 import type { ConnectionItem } from "@/types/connections";
@@ -51,7 +51,15 @@ export function mapToConnectionItems(items: ChallengeItem[], lang: string): Conn
 }
 
 export function getMapRegions(gameId: number): MapRegion[] {
-  return db.select().from(mapRegions).where(eq(mapRegions.gameId, gameId)).orderBy(asc(mapRegions.regionKey)).all();
+  return db.select().from(mapRegions)
+    .where(and(eq(mapRegions.gameId, gameId), eq(mapRegions.enabled, true)))
+    .orderBy(asc(mapRegions.regionKey)).all();
+}
+
+export function getAllMapRegions(gameId: number): MapRegion[] {
+  return db.select().from(mapRegions)
+    .where(eq(mapRegions.gameId, gameId))
+    .orderBy(asc(mapRegions.regionKey)).all();
 }
 
 export type MapChip = {

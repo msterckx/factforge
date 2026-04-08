@@ -100,7 +100,7 @@ function GameOverOverlay({ message }: { message: string }) {
 export default function MapChallenge({ regions, game, dict, challengeId, lang }: Props) {
   const mode = game.mapLabelMode ?? "country";
   const svgPath = game.mapSvg ?? "/maps/africa.svg";
-  const pngPath = svgPath.replace(/\.svg$/i, ".png");
+  const pngPath = svgPath.replace(/\.svg$/i, ".png");  // visual layer
 
   // Build chips from regions
   const allChips = useMemo<Chip[]>(() => {
@@ -314,12 +314,21 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         {/* ── SVG map ────────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0">
           <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-white">
+            {/* PNG visual layer */}
+            <img
+              src={pngPath}
+              alt=""
+              className="w-full h-auto block"
+              draggable={false}
+              style={{ userSelect: "none" }}
+            />
+            {/* SVG hit areas — absolutely positioned over the PNG */}
             <svg
               ref={svgRef}
               viewBox={viewBox}
-              className="w-full h-auto"
+              className="absolute inset-0 w-full h-full"
               style={{ display: "block" }}
-              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, hoverKey, pngPath, viewBox) }}
+              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, hoverKey) }}
             />
             {/* Labels for correctly placed chips */}
             <svg
@@ -386,19 +395,9 @@ function buildSvgInner(
   placed: Record<string, string>,
   wrongKey: string | null,
   hoverKey: string | null,
-  pngPath?: string,
-  viewBox?: string,
 ): string {
   // Strip any <style> block that would leak globally
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
-
-  // PNG image layer — renders behind the transparent hit-area paths
-  let imageTag = "";
-  if (pngPath && viewBox) {
-    const parts = viewBox.split(" ").map(Number);
-    const [vbX, vbY, vbW, vbH] = parts;
-    imageTag = `<image href="${pngPath}" x="${vbX}" y="${vbY}" width="${vbW}" height="${vbH}" preserveAspectRatio="xMidYMid meet"/>`;
-  }
 
   const paths = noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
     // Transparent by default — the image underneath shows the map
@@ -423,7 +422,7 @@ function buildSvgInner(
     return `<path id="${id}"${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" style="cursor:pointer;transition:fill 0.12s"/>`;
   });
 
-  return imageTag + paths;
+  return paths;
 }
 
 /** Render a text label centred on the path's bounding box */

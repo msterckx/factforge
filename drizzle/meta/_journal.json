@@ -134,6 +134,13 @@
       "when": 1774600000000,
       "tag": "0018_map_challenge",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1775653270807,
+      "tag": "0019_map_region_enabled",
+      "breakpoints": true
     }
   ]
 }
