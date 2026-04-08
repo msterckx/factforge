@@ -121,9 +121,11 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   const [gameLost, setGameLost]       = useState(false);
   const [glitterActive, setGlitterActive] = useState(false);
   const [wrongKey, setWrongKey]       = useState<string | null>(null);    // briefly flash red
-  const [hoverKey, setHoverKey]       = useState<string | null>(null);    // SVG path hover during drag
-  const [mouseHoverKey, setMouseHoverKey] = useState<string | null>(null); // SVG path hover (idle)
   const [started, setStarted]         = useState(false);
+
+  // Hover tracked as refs — direct DOM manipulation avoids re-rendering 62 paths on every move
+  const mouseHoverRef = useRef<string | null>(null);
+  const dragHoverRef  = useRef<string | null>(null);
 
   // SVG inline content
   const [svgContent, setSvgContent]   = useState<string | null>(null);
@@ -132,6 +134,33 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   const containerRef                  = useRef<HTMLDivElement>(null);
 
   const { markComplete } = useCompletedChallenges();
+
+  // ── Direct DOM colour helpers (bypass React re-render for hover) ─────────────
+  const SVG_COLORS = {
+    default: { fill: "#c8d8b4", stroke: "#6b7c52", sw: "0.4" },
+    hover:   { fill: "#93c5fd", stroke: "#2563eb", sw: "0.8" },
+    drag:    { fill: "#fbbf24", stroke: "#d97706", sw: "0.8" },
+    placed:  { fill: "#4ade80", stroke: "#15803d", sw: "0.8" },
+    wrong:   { fill: "#f87171", stroke: "#dc2626", sw: "0.8" },
+  } as const;
+
+  function setPathColor(id: string, c: { fill: string; stroke: string; sw: string }) {
+    const el = svgRef.current?.querySelector<SVGPathElement>(`#${CSS.escape(id)}`);
+    if (!el) return;
+    el.setAttribute("fill", c.fill);
+    el.setAttribute("stroke", c.stroke);
+    el.setAttribute("stroke-width", c.sw);
+  }
+
+  function restorePath(id: string) {
+    setPathColor(id, placed[id] ? SVG_COLORS.placed : SVG_COLORS.default);
+  }
+
+  // After dangerouslySetInnerHTML re-renders (placed/wrongKey change), re-apply hover
+  useEffect(() => {
+    if (mouseHoverRef.current) setPathColor(mouseHoverRef.current, SVG_COLORS.hover);
+    if (dragHoverRef.current)  setPathColor(dragHoverRef.current,  SVG_COLORS.drag);
+  }); // runs after every render
 
   // ── Fetch SVG ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -212,7 +241,11 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       dragging.current.ghost.style.left = `${me.clientX}px`;
       dragging.current.ghost.style.top  = `${me.clientY}px`;
       const key = getPathAtPoint(me.clientX, me.clientY);
-      setHoverKey(key);
+      if (key !== dragHoverRef.current) {
+        if (dragHoverRef.current) restorePath(dragHoverRef.current);
+        if (key) setPathColor(key, SVG_COLORS.drag);
+        dragHoverRef.current = key;
+      }
     };
 
     const onUp = (ue: PointerEvent) => {
@@ -221,8 +254,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       if (!dragging.current) return;
       dragging.current.ghost.remove();
       const dropKey = getPathAtPoint(ue.clientX, ue.clientY);
+      if (dragHoverRef.current) { restorePath(dragHoverRef.current); dragHoverRef.current = null; }
       dragging.current = null;
-      setHoverKey(null);
 
       if (!dropKey) return;
 
@@ -284,7 +317,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     setGameWon(false);
     setGameLost(false);
     setGlitterActive(false);
-    setMouseHoverKey(null);
+    mouseHoverRef.current = null;
+    dragHoverRef.current = null;
     setStarted(false);
   }
 
@@ -324,7 +358,12 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 let cur: Element | null = e.target as Element;
                 while (cur && cur !== e.currentTarget) {
                   if (cur.tagName === "path" && (cur as Element).id) {
-                    setMouseHoverKey((cur as Element).id);
+                    const id = (cur as Element).id;
+                    if (id !== mouseHoverRef.current) {
+                      if (mouseHoverRef.current) restorePath(mouseHoverRef.current);
+                      if (!placed[id]) setPathColor(id, SVG_COLORS.hover);
+                      mouseHoverRef.current = id;
+                    }
                     return;
                   }
                   cur = cur.parentElement;
@@ -337,9 +376,9 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                   if (cur === e.currentTarget) return;
                   cur = cur.parentElement;
                 }
-                setMouseHoverKey(null);
+                if (mouseHoverRef.current) { restorePath(mouseHoverRef.current); mouseHoverRef.current = null; }
               }}
-              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, hoverKey, mouseHoverKey) }}
+              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey) }}
             />
             {/* Labels for correctly placed chips */}
             <svg
@@ -401,47 +440,35 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-/** Apply fill/stroke directly on each path element — no CSS classes needed */
+/** Set base fill/stroke on every path. Hover colours are applied via direct DOM after mount. */
 function buildSvgInner(
   raw: string,
   placed: Record<string, string>,
   wrongKey: string | null,
-  dragHoverKey: string | null,
-  mouseHoverKey: string | null,
 ): string {
   // Strip any <style> block that would leak globally
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
 
-  const paths = noStyle.replace(/<path\s+id="([^"]+)"([^>]*?)\/?>/g, (_match, id, rest) => {
-    // Default: neutral land colour with visible border
-    let fill        = "#c8d8b4";   // muted sage green — classic map land colour
-    let stroke      = "#6b7c52";   // darker green border
-    let strokeWidth = "0.4";
+  // Match full <path .../> regardless of attribute order (SVG paths have d= first)
+  return noStyle.replace(/<path([\s\S]*?)\/>/g, (_match, attrs) => {
+    const idMatch = attrs.match(/\bid="([^"]+)"/);
+    if (!idMatch) return _match; // no id — leave unchanged
 
-    if (placed[id]) {
-      // Correct drop — solid emerald, stays permanently
-      fill = "#4ade80"; stroke = "#15803d"; strokeWidth = "0.8";
-    } else if (id === wrongKey) {
-      // Wrong drop — brief red flash
-      fill = "#f87171"; stroke = "#dc2626"; strokeWidth = "0.8";
-    } else if (id === dragHoverKey) {
-      // Active drop target during drag — strong amber
-      fill = "#fbbf24"; stroke = "#d97706"; strokeWidth = "0.8";
-    } else if (id === mouseHoverKey) {
-      // Idle hover — light sky blue
-      fill = "#93c5fd"; stroke = "#2563eb"; strokeWidth = "0.8";
-    }
+    const id = idMatch[1];
+    let fill = "#c8d8b4", stroke = "#6b7c52", sw = "0.4";
 
-    const cleaned = rest
-      .replace(/\s+fill="[^"]*"/g, "")
-      .replace(/\s+stroke="[^"]*"/g, "")
-      .replace(/\s+stroke-width="[^"]*"/g, "")
-      .replace(/\s+class="[^"]*"/g, "");
+    if (placed[id])    { fill = "#4ade80"; stroke = "#15803d"; sw = "0.8"; }
+    else if (id === wrongKey) { fill = "#f87171"; stroke = "#dc2626"; sw = "0.8"; }
 
-    return `<path id="${id}"${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" style="cursor:pointer;transition:fill 0.12s"/>`;
+    const cleaned = attrs
+      .replace(/\s*fill="[^"]*"/g, "")
+      .replace(/\s*stroke="[^"]*"/g, "")
+      .replace(/\s*stroke-width="[^"]*"/g, "")
+      .replace(/\s*class="[^"]*"/g, "")
+      .replace(/\s*style="[^"]*"/g, "");
+
+    return `<path${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
   });
-
-  return paths;
 }
 
 /** Render a text label centred on the path's bounding box */
