@@ -122,6 +122,7 @@ export interface Dictionary {
     tryAgain: string;
     revealAnswer: string;
     yourAnswer: string;
+    mapDidYouKnow: string;
   };
   contact: {
     title: string;
@@ -264,6 +265,7 @@ export const en: Dictionary = {
     tryAgain: "Try Again",
     revealAnswer: "Reveal Correct Order",
     yourAnswer: "Your order",
+    mapDidYouKnow: "Did you know?",
   },
   contact: {
     title: "Contact Us",

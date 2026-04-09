@@ -13,14 +13,21 @@ type EditState = {
   id: number;
   labelEn: string; labelNl: string;
   capitalEn: string; capitalNl: string;
+  infoImageEn: string; infoImageNl: string;
+  infoTextEn: string; infoTextNl: string;
 };
 
 type AddState = {
   regionKey: string; labelEn: string; labelNl: string;
   capitalEn: string; capitalNl: string;
+  infoImageEn: string; infoImageNl: string;
+  infoTextEn: string; infoTextNl: string;
 };
 
-const EMPTY_ADD: AddState = { regionKey: "", labelEn: "", labelNl: "", capitalEn: "", capitalNl: "" };
+const EMPTY_ADD: AddState = {
+  regionKey: "", labelEn: "", labelNl: "", capitalEn: "", capitalNl: "",
+  infoImageEn: "", infoImageNl: "", infoTextEn: "", infoTextNl: "",
+};
 
 export default function MapRegionsManager({ gameId, initialRegions }: Props) {
   const router   = useRouter();
@@ -130,10 +137,14 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        labelEn:   editing.labelEn,
-        labelNl:   editing.labelNl,
-        capitalEn: editing.capitalEn || null,
-        capitalNl: editing.capitalNl || null,
+        labelEn:     editing.labelEn,
+        labelNl:     editing.labelNl,
+        capitalEn:   editing.capitalEn   || null,
+        capitalNl:   editing.capitalNl   || null,
+        infoImageEn: editing.infoImageEn || null,
+        infoImageNl: editing.infoImageNl || null,
+        infoTextEn:  editing.infoTextEn  || null,
+        infoTextNl:  editing.infoTextNl  || null,
       }),
     });
     const data = await res.json();
@@ -158,11 +169,15 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gameId,
-        regionKey: addForm.regionKey,
-        labelEn:   addForm.labelEn,
-        labelNl:   addForm.labelNl,
-        capitalEn: addForm.capitalEn || null,
-        capitalNl: addForm.capitalNl || null,
+        regionKey:   addForm.regionKey,
+        labelEn:     addForm.labelEn,
+        labelNl:     addForm.labelNl,
+        capitalEn:   addForm.capitalEn   || null,
+        capitalNl:   addForm.capitalNl   || null,
+        infoImageEn: addForm.infoImageEn || null,
+        infoImageNl: addForm.infoImageNl || null,
+        infoTextEn:  addForm.infoTextEn  || null,
+        infoTextNl:  addForm.infoTextNl  || null,
       }),
     });
     const data = await res.json();
@@ -179,6 +194,7 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
 
   const tdCls = "px-3 py-1.5";
   const inputCls = "w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400";
+  const textareaCls = "w-full px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-y min-h-[60px]";
 
   return (
     <div className="space-y-4">
@@ -257,79 +273,167 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
               const isEdit = editing?.id === r.id;
               const rowCls = `border-b border-slate-100 last:border-0 ${r.enabled ? (i % 2 === 0 ? "bg-white" : "bg-slate-50/50") : "bg-slate-100/70 opacity-60"}`;
               return (
-                <tr key={r.id} className={rowCls}>
-                  {/* Enabled toggle */}
-                  <td className={tdCls}>
-                    <button
-                      onClick={() => handleToggleOne(r.id, !r.enabled)}
-                      title={r.enabled ? "Disable" : "Enable"}
-                      className={`w-9 h-5 rounded-full transition-colors ${r.enabled ? "bg-emerald-500" : "bg-slate-300"} relative`}
-                    >
-                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${r.enabled ? "translate-x-4" : "translate-x-0.5"}`} />
-                    </button>
-                  </td>
-                  <td className={`${tdCls} font-mono text-xs text-slate-600`}>{r.regionKey}</td>
-                  {isEdit ? (
-                    <>
-                      <td className={tdCls}><input className={inputCls} value={editing.labelEn} onChange={(e) => setEditing({ ...editing, labelEn: e.target.value })} /></td>
-                      <td className={tdCls}><input className={inputCls} value={editing.labelNl} onChange={(e) => setEditing({ ...editing, labelNl: e.target.value })} /></td>
-                      <td className={tdCls}><input className={inputCls} value={editing.capitalEn} onChange={(e) => setEditing({ ...editing, capitalEn: e.target.value })} /></td>
-                      <td className={tdCls}><input className={inputCls} value={editing.capitalNl} onChange={(e) => setEditing({ ...editing, capitalNl: e.target.value })} /></td>
-                      <td className={`${tdCls} whitespace-nowrap`}>
-                        <button onClick={handleSaveEdit} disabled={savingId === r.id} className="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded mr-1 disabled:opacity-50">
-                          {savingId === r.id ? "…" : "Save"}
-                        </button>
-                        <button onClick={() => setEditing(null)} className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs rounded">
-                          Cancel
-                        </button>
+                <>
+                  <tr key={r.id} className={rowCls}>
+                    {/* Enabled toggle */}
+                    <td className={tdCls}>
+                      <button
+                        onClick={() => handleToggleOne(r.id, !r.enabled)}
+                        title={r.enabled ? "Disable" : "Enable"}
+                        className={`w-9 h-5 rounded-full transition-colors ${r.enabled ? "bg-emerald-500" : "bg-slate-300"} relative`}
+                      >
+                        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${r.enabled ? "translate-x-4" : "translate-x-0.5"}`} />
+                      </button>
+                    </td>
+                    <td className={`${tdCls} font-mono text-xs text-slate-600`}>{r.regionKey}</td>
+                    {isEdit ? (
+                      <>
+                        <td className={tdCls}><input className={inputCls} value={editing.labelEn} onChange={(e) => setEditing({ ...editing, labelEn: e.target.value })} /></td>
+                        <td className={tdCls}><input className={inputCls} value={editing.labelNl} onChange={(e) => setEditing({ ...editing, labelNl: e.target.value })} /></td>
+                        <td className={tdCls}><input className={inputCls} value={editing.capitalEn} onChange={(e) => setEditing({ ...editing, capitalEn: e.target.value })} /></td>
+                        <td className={tdCls}><input className={inputCls} value={editing.capitalNl} onChange={(e) => setEditing({ ...editing, capitalNl: e.target.value })} /></td>
+                        <td className={`${tdCls} whitespace-nowrap`}>
+                          <button onClick={handleSaveEdit} disabled={savingId === r.id} className="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded mr-1 disabled:opacity-50">
+                            {savingId === r.id ? "…" : "Save"}
+                          </button>
+                          <button onClick={() => setEditing(null)} className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs rounded">
+                            Cancel
+                          </button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className={`${tdCls} text-slate-700`}>{r.labelEn}</td>
+                        <td className={`${tdCls} text-slate-700`}>{r.labelNl}</td>
+                        <td className={`${tdCls} text-slate-500`}>{r.capitalEn ?? "—"}</td>
+                        <td className={`${tdCls} text-slate-500`}>{r.capitalNl ?? "—"}</td>
+                        <td className={`${tdCls} whitespace-nowrap`}>
+                          <button
+                            onClick={() => setEditing({ id: r.id, labelEn: r.labelEn, labelNl: r.labelNl, capitalEn: r.capitalEn ?? "", capitalNl: r.capitalNl ?? "", infoImageEn: r.infoImageEn ?? "", infoImageNl: r.infoImageNl ?? "", infoTextEn: r.infoTextEn ?? "", infoTextNl: r.infoTextNl ?? "" })}
+                            className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded mr-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs rounded"
+                          >
+                            Del
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+
+                  {/* Extra info row when editing */}
+                  {isEdit && (
+                    <tr key={`${r.id}-info`} className="bg-indigo-50/40 border-b border-slate-100">
+                      <td colSpan={7} className="px-4 py-3">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Extra info (shown after correct drop)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Image URL (EN)</label>
+                            <input
+                              className={inputCls}
+                              placeholder="https://… or /images/…"
+                              value={editing.infoImageEn}
+                              onChange={(e) => setEditing({ ...editing, infoImageEn: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Image URL (NL)</label>
+                            <input
+                              className={inputCls}
+                              placeholder="https://… or /images/… (leave blank to use EN)"
+                              value={editing.infoImageNl}
+                              onChange={(e) => setEditing({ ...editing, infoImageNl: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Info text (EN)</label>
+                            <textarea
+                              className={textareaCls}
+                              placeholder="Interesting fact in English…"
+                              value={editing.infoTextEn}
+                              onChange={(e) => setEditing({ ...editing, infoTextEn: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Info text (NL)</label>
+                            <textarea
+                              className={textareaCls}
+                              placeholder="Interessant feit in het Nederlands…"
+                              value={editing.infoTextNl}
+                              onChange={(e) => setEditing({ ...editing, infoTextNl: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        {/* Preview */}
+                        {(editing.infoImageEn || editing.infoTextEn) && (
+                          <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Preview (EN)</p>
+                            {editing.infoImageEn && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={editing.infoImageEn} alt="" className="h-24 object-cover rounded mb-2" />
+                            )}
+                            {editing.infoTextEn && (
+                              <p className="text-sm text-slate-700">{editing.infoTextEn}</p>
+                            )}
+                          </div>
+                        )}
                       </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className={`${tdCls} text-slate-700`}>{r.labelEn}</td>
-                      <td className={`${tdCls} text-slate-700`}>{r.labelNl}</td>
-                      <td className={`${tdCls} text-slate-500`}>{r.capitalEn ?? "—"}</td>
-                      <td className={`${tdCls} text-slate-500`}>{r.capitalNl ?? "—"}</td>
-                      <td className={`${tdCls} whitespace-nowrap`}>
-                        <button
-                          onClick={() => setEditing({ id: r.id, labelEn: r.labelEn, labelNl: r.labelNl, capitalEn: r.capitalEn ?? "", capitalNl: r.capitalNl ?? "" })}
-                          className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded mr-1"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          className="px-2 py-0.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs rounded"
-                        >
-                          Del
-                        </button>
-                      </td>
-                    </>
+                    </tr>
                   )}
-                </tr>
+                </>
               );
             })}
 
             {/* Add row */}
             {adding ? (
-              <tr className="bg-indigo-50/50 border-b border-slate-100">
-                <td className={tdCls} />
-                <td className={tdCls}>
-                  <input className={`${inputCls} font-mono`} placeholder="e.g. NG" value={addForm.regionKey} onChange={(e) => setAddForm({ ...addForm, regionKey: e.target.value.toUpperCase() })} maxLength={6} />
-                </td>
-                <td className={tdCls}><input className={inputCls} placeholder="English name" value={addForm.labelEn} onChange={(e) => setAddForm({ ...addForm, labelEn: e.target.value })} /></td>
-                <td className={tdCls}><input className={inputCls} placeholder="Dutch name" value={addForm.labelNl} onChange={(e) => setAddForm({ ...addForm, labelNl: e.target.value })} /></td>
-                <td className={tdCls}><input className={inputCls} placeholder="Capital EN" value={addForm.capitalEn} onChange={(e) => setAddForm({ ...addForm, capitalEn: e.target.value })} /></td>
-                <td className={tdCls}><input className={inputCls} placeholder="Capital NL" value={addForm.capitalNl} onChange={(e) => setAddForm({ ...addForm, capitalNl: e.target.value })} /></td>
-                <td className={`${tdCls} whitespace-nowrap`}>
-                  <button onClick={handleAdd} disabled={savingId === -1} className="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded mr-1 disabled:opacity-50">
-                    {savingId === -1 ? "…" : "Add"}
-                  </button>
-                  <button onClick={() => { setAdding(false); setAddForm(EMPTY_ADD); }} className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs rounded">
-                    Cancel
-                  </button>
-                </td>
-              </tr>
+              <>
+                <tr className="bg-indigo-50/50 border-b border-slate-100">
+                  <td className={tdCls} />
+                  <td className={tdCls}>
+                    <input className={`${inputCls} font-mono`} placeholder="e.g. NG" value={addForm.regionKey} onChange={(e) => setAddForm({ ...addForm, regionKey: e.target.value.toUpperCase() })} maxLength={6} />
+                  </td>
+                  <td className={tdCls}><input className={inputCls} placeholder="English name" value={addForm.labelEn} onChange={(e) => setAddForm({ ...addForm, labelEn: e.target.value })} /></td>
+                  <td className={tdCls}><input className={inputCls} placeholder="Dutch name" value={addForm.labelNl} onChange={(e) => setAddForm({ ...addForm, labelNl: e.target.value })} /></td>
+                  <td className={tdCls}><input className={inputCls} placeholder="Capital EN" value={addForm.capitalEn} onChange={(e) => setAddForm({ ...addForm, capitalEn: e.target.value })} /></td>
+                  <td className={tdCls}><input className={inputCls} placeholder="Capital NL" value={addForm.capitalNl} onChange={(e) => setAddForm({ ...addForm, capitalNl: e.target.value })} /></td>
+                  <td className={`${tdCls} whitespace-nowrap`}>
+                    <button onClick={handleAdd} disabled={savingId === -1} className="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded mr-1 disabled:opacity-50">
+                      {savingId === -1 ? "…" : "Add"}
+                    </button>
+                    <button onClick={() => { setAdding(false); setAddForm(EMPTY_ADD); }} className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs rounded">
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+                {/* Extra info for add form */}
+                <tr className="bg-indigo-50/30 border-b border-slate-100">
+                  <td colSpan={7} className="px-4 py-3">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Extra info (optional — shown after correct drop)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Image URL (EN)</label>
+                        <input className={inputCls} placeholder="https://…" value={addForm.infoImageEn} onChange={(e) => setAddForm({ ...addForm, infoImageEn: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Image URL (NL)</label>
+                        <input className={inputCls} placeholder="https://… (leave blank to use EN)" value={addForm.infoImageNl} onChange={(e) => setAddForm({ ...addForm, infoImageNl: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Info text (EN)</label>
+                        <textarea className={textareaCls} placeholder="Interesting fact…" value={addForm.infoTextEn} onChange={(e) => setAddForm({ ...addForm, infoTextEn: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Info text (NL)</label>
+                        <textarea className={textareaCls} placeholder="Interessant feit…" value={addForm.infoTextNl} onChange={(e) => setAddForm({ ...addForm, infoTextNl: e.target.value })} />
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </>
             ) : null}
           </tbody>
         </table>

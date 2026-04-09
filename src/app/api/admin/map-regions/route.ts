@@ -12,15 +12,17 @@ export async function POST(req: Request) {
     gameId?: number; regionKey?: string;
     labelEn?: string; labelNl?: string;
     capitalEn?: string | null; capitalNl?: string | null;
+    infoImageEn?: string | null; infoImageNl?: string | null;
+    infoTextEn?: string | null; infoTextNl?: string | null;
   };
 
-  const { gameId, regionKey, labelEn, labelNl, capitalEn, capitalNl } = body;
+  const { gameId, regionKey, labelEn, labelNl, capitalEn, capitalNl, infoImageEn, infoImageNl, infoTextEn, infoTextNl } = body;
   if (!gameId || !regionKey || !labelEn || !labelNl) {
     return NextResponse.json({ error: "gameId, regionKey, labelEn, labelNl are required" }, { status: 400 });
   }
 
   const [row] = db.insert(mapRegions)
-    .values({ gameId, regionKey, labelEn, labelNl, capitalEn: capitalEn ?? null, capitalNl: capitalNl ?? null })
+    .values({ gameId, regionKey, labelEn, labelNl, capitalEn: capitalEn ?? null, capitalNl: capitalNl ?? null, infoImageEn: infoImageEn ?? null, infoImageNl: infoImageNl ?? null, infoTextEn: infoTextEn ?? null, infoTextNl: infoTextNl ?? null })
     .returning().all();
 
   return NextResponse.json(row, { status: 201 });

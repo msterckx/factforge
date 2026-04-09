@@ -157,12 +157,16 @@ export const challengeGames = sqliteTable("challenge_games", {
 export const mapRegions = sqliteTable("map_regions", {
   id:         integer("id").primaryKey({ autoIncrement: true }),
   gameId:     integer("game_id").notNull().references(() => challengeGames.id, { onDelete: "cascade" }),
-  regionKey:  text("region_key").notNull(),  // matches SVG path id, e.g. "NG"
-  labelEn:    text("label_en").notNull(),    // country name in English
-  labelNl:    text("label_nl").notNull(),    // country name in Dutch
-  capitalEn:  text("capital_en"),            // capital city in English
-  capitalNl:  text("capital_nl"),            // capital city in Dutch
-  enabled:    integer("enabled", { mode: "boolean" }).notNull().default(true),
+  regionKey:   text("region_key").notNull(),  // matches SVG path id, e.g. "NG"
+  labelEn:     text("label_en").notNull(),    // country name in English
+  labelNl:     text("label_nl").notNull(),    // country name in Dutch
+  capitalEn:   text("capital_en"),            // capital city in English
+  capitalNl:   text("capital_nl"),            // capital city in Dutch
+  infoImageEn: text("info_image_en"),         // image URL shown after correct drop (EN)
+  infoImageNl: text("info_image_nl"),         // image URL shown after correct drop (NL)
+  infoTextEn:  text("info_text_en"),          // extra info text shown after correct drop (EN)
+  infoTextNl:  text("info_text_nl"),          // extra info text shown after correct drop (NL)
+  enabled:     integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt:  text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 

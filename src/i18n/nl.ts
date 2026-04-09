@@ -124,6 +124,7 @@ export const nl: Dictionary = {
     tryAgain: "Opnieuw proberen",
     revealAnswer: "Toon correcte volgorde",
     yourAnswer: "Jouw volgorde",
+    mapDidYouKnow: "Wist je dat?",
   },
   contact: {
     title: "Neem contact op",
