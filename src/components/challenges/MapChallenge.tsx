@@ -96,6 +96,56 @@ function GameOverOverlay({ message }: { message: string }) {
   );
 }
 
+// ── Info panel shown after correct drop ───────────────────────────────────────
+function RegionInfoPanel({
+  region,
+  lang,
+  didYouKnow,
+  onDismiss,
+}: {
+  region: MapRegion;
+  lang: string;
+  didYouKnow: string;
+  onDismiss: () => void;
+}) {
+  const image = lang === "nl" ? (region.infoImageNl ?? region.infoImageEn) : region.infoImageEn;
+  const text  = lang === "nl" ? (region.infoTextNl  ?? region.infoTextEn)  : region.infoTextEn;
+  const name  = lang === "nl" ? region.labelNl : region.labelEn;
+
+  if (!image && !text) return null;
+
+  return (
+    <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden animate-fade-in">
+      <div className="flex items-center justify-between px-4 py-2 bg-emerald-100 border-b border-emerald-200">
+        <span className="text-sm font-semibold text-emerald-800">{name}</span>
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="text-emerald-600 hover:text-emerald-800 text-lg leading-none"
+        >
+          ×
+        </button>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-4 p-4">
+        {image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt={name}
+            className="w-full sm:w-48 h-36 object-cover rounded-xl flex-shrink-0"
+          />
+        )}
+        {text && (
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-1">{didYouKnow}</p>
+            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{text}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function MapChallenge({ regions, game, dict, challengeId, lang }: Props) {
   const mode = game.mapLabelMode ?? "country";
@@ -122,6 +172,14 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   const [glitterActive, setGlitterActive] = useState(false);
   const [wrongKey, setWrongKey]       = useState<string | null>(null);    // briefly flash red
   const [started, setStarted]         = useState(false);
+  const [lastPlacedRegion, setLastPlacedRegion] = useState<MapRegion | null>(null);
+
+  // Lookup map for quick access by regionKey
+  const regionsByKey = useMemo(() => {
+    const map: Record<string, MapRegion> = {};
+    for (const r of regions) map[r.regionKey] = r;
+    return map;
+  }, [regions]);
 
   // Hover tracked as refs — direct DOM manipulation avoids re-rendering 62 paths on every move
   const mouseHoverRef = useRef<string | null>(null);
@@ -275,6 +333,11 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       const newPlaced = { ...placed, [dropKey]: chip.label };
       setPlaced(newPlaced);
       setBank((prev) => prev.filter((c) => c.regionKey !== chip.regionKey));
+      // Show info panel for this region (only if it has extra info)
+      const region = regionsByKey[chip.regionKey];
+      if (region && (region.infoImageEn || region.infoImageNl || region.infoTextEn || region.infoTextNl)) {
+        setLastPlacedRegion(region);
+      }
 
       if (Object.keys(newPlaced).length === allChips.length) {
         setGameWon(true);
@@ -320,6 +383,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     mouseHoverRef.current = null;
     dragHoverRef.current = null;
     setStarted(false);
+    setLastPlacedRegion(null);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -434,6 +498,16 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           )}
         </div>
       </div>
+
+      {/* ── Info panel ────────────────────────────────────────────────── */}
+      {lastPlacedRegion && (
+        <RegionInfoPanel
+          region={lastPlacedRegion}
+          lang={lang}
+          didYouKnow={dict.mapDidYouKnow}
+          onDismiss={() => setLastPlacedRegion(null)}
+        />
+      )}
     </div>
   );
 }

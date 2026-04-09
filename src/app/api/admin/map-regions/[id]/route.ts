@@ -15,6 +15,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json() as {
     labelEn?: string; labelNl?: string;
     capitalEn?: string | null; capitalNl?: string | null;
+    infoImageEn?: string | null; infoImageNl?: string | null;
+    infoTextEn?: string | null; infoTextNl?: string | null;
   };
 
   const [row] = db.update(mapRegions)
