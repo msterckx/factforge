@@ -13,38 +13,55 @@ type EditState = {
   id: number;
   labelEn: string; labelNl: string;
   capitalEn: string; capitalNl: string;
-  infoImageEn: string; infoImageNl: string;
-  infoTextEn: string; infoTextNl: string;
+  infoImageEn: string;
+  infoTextEn: string;
+  infoTextNl: string; // auto-translated; empty = not yet translated
 };
 
 type AddState = {
   regionKey: string; labelEn: string; labelNl: string;
   capitalEn: string; capitalNl: string;
-  infoImageEn: string; infoImageNl: string;
-  infoTextEn: string; infoTextNl: string;
+  infoImageEn: string;
+  infoTextEn: string;
+  infoTextNl: string;
 };
 
 const EMPTY_ADD: AddState = {
   regionKey: "", labelEn: "", labelNl: "", capitalEn: "", capitalNl: "",
-  infoImageEn: "", infoImageNl: "", infoTextEn: "", infoTextNl: "",
+  infoImageEn: "", infoTextEn: "", infoTextNl: "",
 };
 
 export default function MapRegionsManager({ gameId, initialRegions }: Props) {
   const router   = useRouter();
   const fileRef  = useRef<HTMLInputElement>(null);
-  const [regions, setRegions]     = useState(initialRegions);
-  const [loading, setLoading]     = useState(false);
-  const [msg, setMsg]             = useState<string | null>(null);
-  const [isError, setIsError]     = useState(false);
-  const [editing, setEditing]     = useState<EditState | null>(null);
-  const [adding, setAdding]       = useState(false);
-  const [addForm, setAddForm]     = useState<AddState>(EMPTY_ADD);
-  const [savingId, setSavingId]   = useState<number | null>(null);
+  const [regions, setRegions]         = useState(initialRegions);
+  const [loading, setLoading]         = useState(false);
+  const [msg, setMsg]                 = useState<string | null>(null);
+  const [isError, setIsError]         = useState(false);
+  const [editing, setEditing]         = useState<EditState | null>(null);
+  const [adding, setAdding]           = useState(false);
+  const [addForm, setAddForm]         = useState<AddState>(EMPTY_ADD);
+  const [savingId, setSavingId]       = useState<number | null>(null);
+  const [translatingEdit, setTranslatingEdit] = useState(false);
+  const [translatingAdd, setTranslatingAdd]   = useState(false);
 
   const enabledCount = regions.filter((r) => r.enabled).length;
 
   function flash(text: string, error = false) {
     setMsg(text); setIsError(error);
+  }
+
+  /* ── Translate helper ─────────────────────────────────────────────── */
+  async function translateToNl(text: string): Promise<string | null> {
+    if (!text.trim()) return null;
+    const res  = await fetch("/api/admin/translate-text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    if (!res.ok) { flash(data.error ?? "Translation failed.", true); return null; }
+    return data.text as string;
   }
 
   /* ── Load Africa defaults ─────────────────────────────────────────── */
@@ -142,7 +159,7 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
         capitalEn:   editing.capitalEn   || null,
         capitalNl:   editing.capitalNl   || null,
         infoImageEn: editing.infoImageEn || null,
-        infoImageNl: editing.infoImageNl || null,
+        infoImageNl: null, // always fall back to EN image
         infoTextEn:  editing.infoTextEn  || null,
         infoTextNl:  editing.infoTextNl  || null,
       }),
@@ -175,7 +192,7 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
         capitalEn:   addForm.capitalEn   || null,
         capitalNl:   addForm.capitalNl   || null,
         infoImageEn: addForm.infoImageEn || null,
-        infoImageNl: addForm.infoImageNl || null,
+        infoImageNl: null,
         infoTextEn:  addForm.infoTextEn  || null,
         infoTextNl:  addForm.infoTextNl  || null,
       }),
@@ -309,7 +326,14 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
                         <td className={`${tdCls} text-slate-500`}>{r.capitalNl ?? "—"}</td>
                         <td className={`${tdCls} whitespace-nowrap`}>
                           <button
-                            onClick={() => setEditing({ id: r.id, labelEn: r.labelEn, labelNl: r.labelNl, capitalEn: r.capitalEn ?? "", capitalNl: r.capitalNl ?? "", infoImageEn: r.infoImageEn ?? "", infoImageNl: r.infoImageNl ?? "", infoTextEn: r.infoTextEn ?? "", infoTextNl: r.infoTextNl ?? "" })}
+                            onClick={() => setEditing({
+                              id: r.id,
+                              labelEn: r.labelEn, labelNl: r.labelNl,
+                              capitalEn: r.capitalEn ?? "", capitalNl: r.capitalNl ?? "",
+                              infoImageEn: r.infoImageEn ?? "",
+                              infoTextEn: r.infoTextEn ?? "",
+                              infoTextNl: r.infoTextNl ?? "",
+                            })}
                             className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded mr-1"
                           >
                             Edit
@@ -329,10 +353,11 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
                   {isEdit && (
                     <tr key={`${r.id}-info`} className="bg-indigo-50/40 border-b border-slate-100">
                       <td colSpan={7} className="px-4 py-3">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Extra info (shown after correct drop)</p>
-                        <div className="grid grid-cols-2 gap-3">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Extra info (shown after correct drop)</p>
+                        <div className="space-y-3">
+                          {/* Image URL */}
                           <div>
-                            <label className="block text-xs text-slate-500 mb-1">Image URL (EN)</label>
+                            <label className="block text-xs text-slate-500 mb-1">Image URL</label>
                             <input
                               className={inputCls}
                               placeholder="https://… or /images/…"
@@ -340,47 +365,45 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
                               onChange={(e) => setEditing({ ...editing, infoImageEn: e.target.value })}
                             />
                           </div>
+
+                          {/* Text EN */}
                           <div>
-                            <label className="block text-xs text-slate-500 mb-1">Image URL (NL)</label>
-                            <input
-                              className={inputCls}
-                              placeholder="https://… or /images/… (leave blank to use EN)"
-                              value={editing.infoImageNl}
-                              onChange={(e) => setEditing({ ...editing, infoImageNl: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-slate-500 mb-1">Info text (EN)</label>
+                            <label className="block text-xs text-slate-500 mb-1">Info text (English)</label>
                             <textarea
                               className={textareaCls}
-                              placeholder="Interesting fact in English…"
+                              placeholder="Interesting fact…"
                               value={editing.infoTextEn}
-                              onChange={(e) => setEditing({ ...editing, infoTextEn: e.target.value })}
+                              onChange={(e) => setEditing({ ...editing, infoTextEn: e.target.value, infoTextNl: "" })}
                             />
                           </div>
-                          <div>
-                            <label className="block text-xs text-slate-500 mb-1">Info text (NL)</label>
-                            <textarea
-                              className={textareaCls}
-                              placeholder="Interessant feit in het Nederlands…"
-                              value={editing.infoTextNl}
-                              onChange={(e) => setEditing({ ...editing, infoTextNl: e.target.value })}
-                            />
+
+                          {/* Translate button + NL preview */}
+                          <div className="flex items-start gap-3">
+                            <button
+                              disabled={!editing.infoTextEn.trim() || translatingEdit}
+                              onClick={async () => {
+                                setTranslatingEdit(true);
+                                const nl = await translateToNl(editing.infoTextEn);
+                                if (nl) setEditing((prev) => prev ? { ...prev, infoTextNl: nl } : prev);
+                                setTranslatingEdit(false);
+                              }}
+                              className="flex-shrink-0 px-3 py-1 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg disabled:opacity-40 transition-colors"
+                            >
+                              {translatingEdit ? "Translating…" : "Translate to NL"}
+                            </button>
+                            {editing.infoTextNl && (
+                              <p className="text-xs text-slate-500 italic leading-relaxed">{editing.infoTextNl}</p>
+                            )}
                           </div>
+
+                          {/* Image preview */}
+                          {editing.infoImageEn && (
+                            <div>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={editing.infoImageEn} alt="" className="h-24 object-cover rounded-lg" />
+                            </div>
+                          )}
                         </div>
-                        {/* Preview */}
-                        {(editing.infoImageEn || editing.infoTextEn) && (
-                          <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
-                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Preview (EN)</p>
-                            {editing.infoImageEn && (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={editing.infoImageEn} alt="" className="h-24 object-cover rounded mb-2" />
-                            )}
-                            {editing.infoTextEn && (
-                              <p className="text-sm text-slate-700">{editing.infoTextEn}</p>
-                            )}
-                          </div>
-                        )}
                       </td>
                     </tr>
                   )}
@@ -412,23 +435,32 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
                 {/* Extra info for add form */}
                 <tr className="bg-indigo-50/30 border-b border-slate-100">
                   <td colSpan={7} className="px-4 py-3">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Extra info (optional — shown after correct drop)</p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Extra info (optional)</p>
+                    <div className="space-y-3">
                       <div>
-                        <label className="block text-xs text-slate-500 mb-1">Image URL (EN)</label>
+                        <label className="block text-xs text-slate-500 mb-1">Image URL</label>
                         <input className={inputCls} placeholder="https://…" value={addForm.infoImageEn} onChange={(e) => setAddForm({ ...addForm, infoImageEn: e.target.value })} />
                       </div>
                       <div>
-                        <label className="block text-xs text-slate-500 mb-1">Image URL (NL)</label>
-                        <input className={inputCls} placeholder="https://… (leave blank to use EN)" value={addForm.infoImageNl} onChange={(e) => setAddForm({ ...addForm, infoImageNl: e.target.value })} />
+                        <label className="block text-xs text-slate-500 mb-1">Info text (English)</label>
+                        <textarea className={textareaCls} placeholder="Interesting fact…" value={addForm.infoTextEn} onChange={(e) => setAddForm({ ...addForm, infoTextEn: e.target.value, infoTextNl: "" })} />
                       </div>
-                      <div>
-                        <label className="block text-xs text-slate-500 mb-1">Info text (EN)</label>
-                        <textarea className={textareaCls} placeholder="Interesting fact…" value={addForm.infoTextEn} onChange={(e) => setAddForm({ ...addForm, infoTextEn: e.target.value })} />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-slate-500 mb-1">Info text (NL)</label>
-                        <textarea className={textareaCls} placeholder="Interessant feit…" value={addForm.infoTextNl} onChange={(e) => setAddForm({ ...addForm, infoTextNl: e.target.value })} />
+                      <div className="flex items-start gap-3">
+                        <button
+                          disabled={!addForm.infoTextEn.trim() || translatingAdd}
+                          onClick={async () => {
+                            setTranslatingAdd(true);
+                            const nl = await translateToNl(addForm.infoTextEn);
+                            if (nl) setAddForm((prev) => ({ ...prev, infoTextNl: nl }));
+                            setTranslatingAdd(false);
+                          }}
+                          className="flex-shrink-0 px-3 py-1 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg disabled:opacity-40 transition-colors"
+                        >
+                          {translatingAdd ? "Translating…" : "Translate to NL"}
+                        </button>
+                        {addForm.infoTextNl && (
+                          <p className="text-xs text-slate-500 italic leading-relaxed">{addForm.infoTextNl}</p>
+                        )}
                       </div>
                     </div>
                   </td>
