@@ -96,6 +96,38 @@ function GameOverOverlay({ message }: { message: string }) {
   );
 }
 
+// ── Lightbox ───────────────────────────────────────────────────────────────────
+function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  // Close on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 animate-fade-in"
+      onClick={onClose}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className="max-w-[90vw] max-h-[90vh] rounded-2xl shadow-2xl object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 // ── Info panel shown after correct drop ───────────────────────────────────────
 function RegionInfoPanel({
   region,
@@ -108,6 +140,8 @@ function RegionInfoPanel({
   didYouKnow: string;
   onDismiss: () => void;
 }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const image = lang === "nl" ? (region.infoImageNl ?? region.infoImageEn) : region.infoImageEn;
   const text  = lang === "nl" ? (region.infoTextNl  ?? region.infoTextEn)  : region.infoTextEn;
   const name  = lang === "nl" ? region.labelNl : region.labelEn;
@@ -115,34 +149,45 @@ function RegionInfoPanel({
   if (!image && !text) return null;
 
   return (
-    <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden animate-fade-in">
-      <div className="flex items-center justify-between px-4 py-2 bg-emerald-100 border-b border-emerald-200">
-        <span className="text-sm font-semibold text-emerald-800">{name}</span>
-        <button
-          onClick={onDismiss}
-          aria-label="Dismiss"
-          className="text-emerald-600 hover:text-emerald-800 text-lg leading-none"
-        >
-          ×
-        </button>
+    <>
+      {lightboxOpen && image && (
+        <Lightbox src={image} alt={name} onClose={() => setLightboxOpen(false)} />
+      )}
+      <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden animate-fade-in">
+        <div className="flex items-center justify-between px-4 py-2 bg-emerald-100 border-b border-emerald-200">
+          <span className="text-sm font-semibold text-emerald-800">{name}</span>
+          <button
+            onClick={onDismiss}
+            aria-label="Dismiss"
+            className="text-emerald-600 hover:text-emerald-800 text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4 p-4">
+          {image && (
+            <button
+              onClick={() => setLightboxOpen(true)}
+              className="flex-shrink-0 w-full sm:w-48 h-36 rounded-xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 group"
+              aria-label="Expand image"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image}
+                alt={name}
+                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105 cursor-zoom-in"
+              />
+            </button>
+          )}
+          {text && (
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-1">{didYouKnow}</p>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{text}</p>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="flex flex-col sm:flex-row gap-4 p-4">
-        {image && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={image}
-            alt={name}
-            className="w-full sm:w-48 h-36 object-cover rounded-xl flex-shrink-0"
-          />
-        )}
-        {text && (
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-1">{didYouKnow}</p>
-            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{text}</p>
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 
