@@ -7,6 +7,7 @@ import type { MapRegion } from "@/data/challengeGame";
 interface Props {
   gameId: number;
   initialRegions: MapRegion[];
+  mapSvg?: string | null;
 }
 
 type EditState = {
@@ -31,7 +32,7 @@ const EMPTY_ADD: AddState = {
   infoImageEn: "", infoTextEn: "", infoTextNl: "",
 };
 
-export default function MapRegionsManager({ gameId, initialRegions }: Props) {
+export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Props) {
   const router   = useRouter();
   const fileRef  = useRef<HTMLInputElement>(null);
   const [regions, setRegions]         = useState(initialRegions);
@@ -64,11 +65,17 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
     return data.text as string;
   }
 
-  /* ── Load Africa defaults ─────────────────────────────────────────── */
+  /* ── Load map defaults ────────────────────────────────────────────── */
+  const defaultsConfig: { label: string; endpoint: string } | null =
+    mapSvg === "/maps/africa.svg"        ? { label: "Load Africa defaults",        endpoint: "/api/admin/map-regions/load-defaults"    } :
+    mapSvg === "/maps/south_america.svg" ? { label: "Load South America defaults", endpoint: "/api/admin/map-regions/load-sa-defaults" } :
+    null;
+
   async function handleLoadDefaults() {
-    if (!confirm("This will replace all existing regions with the Africa defaults. Continue?")) return;
+    if (!defaultsConfig) return;
+    if (!confirm(`This will replace all existing regions with the ${defaultsConfig.label.replace("Load ", "").replace(" defaults", "")} defaults. Continue?`)) return;
     setLoading(true); setMsg(null);
-    const res  = await fetch("/api/admin/map-regions/load-defaults", {
+    const res  = await fetch(defaultsConfig.endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gameId }),
@@ -217,13 +224,15 @@ export default function MapRegionsManager({ gameId, initialRegions }: Props) {
     <div className="space-y-4">
       {/* Action bar */}
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={handleLoadDefaults}
-          disabled={loading}
-          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
-        >
-          {loading ? "Loading…" : "Load Africa defaults"}
-        </button>
+        {defaultsConfig && (
+          <button
+            onClick={handleLoadDefaults}
+            disabled={loading}
+            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg disabled:opacity-50 transition-colors"
+          >
+            {loading ? "Loading…" : defaultsConfig.label}
+          </button>
+        )}
 
         <span className="text-slate-300 hidden sm:inline">|</span>
 
