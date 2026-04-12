@@ -457,6 +457,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ── SVG map ────────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0">
+          <div className={svgPath.includes("south_america") ? "max-w-[90%]" : undefined}>
           <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-700">
             <svg
               ref={svgRef}
@@ -509,6 +510,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 );
               })}
             </svg>
+          </div>
           </div>
         </div>
 
