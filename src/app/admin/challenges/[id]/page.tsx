@@ -50,7 +50,7 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-1">Map Regions ({regions.length})</h2>
           <p className="text-sm text-slate-400 mb-4">Import a CSV to define the clickable map regions and their labels.</p>
-          <MapRegionsManager gameId={game.id} initialRegions={regions} />
+          <MapRegionsManager gameId={game.id} initialRegions={regions} mapSvg={game.mapSvg} />
         </div>
       )}
       {game.gameType === "quiz" && (
