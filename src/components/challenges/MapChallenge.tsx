@@ -586,16 +586,26 @@ function buildSvgInner(
 
   function applyColors(tag: string, attrs: string): string {
     const idMatch = attrs.match(/\bid="([^"]+)"/);
-    if (!idMatch || !regionKeySet.has(idMatch[1])) return `<${tag}${attrs}/>`; // not a game element — leave as-is
-    const id = idMatch[1];
-    const isCircle = tag === "circle";
-    const { fill, stroke, sw } = gameColors(id, isCircle);
+    const isGameElement = idMatch && regionKeySet.has(idMatch[1]);
+
+    // Non-game circles (decorative): leave completely unchanged
+    if (tag === "circle" && !isGameElement) return `<${tag}${attrs}/>`;
+
     const cleaned = attrs
       .replace(/\s*fill="[^"]*"/g, "")
       .replace(/\s*stroke="[^"]*"/g, "")
       .replace(/\s*stroke-width="[^"]*"/g, "")
       .replace(/\s*class="[^"]*"/g, "")
       .replace(/\s*style="[^"]*"/g, "");
+
+    if (!isGameElement) {
+      // Background country path — render in the same green as before
+      return `<path${cleaned} fill="#c8d8b4" stroke="#6b7c52" stroke-width="0.4"/>`;
+    }
+
+    const id = idMatch[1];
+    const isCircle = tag === "circle";
+    const { fill, stroke, sw } = gameColors(id, isCircle);
     return `<${tag}${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
   }
 
