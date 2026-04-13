@@ -511,6 +511,12 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 }
                 if (mouseHoverRef.current) { restorePath(mouseHoverRef.current); mouseHoverRef.current = null; }
               }}
+              onClick={(e) => {
+                if (dragging.current) return;
+                const key = getPathAtPoint(e.clientX, e.clientY);
+                if (!key || !placed[key]) return;
+                setHoveredChipKey((prev) => (prev === key ? null : key));
+              }}
               dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, regionKeySet, justPlacedKey) }}
             />
           </div>
