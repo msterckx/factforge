@@ -128,15 +128,17 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
   );
 }
 
-// ── Info panel shown on chip hover ────────────────────────────────────────────
+// ── Info panel shown on chip click ────────────────────────────────────────────
 function RegionInfoPanel({
   region,
   lang,
   didYouKnow,
+  onDismiss,
 }: {
   region: MapRegion;
   lang: string;
   didYouKnow: string;
+  onDismiss: () => void;
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -152,8 +154,15 @@ function RegionInfoPanel({
         <Lightbox src={image} alt={name} onClose={() => setLightboxOpen(false)} />
       )}
       <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden animate-fade-in">
-        <div className="px-4 py-2 bg-emerald-100 border-b border-emerald-200">
+        <div className="flex items-center justify-between px-4 py-2 bg-emerald-100 border-b border-emerald-200">
           <span className="text-sm font-semibold text-emerald-800">{name}</span>
+          <button
+            onClick={onDismiss}
+            aria-label="Dismiss"
+            className="text-emerald-600 hover:text-emerald-800 text-lg leading-none"
+          >
+            ×
+          </button>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 p-4">
           {image && (
@@ -310,42 +319,66 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   function onChipDown(e: React.PointerEvent, chip: Chip) {
     e.preventDefault();
     if (gameWon || gameLost) return;
-    setHoveredChipKey(null); // hide info panel while dragging
 
-    if (!started) {
-      setStarted(true);
-      trackChallengeStart(challengeId);
-    }
-
-    // Build ghost
-    const ghost = document.createElement("div");
-    ghost.textContent = chip.label;
-    ghost.style.cssText = `
-      position: fixed; z-index: 9999; pointer-events: none;
-      padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
-      background: #1e293b; color: #f8fafc; white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.35); opacity: 0.95;
-      transform: translate(-50%,-50%);
-      left: ${e.clientX}px; top: ${e.clientY}px;
-    `;
-    document.body.appendChild(ghost);
-    dragging.current = { chip, ghost };
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragStarted = false;
 
     const onMove = (me: PointerEvent) => {
-      if (!dragging.current) return;
-      dragging.current.ghost.style.left = `${me.clientX}px`;
-      dragging.current.ghost.style.top  = `${me.clientY}px`;
-      const key = getPathAtPoint(me.clientX, me.clientY);
-      if (key !== dragHoverRef.current) {
-        if (dragHoverRef.current) restorePath(dragHoverRef.current);
-        if (key) setPathColor(key, SVG_COLORS.drag);
-        dragHoverRef.current = key;
+      const dx = me.clientX - startX;
+      const dy = me.clientY - startY;
+
+      // Initiate drag once pointer moves more than 6px
+      if (!dragStarted && Math.sqrt(dx * dx + dy * dy) > 6) {
+        dragStarted = true;
+        setHoveredChipKey(null); // hide info panel while dragging
+
+        if (!started) {
+          setStarted(true);
+          trackChallengeStart(challengeId);
+        }
+
+        // Build ghost
+        const ghost = document.createElement("div");
+        ghost.textContent = chip.label;
+        ghost.style.cssText = `
+          position: fixed; z-index: 9999; pointer-events: none;
+          padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+          background: #1e293b; color: #f8fafc; white-space: nowrap;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.35); opacity: 0.95;
+          transform: translate(-50%,-50%);
+          left: ${me.clientX}px; top: ${me.clientY}px;
+        `;
+        document.body.appendChild(ghost);
+        dragging.current = { chip, ghost };
+      }
+
+      if (dragStarted && dragging.current) {
+        dragging.current.ghost.style.left = `${me.clientX}px`;
+        dragging.current.ghost.style.top  = `${me.clientY}px`;
+        const key = getPathAtPoint(me.clientX, me.clientY);
+        if (key !== dragHoverRef.current) {
+          if (dragHoverRef.current) restorePath(dragHoverRef.current);
+          if (key) setPathColor(key, SVG_COLORS.drag);
+          dragHoverRef.current = key;
+        }
       }
     };
 
     const onUp = (ue: PointerEvent) => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+
+      if (!dragStarted) {
+        // Tap / click — toggle info panel for this chip
+        if (!started) {
+          setStarted(true);
+          trackChallengeStart(challengeId);
+        }
+        setHoveredChipKey((prev) => (prev === chip.regionKey ? null : chip.regionKey));
+        return;
+      }
+
       if (!dragging.current) return;
       dragging.current.ghost.remove();
       const dropKey = getPathAtPoint(ue.clientX, ue.clientY);
@@ -353,7 +386,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       dragging.current = null;
 
       if (!dropKey) return;
-
       handleDrop(chip, dropKey);
     };
 
@@ -495,9 +527,11 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
               <div
                 key={chip.regionKey}
                 onPointerDown={(e) => onChipDown(e, chip)}
-                onMouseEnter={() => setHoveredChipKey(chip.regionKey)}
-                onMouseLeave={() => setHoveredChipKey(null)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-lg cursor-grab active:cursor-grabbing shadow-sm select-none touch-none"
+                className={`px-3 py-1.5 text-white text-sm font-medium rounded-lg cursor-grab active:cursor-grabbing shadow-sm select-none touch-none transition-colors ${
+                  hoveredChipKey === chip.regionKey
+                    ? "bg-emerald-700 ring-2 ring-emerald-400"
+                    : "bg-slate-800 hover:bg-slate-700"
+                }`}
               >
                 {chip.label}
               </div>
@@ -519,12 +553,13 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         </div>
       </div>
 
-      {/* ── Info panel (shown while hovering a chip) ──────────────────── */}
+      {/* ── Info panel (shown on chip click) ──────────────────────────── */}
       {hoveredChipKey && regionsByKey[hoveredChipKey] && (
         <RegionInfoPanel
           region={regionsByKey[hoveredChipKey]}
           lang={lang}
           didYouKnow={dict.mapDidYouKnow}
+          onDismiss={() => setHoveredChipKey(null)}
         />
       )}
     </div>
