@@ -226,6 +226,9 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     return map;
   }, [regions]);
 
+  // Set of valid drop-target IDs — only these get colored/hovered
+  const regionKeySet = useMemo(() => new Set(allChips.map((c) => c.regionKey)), [allChips]);
+
   // Hover tracked as refs — direct DOM manipulation avoids re-rendering 62 paths on every move
   const mouseHoverRef = useRef<string | null>(null);
   const dragHoverRef  = useRef<string | null>(null);
@@ -248,7 +251,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   } as const;
 
   function setPathColor(id: string, c: { fill: string; stroke: string; sw: string }) {
-    const el = svgRef.current?.querySelector<SVGPathElement>(`#${CSS.escape(id)}`);
+    const el = svgRef.current?.querySelector<SVGElement>(`#${CSS.escape(id)}`);
     if (!el) return;
     el.setAttribute("fill", c.fill);
     el.setAttribute("stroke", c.stroke);
@@ -306,14 +309,13 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     if (!svgRef.current) return null;
     const el = document.elementFromPoint(clientX, clientY);
     if (!el) return null;
-    // Walk up to find path element with id
     let cur: Element | null = el;
     while (cur && cur !== svgRef.current) {
-      if (cur.tagName === "path" && cur.id) return cur.id;
+      if (cur.id && regionKeySet.has(cur.id)) return cur.id;
       cur = cur.parentElement;
     }
     return null;
-  }, []);
+  }, [regionKeySet]);
 
   // ── Pointer handlers on chips ─────────────────────────────────────────────
   function onChipDown(e: React.PointerEvent, chip: Chip) {
@@ -467,8 +469,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 if (dragging.current) return;
                 let cur: Element | null = e.target as Element;
                 while (cur && cur !== e.currentTarget) {
-                  if (cur.tagName === "path" && (cur as Element).id) {
-                    const id = (cur as Element).id;
+                  if (cur.id && regionKeySet.has(cur.id)) {
+                    const id = cur.id;
                     if (id !== mouseHoverRef.current) {
                       if (mouseHoverRef.current) restorePath(mouseHoverRef.current);
                       if (!placed[id]) setPathColor(id, SVG_COLORS.hover);
@@ -488,7 +490,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 }
                 if (mouseHoverRef.current) { restorePath(mouseHoverRef.current); mouseHoverRef.current = null; }
               }}
-              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey) }}
+              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, regionKeySet) }}
             />
             {/* Labels for correctly placed chips */}
             <svg
@@ -561,35 +563,45 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-/** Set base fill/stroke on every path. Hover colours are applied via direct DOM after mount. */
+/**
+ * Apply game colours only to elements whose IDs are in regionKeySet.
+ * Background paths (country shapes etc.) are left completely unchanged.
+ * Circle elements (point markers) are handled alongside paths.
+ */
 function buildSvgInner(
   raw: string,
   placed: Record<string, string>,
   wrongKey: string | null,
+  regionKeySet: Set<string>,
 ): string {
   // Strip any <style> block that would leak globally
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
 
-  // Match full <path .../> regardless of attribute order (SVG paths have d= first)
-  return noStyle.replace(/<path([\s\S]*?)\/>/g, (_match, attrs) => {
+  function gameColors(id: string, isCircle: boolean) {
+    if (placed[id])       return { fill: "#4ade80", stroke: "#15803d", sw: isCircle ? "2" : "0.8" };
+    if (id === wrongKey)  return { fill: "#f87171", stroke: "#dc2626", sw: isCircle ? "2" : "0.8" };
+    if (isCircle)         return { fill: "#fbbf24", stroke: "#d97706", sw: "2" };   // amber dot = unplaced target
+    return                       { fill: "#c8d8b4", stroke: "#6b7c52", sw: "0.4" }; // soft green = unplaced country
+  }
+
+  function applyColors(tag: string, attrs: string): string {
     const idMatch = attrs.match(/\bid="([^"]+)"/);
-    if (!idMatch) return _match; // no id — leave unchanged
-
+    if (!idMatch || !regionKeySet.has(idMatch[1])) return `<${tag}${attrs}/>`; // not a game element — leave as-is
     const id = idMatch[1];
-    let fill = "#c8d8b4", stroke = "#6b7c52", sw = "0.4";
-
-    if (placed[id])    { fill = "#4ade80"; stroke = "#15803d"; sw = "0.8"; }
-    else if (id === wrongKey) { fill = "#f87171"; stroke = "#dc2626"; sw = "0.8"; }
-
+    const isCircle = tag === "circle";
+    const { fill, stroke, sw } = gameColors(id, isCircle);
     const cleaned = attrs
       .replace(/\s*fill="[^"]*"/g, "")
       .replace(/\s*stroke="[^"]*"/g, "")
       .replace(/\s*stroke-width="[^"]*"/g, "")
       .replace(/\s*class="[^"]*"/g, "")
       .replace(/\s*style="[^"]*"/g, "");
+    return `<${tag}${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
+  }
 
-    return `<path${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
-  });
+  return noStyle
+    .replace(/<path([\s\S]*?)\/>/g,   (_m, attrs) => applyColors("path",   attrs))
+    .replace(/<circle([\s\S]*?)\/>/g, (_m, attrs) => applyColors("circle", attrs));
 }
 
 /** Render a text label centred on the path's bounding box */
