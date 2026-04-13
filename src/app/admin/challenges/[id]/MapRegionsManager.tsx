@@ -426,7 +426,7 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                 <tr className="bg-indigo-50/50 border-b border-slate-100">
                   <td className={tdCls} />
                   <td className={tdCls}>
-                    <input className={`${inputCls} font-mono`} placeholder="e.g. NG" value={addForm.regionKey} onChange={(e) => setAddForm({ ...addForm, regionKey: e.target.value.toUpperCase() })} maxLength={6} />
+                    <input className={`${inputCls} font-mono`} placeholder="e.g. NG or Parque_Nacional_Los_Glaciares" value={addForm.regionKey} onChange={(e) => setAddForm({ ...addForm, regionKey: e.target.value })} />
                   </td>
                   <td className={tdCls}><input className={inputCls} placeholder="English name" value={addForm.labelEn} onChange={(e) => setAddForm({ ...addForm, labelEn: e.target.value })} /></td>
                   <td className={tdCls}><input className={inputCls} placeholder="Dutch name" value={addForm.labelNl} onChange={(e) => setAddForm({ ...addForm, labelNl: e.target.value })} /></td>
