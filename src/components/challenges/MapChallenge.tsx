@@ -128,17 +128,15 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
   );
 }
 
-// ── Info panel shown after correct drop ───────────────────────────────────────
+// ── Info panel shown on chip hover ────────────────────────────────────────────
 function RegionInfoPanel({
   region,
   lang,
   didYouKnow,
-  onDismiss,
 }: {
   region: MapRegion;
   lang: string;
   didYouKnow: string;
-  onDismiss: () => void;
 }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
@@ -154,15 +152,8 @@ function RegionInfoPanel({
         <Lightbox src={image} alt={name} onClose={() => setLightboxOpen(false)} />
       )}
       <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden animate-fade-in">
-        <div className="flex items-center justify-between px-4 py-2 bg-emerald-100 border-b border-emerald-200">
+        <div className="px-4 py-2 bg-emerald-100 border-b border-emerald-200">
           <span className="text-sm font-semibold text-emerald-800">{name}</span>
-          <button
-            onClick={onDismiss}
-            aria-label="Dismiss"
-            className="text-emerald-600 hover:text-emerald-800 text-lg leading-none"
-          >
-            ×
-          </button>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 p-4">
           {image && (
@@ -217,7 +208,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   const [glitterActive, setGlitterActive] = useState(false);
   const [wrongKey, setWrongKey]       = useState<string | null>(null);    // briefly flash red
   const [started, setStarted]         = useState(false);
-  const [lastPlacedRegion, setLastPlacedRegion] = useState<MapRegion | null>(null);
+  const [hoveredChipKey, setHoveredChipKey] = useState<string | null>(null);
+  const [justPlacedKey, setJustPlacedKey]   = useState<string | null>(null); // triggers pulse anim
 
   // Lookup map for quick access by regionKey
   const regionsByKey = useMemo(() => {
@@ -235,7 +227,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
   // SVG inline content
   const [svgContent, setSvgContent]   = useState<string | null>(null);
-  const [svgReady, setSvgReady]       = useState(false);
   const svgRef                        = useRef<SVGSVGElement | null>(null);
   const containerRef                  = useRef<HTMLDivElement>(null);
 
@@ -275,8 +266,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       .then((text) => {
         const inner = text.replace(/<\/?svg[^>]*>/gi, "").trim();
         setSvgContent(rewriteInkscapeLabels(inner));
-        // Wait one frame for dangerouslySetInnerHTML to flush before labels query the DOM
-        requestAnimationFrame(() => setSvgReady(true));
       })
       .catch(console.error);
   }, [svgPath]);
@@ -321,6 +310,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   function onChipDown(e: React.PointerEvent, chip: Chip) {
     e.preventDefault();
     if (gameWon || gameLost) return;
+    setHoveredChipKey(null); // hide info panel while dragging
 
     if (!started) {
       setStarted(true);
@@ -380,11 +370,9 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       const newPlaced = { ...placed, [dropKey]: chip.label };
       setPlaced(newPlaced);
       setBank((prev) => prev.filter((c) => c.regionKey !== chip.regionKey));
-      // Show info panel for this region (only if it has extra info)
-      const region = regionsByKey[chip.regionKey];
-      if (region && (region.infoImageEn || region.infoImageNl || region.infoTextEn || region.infoTextNl)) {
-        setLastPlacedRegion(region);
-      }
+      // Pulse animation on the circle/path
+      setJustPlacedKey(chip.regionKey);
+      setTimeout(() => setJustPlacedKey(null), 750);
 
       if (Object.keys(newPlaced).length === allChips.length) {
         setGameWon(true);
@@ -430,7 +418,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     mouseHoverRef.current = null;
     dragHoverRef.current = null;
     setStarted(false);
-    setLastPlacedRegion(null);
+    setHoveredChipKey(null);
+    setJustPlacedKey(null);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
@@ -490,28 +479,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 }
                 if (mouseHoverRef.current) { restorePath(mouseHoverRef.current); mouseHoverRef.current = null; }
               }}
-              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, regionKeySet) }}
+              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, regionKeySet, justPlacedKey) }}
             />
-            {/* Labels for correctly placed chips */}
-            <svg
-              viewBox={viewBox}
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{ top: 0, left: 0 }}
-            >
-              {regions.map((r) => {
-                if (!placed[r.regionKey]) return null;
-                return (
-                  <RegionLabel
-                    key={r.regionKey}
-                    regionKey={r.regionKey}
-                    label={placed[r.regionKey]}
-                    svgRef={svgRef}
-                    viewBox={viewBox}
-                    svgReady={svgReady}
-                  />
-                );
-              })}
-            </svg>
           </div>
           </div>
         </div>
@@ -526,6 +495,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
               <div
                 key={chip.regionKey}
                 onPointerDown={(e) => onChipDown(e, chip)}
+                onMouseEnter={() => setHoveredChipKey(chip.regionKey)}
+                onMouseLeave={() => setHoveredChipKey(null)}
                 className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-lg cursor-grab active:cursor-grabbing shadow-sm select-none touch-none"
               >
                 {chip.label}
@@ -548,13 +519,12 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         </div>
       </div>
 
-      {/* ── Info panel ────────────────────────────────────────────────── */}
-      {lastPlacedRegion && (
+      {/* ── Info panel (shown while hovering a chip) ──────────────────── */}
+      {hoveredChipKey && regionsByKey[hoveredChipKey] && (
         <RegionInfoPanel
-          region={lastPlacedRegion}
+          region={regionsByKey[hoveredChipKey]}
           lang={lang}
           didYouKnow={dict.mapDidYouKnow}
-          onDismiss={() => setLastPlacedRegion(null)}
         />
       )}
     </div>
@@ -590,6 +560,7 @@ function buildSvgInner(
   placed: Record<string, string>,
   wrongKey: string | null,
   regionKeySet: Set<string>,
+  justPlacedKey: string | null = null,
 ): string {
   // Strip any <style> block that would leak globally
   const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
@@ -627,7 +598,9 @@ function buildSvgInner(
     const radiusAttr = isCircle
       ? ` r="4"` + cleaned.replace(/\s*\br="[^"]*"/g, "")
       : cleaned;
-    return `<${tag}${radiusAttr} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
+    // Pulse animation class for just-placed elements
+    const pulseClass = id === justPlacedKey ? ` class="circle-correct-pulse"` : "";
+    return `<${tag}${radiusAttr}${pulseClass} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
   }
 
   return noStyle
@@ -635,54 +608,3 @@ function buildSvgInner(
     .replace(/<circle([\s\S]*?)\/>/g, (_m, attrs) => applyColors("circle", attrs));
 }
 
-/** Render a text label centred on the path's bounding box */
-function RegionLabel({
-  regionKey, label, svgRef, viewBox, svgReady,
-}: {
-  regionKey: string; label: string; svgRef: React.RefObject<SVGSVGElement | null>; viewBox: string; svgReady: boolean;
-}) {
-  const [center, setCenter] = useState<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    if (!svgReady || !svgRef.current) return;
-    const path = svgRef.current.querySelector<SVGGeometryElement>(`#${CSS.escape(regionKey)}`);
-    if (!path) return;
-
-    const svgEl  = svgRef.current;
-    const svgBox = svgEl.getBoundingClientRect();
-    const pBox   = path.getBoundingClientRect();
-
-    if (svgBox.width === 0) return;
-
-    // Convert pixel position to viewBox coordinates
-    const [vbMinX, vbMinY, vbWidth, vbHeight] = viewBox.split(" ").map(Number);
-    const scaleX = vbWidth  / svgBox.width;
-    const scaleY = vbHeight / svgBox.height;
-
-    const cx = vbMinX + (pBox.left + pBox.width  / 2 - svgBox.left) * scaleX;
-    const cy = vbMinY + (pBox.top  + pBox.height / 2 - svgBox.top)  * scaleY;
-    setCenter({ x: cx, y: cy });
-  }, [regionKey, svgRef, viewBox, svgReady]);
-
-  if (!center) return null;
-
-  return (
-    <>
-      <text
-        x={center.x}
-        y={center.y}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fontSize="9"
-        fontWeight="700"
-        fill="white"
-        stroke="#166534"
-        strokeWidth="3"
-        paintOrder="stroke"
-        style={{ pointerEvents: "none", userSelect: "none" }}
-      >
-        {label}
-      </text>
-    </>
-  );
-}
