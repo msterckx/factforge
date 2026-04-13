@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { ChallengeGame } from "@/data/challengeGame";
 
 interface CategoryOption { id: number; name: string; slug: string; subcategories: { id: number; name: string }[] }
+interface MapOption { label: string; value: string }
 
 export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
   const router = useRouter();
+  const svgFileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -16,10 +18,43 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
   const [quizCategoryId, setQuizCategoryId] = useState<number | null>(game.quizCategoryId ?? null);
   const [quizSubcategoryId, setQuizSubcategoryId] = useState<number | null>(game.quizSubcategoryId ?? null);
   const [dbCategories, setDbCategories] = useState<CategoryOption[]>([]);
+  const [mapOptions, setMapOptions] = useState<MapOption[]>([]);
+  const [mapSvg, setMapSvg] = useState(game.mapSvg ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState<{ text: string; error: boolean } | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/categories").then((r) => r.json()).then(setDbCategories).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (gameType === "map") {
+      fetch("/api/admin/maps").then((r) => r.json()).then((d) => setMapOptions(d.maps ?? [])).catch(() => {});
+    }
+  }, [gameType]);
+
+  async function handleSvgUpload() {
+    const file = svgFileRef.current?.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadMsg(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/maps/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (res.ok) {
+      setUploadMsg({ text: `Uploaded: ${data.filename}`, error: false });
+      // Refresh map list and auto-select the new map
+      const listRes = await fetch("/api/admin/maps");
+      const listData = await listRes.json();
+      setMapOptions(listData.maps ?? []);
+      setMapSvg(data.path);
+      if (svgFileRef.current) svgFileRef.current.value = "";
+    } else {
+      setUploadMsg({ text: data.error ?? "Upload failed", error: true });
+    }
+    setUploading(false);
+  }
 
   const selectedCategory = dbCategories.find((c) => c.id === quizCategoryId);
   const availableSubcategories = selectedCategory?.subcategories ?? [];
@@ -216,13 +251,21 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
           <p className="text-sm font-semibold text-emerald-800">Map Settings</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">SVG path <span className="text-slate-400 font-normal">(relative to /public)</span></label>
-              <input
-                name="mapSvg"
-                defaultValue={game.mapSvg ?? "/maps/africa.svg"}
-                placeholder="/maps/africa.svg"
+              <label className="block text-sm font-medium text-slate-700 mb-1">SVG map</label>
+              {/* Hidden input so the value is submitted with the form */}
+              <input type="hidden" name="mapSvg" value={mapSvg} />
+              <select
+                value={mapSvg}
+                onChange={(e) => setMapSvg(e.target.value)}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+              >
+                {mapSvg && !mapOptions.find((o) => o.value === mapSvg) && (
+                  <option value={mapSvg}>{mapSvg}</option>
+                )}
+                {mapOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Label mode</label>
@@ -237,11 +280,30 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
               </select>
             </div>
           </div>
-          <p className="text-xs text-emerald-700">
-            Regions are managed via <strong>CSV import</strong> at{" "}
-            <code className="bg-emerald-100 px-1 rounded">/api/admin/map-regions/import</code>{" "}
-            (POST with <code className="bg-emerald-100 px-1 rounded">gameId</code> and a CSV file).
-          </p>
+
+          {/* Upload a new SVG */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <label className="text-xs text-slate-500 font-medium flex-shrink-0">Upload new SVG:</label>
+            <input
+              ref={svgFileRef}
+              type="file"
+              accept=".svg,image/svg+xml"
+              className="text-sm text-slate-600 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border file:border-slate-300 file:text-sm file:bg-white file:text-slate-700 hover:file:bg-slate-50"
+            />
+            <button
+              type="button"
+              onClick={handleSvgUpload}
+              disabled={uploading}
+              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+            >
+              {uploading ? "Uploading…" : "Upload"}
+            </button>
+            {uploadMsg && (
+              <span className={`text-xs ${uploadMsg.error ? "text-red-600" : "text-emerald-700"}`}>
+                {uploadMsg.text}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
