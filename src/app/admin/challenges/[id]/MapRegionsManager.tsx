@@ -67,8 +67,9 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
 
   /* ── Load map defaults ────────────────────────────────────────────── */
   const defaultsConfig: { label: string; endpoint: string } | null =
-    mapSvg === "/maps/africa.svg"        ? { label: "Load Africa defaults",        endpoint: "/api/admin/map-regions/load-defaults"    } :
-    mapSvg === "/maps/south_america.svg" ? { label: "Load South America defaults", endpoint: "/api/admin/map-regions/load-sa-defaults" } :
+    mapSvg === "/maps/africa.svg"          ? { label: "Load Africa defaults",                  endpoint: "/api/admin/map-regions/load-defaults"          } :
+    mapSvg === "/maps/south_america.svg"   ? { label: "Load South America defaults",            endpoint: "/api/admin/map-regions/load-sa-defaults"       } :
+    mapSvg === "/maps/south_america_v2.svg"? { label: "Load SA National Parks defaults",        endpoint: "/api/admin/map-regions/load-sa-parks-defaults" } :
     null;
 
   async function handleLoadDefaults() {

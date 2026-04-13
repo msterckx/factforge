@@ -205,7 +205,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       } else {
         label = lang === "nl" ? r.labelNl : r.labelEn;
       }
-      return { regionKey: r.regionKey, label };
+      return { regionKey: r.regionKey.trim(), label };
     });
   }, [regions, mode, lang]);
 
@@ -220,10 +220,10 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   const [hoveredChipKey, setHoveredChipKey] = useState<string | null>(null);
   const [justPlacedKey, setJustPlacedKey]   = useState<string | null>(null); // triggers pulse anim
 
-  // Lookup map for quick access by regionKey
+  // Lookup map for quick access by regionKey (trimmed to match SVG IDs)
   const regionsByKey = useMemo(() => {
     const map: Record<string, MapRegion> = {};
-    for (const r of regions) map[r.regionKey] = r;
+    for (const r of regions) map[r.regionKey.trim()] = r;
     return map;
   }, [regions]);
 
