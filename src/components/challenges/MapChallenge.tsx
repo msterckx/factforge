@@ -274,7 +274,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       .then((r) => r.text())
       .then((text) => {
         const inner = text.replace(/<\/?svg[^>]*>/gi, "").trim();
-        setSvgContent(inner);
+        setSvgContent(rewriteInkscapeLabels(inner));
         // Wait one frame for dangerouslySetInnerHTML to flush before labels query the DOM
         requestAnimationFrame(() => setSvgReady(true));
       })
@@ -564,6 +564,23 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 /**
+ * When Inkscape duplicates a circle it keeps the original id and puts the
+ * real name in inkscape:label. Rewrite the id to match the label so that
+ * region keys can be set from the label value directly.
+ */
+function rewriteInkscapeLabels(svgInner: string): string {
+  return svgInner.replace(/<circle([\s\S]*?)\/>/g, (_match, attrs) => {
+    const labelMatch = attrs.match(/inkscape:label="([^"]+)"/);
+    if (!labelMatch) return _match;
+    const label = labelMatch[1].trim();
+    if (!label) return _match;
+    // Replace whatever id= is there with the label value
+    const newAttrs = attrs.replace(/\bid="[^"]*"/, `id="${label}"`);
+    return `<circle${newAttrs}/>`;
+  });
+}
+
+/**
  * Apply game colours only to elements whose IDs are in regionKeySet.
  * Background paths (country shapes etc.) are left completely unchanged.
  * Circle elements (point markers) are handled alongside paths.
@@ -606,7 +623,11 @@ function buildSvgInner(
     const id = idMatch[1];
     const isCircle = tag === "circle";
     const { fill, stroke, sw } = gameColors(id, isCircle);
-    return `<${tag}${cleaned} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
+    // Boost circle radius so small dots are actually clickable
+    const radiusAttr = isCircle
+      ? ` r="4"` + cleaned.replace(/\s*\br="[^"]*"/g, "")
+      : cleaned;
+    return `<${tag}${radiusAttr} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
   }
 
   return noStyle
