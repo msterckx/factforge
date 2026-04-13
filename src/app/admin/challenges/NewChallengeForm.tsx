@@ -48,10 +48,17 @@ export default function NewChallengeForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [dbCategories, setDbCategories] = useState<CategoryOption[]>([]);
+  const [mapOptions, setMapOptions] = useState<{ label: string; value: string }[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/categories").then((r) => r.json()).then(setDbCategories).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (form.gameType === "map") {
+      fetch("/api/admin/maps").then((r) => r.json()).then((d) => setMapOptions(d.maps ?? [])).catch(() => {});
+    }
+  }, [form.gameType]);
 
   const selectedCategory = dbCategories.find((c) => c.id === form.quizCategoryId);
   const availableSubcategories = selectedCategory?.subcategories ?? [];
@@ -333,13 +340,19 @@ export default function NewChallengeForm() {
           <p className="text-sm font-semibold text-emerald-800">Map Settings</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">SVG path <span className="text-slate-400 font-normal">(relative to /public)</span></label>
-              <input
+              <label className="block text-sm font-medium text-slate-700 mb-1">SVG map</label>
+              <select
                 value={form.mapSvg}
                 onChange={(e) => set("mapSvg", e.target.value)}
-                placeholder="/maps/africa.svg"
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
+              >
+                {form.mapSvg && !mapOptions.find((o) => o.value === form.mapSvg) && (
+                  <option value={form.mapSvg}>{form.mapSvg}</option>
+                )}
+                {mapOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Label mode</label>
