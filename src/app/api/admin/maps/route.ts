@@ -12,7 +12,7 @@ export async function GET() {
   const publicMaps: { label: string; value: string }[] = fs.existsSync(publicDir)
     ? fs.readdirSync(publicDir)
         .filter((f) => f.endsWith(".svg"))
-        .map((f) => ({ label: stem(f), value: `/maps/${f}` }))
+        .map((f) => ({ label: f, value: `/maps/${f}` }))
     : [];
 
   // Maps uploaded to /var/data/maps/
@@ -20,12 +20,8 @@ export async function GET() {
   const uploadedMaps: { label: string; value: string }[] = fs.existsSync(uploadedDir)
     ? fs.readdirSync(uploadedDir)
         .filter((f) => f.endsWith(".svg"))
-        .map((f) => ({ label: `${stem(f)} (uploaded)`, value: `/api/maps/${f}` }))
+        .map((f) => ({ label: `${f} (uploaded)`, value: `/api/maps/${f}` }))
     : [];
 
   return NextResponse.json({ maps: [...publicMaps, ...uploadedMaps] });
-}
-
-function stem(filename: string) {
-  return filename.replace(/\.svg$/i, "").replace(/[_-]/g, " ");
 }
