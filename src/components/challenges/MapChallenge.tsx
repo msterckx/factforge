@@ -371,7 +371,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         if (key !== dragHoverRef.current) {
           if (dragHoverRef.current) restorePath(dragHoverRef.current);
           if (key && !circleKeySet.has(key)) setPathColor(key, SVG_COLORS.drag);
-          dragHoverRef.current = key;
+          dragHoverRef.current = (key && !circleKeySet.has(key)) ? key : null;
         }
       }
     };
@@ -506,7 +506,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                     if (id !== mouseHoverRef.current) {
                       if (mouseHoverRef.current) restorePath(mouseHoverRef.current);
                       if (!placed[id] && !circleKeySet.has(id)) setPathColor(id, SVG_COLORS.hover);
-                      mouseHoverRef.current = id;
+                      mouseHoverRef.current = circleKeySet.has(id) ? null : id;
                     }
                     return;
                   }
