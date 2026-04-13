@@ -244,6 +244,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   // ── Direct DOM colour helpers (bypass React re-render for hover) ─────────────
   const SVG_COLORS = {
     default: { fill: "#c8d8b4", stroke: "#6b7c52", sw: "0.4" },
+    circle:  { fill: "#fbbf24", stroke: "#d97706", sw: "2"   },
     hover:   { fill: "#93c5fd", stroke: "#2563eb", sw: "0.8" },
     drag:    { fill: "#fbbf24", stroke: "#d97706", sw: "0.8" },
     placed:  { fill: "#4ade80", stroke: "#15803d", sw: "0.8" },
@@ -259,7 +260,9 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   }
 
   function restorePath(id: string) {
-    setPathColor(id, placed[id] ? SVG_COLORS.placed : SVG_COLORS.default);
+    if (placed[id]) { setPathColor(id, SVG_COLORS.placed); return; }
+    const el = svgRef.current?.querySelector<SVGElement>(`#${CSS.escape(id)}`);
+    setPathColor(id, el?.tagName.toLowerCase() === "circle" ? SVG_COLORS.circle : SVG_COLORS.default);
   }
 
   // After dangerouslySetInnerHTML re-renders (placed/wrongKey change), re-apply hover
