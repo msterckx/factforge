@@ -8,3 +8,15 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out both;
 }
+
+@keyframes correct-pulse {
+  0%   { transform: scale(1);   opacity: 1; }
+  35%  { transform: scale(2.8); opacity: 0.7; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.circle-correct-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: correct-pulse 0.75s ease-out;
+}
