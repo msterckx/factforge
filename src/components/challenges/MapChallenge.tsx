@@ -236,6 +236,14 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
   // SVG inline content
   const [svgContent, setSvgContent]   = useState<string | null>(null);
+
+  // Circle elements should not react to hover/drag — only change color on correct drop
+  const circleKeySet = useMemo<Set<string>>(() => {
+    if (!svgContent) return new Set();
+    const set = new Set<string>();
+    for (const m of svgContent.matchAll(/<circle[^>]*?\bid="([^"]+)"/g)) set.add(m[1]);
+    return set;
+  }, [svgContent]);
   const svgRef                        = useRef<SVGSVGElement | null>(null);
   const containerRef                  = useRef<HTMLDivElement>(null);
 
@@ -362,7 +370,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         const key = getPathAtPoint(me.clientX, me.clientY);
         if (key !== dragHoverRef.current) {
           if (dragHoverRef.current) restorePath(dragHoverRef.current);
-          if (key) setPathColor(key, SVG_COLORS.drag);
+          if (key && !circleKeySet.has(key)) setPathColor(key, SVG_COLORS.drag);
           dragHoverRef.current = key;
         }
       }
@@ -497,7 +505,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                     const id = cur.id;
                     if (id !== mouseHoverRef.current) {
                       if (mouseHoverRef.current) restorePath(mouseHoverRef.current);
-                      if (!placed[id]) setPathColor(id, SVG_COLORS.hover);
+                      if (!placed[id] && !circleKeySet.has(id)) setPathColor(id, SVG_COLORS.hover);
                       mouseHoverRef.current = id;
                     }
                     return;
