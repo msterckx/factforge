@@ -153,13 +153,13 @@ function RegionInfoPanel({
       {lightboxOpen && image && (
         <Lightbox src={image} alt={name} onClose={() => setLightboxOpen(false)} />
       )}
-      <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 overflow-hidden animate-fade-in">
-        <div className="flex items-center justify-between px-4 py-2 bg-emerald-100 border-b border-emerald-200">
-          <span className="text-sm font-semibold text-emerald-800">{name}</span>
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] w-[min(480px,90vw)] rounded-2xl border border-emerald-300/60 overflow-hidden animate-fade-in shadow-2xl backdrop-blur-md bg-white/75">
+        <div className="flex items-center justify-between px-4 py-2 bg-emerald-100/80 border-b border-emerald-200/60">
+          <span className="text-sm font-semibold text-emerald-900">{name}</span>
           <button
             onClick={onDismiss}
             aria-label="Dismiss"
-            className="text-emerald-600 hover:text-emerald-800 text-lg leading-none"
+            className="text-emerald-700 hover:text-emerald-900 text-lg leading-none"
           >
             ×
           </button>
@@ -168,7 +168,7 @@ function RegionInfoPanel({
           {image && (
             <button
               onClick={() => setLightboxOpen(true)}
-              className="flex-shrink-0 w-full sm:w-48 h-36 rounded-xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 group"
+              className="flex-shrink-0 w-full sm:w-40 h-28 rounded-xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 group"
               aria-label="Expand image"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -181,8 +181,8 @@ function RegionInfoPanel({
           )}
           {text && (
             <div className="flex-1">
-              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide mb-1">{didYouKnow}</p>
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{text}</p>
+              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1">{didYouKnow}</p>
+              <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-line">{text}</p>
             </div>
           )}
         </div>
