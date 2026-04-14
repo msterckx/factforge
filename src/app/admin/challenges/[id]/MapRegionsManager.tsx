@@ -290,7 +290,7 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
-              {["On", "Key", "Label EN", "Label NL", "Capital EN", "Capital NL", ""].map((h) => (
+              {["On", "Key", "Label EN", "Label NL", ""].map((h) => (
                 <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -317,8 +317,6 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                       <>
                         <td className={tdCls}><input className={inputCls} value={editing.labelEn} onChange={(e) => setEditing({ ...editing, labelEn: e.target.value })} /></td>
                         <td className={tdCls}><input className={inputCls} value={editing.labelNl} onChange={(e) => setEditing({ ...editing, labelNl: e.target.value })} /></td>
-                        <td className={tdCls}><input className={inputCls} value={editing.capitalEn} onChange={(e) => setEditing({ ...editing, capitalEn: e.target.value })} /></td>
-                        <td className={tdCls}><input className={inputCls} value={editing.capitalNl} onChange={(e) => setEditing({ ...editing, capitalNl: e.target.value })} /></td>
                         <td className={`${tdCls} whitespace-nowrap`}>
                           <button onClick={handleSaveEdit} disabled={savingId === r.id} className="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded mr-1 disabled:opacity-50">
                             {savingId === r.id ? "…" : "Save"}
@@ -332,8 +330,6 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                       <>
                         <td className={`${tdCls} text-slate-700`}>{r.labelEn}</td>
                         <td className={`${tdCls} text-slate-700`}>{r.labelNl}</td>
-                        <td className={`${tdCls} text-slate-500`}>{r.capitalEn ?? "—"}</td>
-                        <td className={`${tdCls} text-slate-500`}>{r.capitalNl ?? "—"}</td>
                         <td className={`${tdCls} whitespace-nowrap`}>
                           <button
                             onClick={() => setEditing({
@@ -362,7 +358,7 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                   {/* Extra info row when editing */}
                   {isEdit && (
                     <tr key={`${r.id}-info`} className="bg-indigo-50/40 border-b border-slate-100">
-                      <td colSpan={7} className="px-4 py-3">
+                      <td colSpan={5} className="px-4 py-3">
                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Extra info (shown after correct drop)</p>
                         <div className="space-y-3">
                           {/* Image URL */}
@@ -431,8 +427,6 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                   </td>
                   <td className={tdCls}><input className={inputCls} placeholder="English name" value={addForm.labelEn} onChange={(e) => setAddForm({ ...addForm, labelEn: e.target.value })} /></td>
                   <td className={tdCls}><input className={inputCls} placeholder="Dutch name" value={addForm.labelNl} onChange={(e) => setAddForm({ ...addForm, labelNl: e.target.value })} /></td>
-                  <td className={tdCls}><input className={inputCls} placeholder="Capital EN" value={addForm.capitalEn} onChange={(e) => setAddForm({ ...addForm, capitalEn: e.target.value })} /></td>
-                  <td className={tdCls}><input className={inputCls} placeholder="Capital NL" value={addForm.capitalNl} onChange={(e) => setAddForm({ ...addForm, capitalNl: e.target.value })} /></td>
                   <td className={`${tdCls} whitespace-nowrap`}>
                     <button onClick={handleAdd} disabled={savingId === -1} className="px-2 py-0.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded mr-1 disabled:opacity-50">
                       {savingId === -1 ? "…" : "Add"}
@@ -444,7 +438,7 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                 </tr>
                 {/* Extra info for add form */}
                 <tr className="bg-indigo-50/30 border-b border-slate-100">
-                  <td colSpan={7} className="px-4 py-3">
+                  <td colSpan={5} className="px-4 py-3">
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Extra info (optional)</p>
                     <div className="space-y-3">
                       <div>
