@@ -181,11 +181,11 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
   // ── Core placement logic ──────────────────────────────────────────────────
   function tryPlace(item: ChronologyItem, slotIndex: number) {
     if (placed[slotIndex] !== undefined || gameOver || allCorrect) return;
-    if (item.id === slotIndex + 1) {
+    if (item.id === items[slotIndex].id) {
       setPlaced((prev) => ({ ...prev, [slotIndex]: item }));
       setPool((prev) => prev.filter((c) => c.id !== item.id));
       setSelectedItem(null);
-      setInfoItem(null);
+      setInfoItem(item);
       setPlayerPlaced((p) => p + 1);
     } else {
       const newLives = lives - 1;
@@ -194,7 +194,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       setWrongSlot(slotIndex);
       setTimeout(() => setWrongSlot(null), 600);
       setSelectedItem(null);
-      setInfoItem(null);
       if (newLives <= 0) setGameOver(true);
     }
   }
@@ -210,7 +209,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
     setPool((prev) => prev.filter((c) => c.id !== item.id));
     setHintedSlots((prev) => { const s = new Set(prev); s.add(placedCount); return s; });
     setSelectedItem(null);
-    setInfoItem(null);
 
     const newLives = Math.max(0, lives - 2);
     setLives(newLives);
@@ -305,7 +303,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       const tapped = dragItem.current;
       const isAlreadySelected = selectedItem?.id === tapped.id;
       setSelectedItem(isAlreadySelected ? null : tapped);
-      setInfoItem(isAlreadySelected ? null : tapped);
     }
 
     dragItem.current = null;
@@ -455,7 +452,7 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
             return (
               <div
                 key={`placed-${i}`}
-                onClick={() => { setInfoItem((prev) => prev?.id === item.id ? null : item); setSelectedItem(null); }}
+                onClick={() => { setInfoItem(item); }}
                 className={`relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border select-none cursor-pointer ${
                   infoItem?.id === item.id
                     ? "border-amber-400 ring-2 ring-amber-300"
@@ -547,23 +544,50 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
         </div>
       )}
 
-      {/* Info panel */}
+      {/* Did-you-know modal */}
       {infoItem && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-4 relative">
-          <button
-            onClick={() => { setInfoItem(null); setSelectedItem(null); }}
-            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 text-base leading-none rounded-full hover:bg-amber-100"
-            aria-label="Close"
-          >×</button>
-          <div className="flex gap-3 pr-6">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setInfoItem(null)}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="relative z-10 bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: "msAppear 0.25s ease-out forwards" }}
+          >
             {infoItem.imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={resolveImageUrl(infoItem.imageUrl)} alt={infoItem.name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg object-cover object-top flex-shrink-0" draggable={false} />
+              <img
+                src={resolveImageUrl(infoItem.imageUrl)}
+                alt={infoItem.name}
+                className="w-full h-56 sm:h-72 object-cover object-top"
+                draggable={false}
+              />
             )}
-            <div className="min-w-0">
-              <p className="font-semibold text-slate-800 text-sm leading-tight">{infoItem.name}</p>
-              {infoItem.reign && <p className="text-xs text-amber-700 font-medium mt-0.5">{infoItem.reign}</p>}
-              {infoItem.description && <p className="text-xs text-slate-600 leading-relaxed mt-1">{infoItem.description}</p>}
+            <div className="p-5 sm:p-7">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-800 leading-tight">{infoItem.name}</p>
+                  {infoItem.reign && (
+                    <p className="text-sm text-amber-700 font-semibold mt-0.5">{infoItem.reign}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setInfoItem(null)}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 text-xl leading-none rounded-full hover:bg-slate-100 transition-colors"
+                  aria-label="Close"
+                >×</button>
+              </div>
+              {infoItem.description && (
+                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">{infoItem.description}</p>
+              )}
+              <button
+                onClick={() => setInfoItem(null)}
+                className="mt-5 w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors text-sm"
+              >
+                Continue
+              </button>
             </div>
           </div>
         </div>
