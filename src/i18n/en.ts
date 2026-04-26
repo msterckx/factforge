@@ -64,6 +64,7 @@ export interface Dictionary {
     guessThePersonSubtitle: string;
     comingSoon: string;
     backToHome: string;
+    startChallenge: string;
     typeTheName: string;
     submit: string;
     correct: string;
@@ -207,6 +208,7 @@ export const en: Dictionary = {
     guessThePersonSubtitle: "Recognize a famous face before time runs out",
     comingSoon: "Coming soon",
     backToHome: "Back to Home",
+    startChallenge: "Start Challenge",
     typeTheName: "Type the name...",
     submit: "Submit",
     correct: "Correct!",
