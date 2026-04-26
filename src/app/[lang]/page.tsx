@@ -36,7 +36,7 @@ export default async function HomePage({ params }: Props) {
     }
   }
 
-  const dbGames = getAllChallengeGames();
+  const dbGames = getAllChallengeGames().filter((g) => g.available);
   const dbCategories = db.select({ slug: categories.slug, name: categories.name }).from(categories).orderBy(asc(categories.name)).all();
   const categoryNames: Record<string, string> = Object.fromEntries(dbCategories.map((c) => [c.slug, c.name]));
 
