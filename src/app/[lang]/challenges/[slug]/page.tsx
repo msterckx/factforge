@@ -117,8 +117,8 @@ export default async function ChallengePage({ params }: Props) {
       <p className="text-slate-500 text-sm mb-4 whitespace-pre-line">{subtitle}</p>
       <StartChallengeButton label={d.startChallenge} />
 
-      <ClientOnly>
       <div id="challenge-game">
+      <ClientOnly>
       {game.gameType === "chronology" && (
         <ChronologyGame
           items={mapToChronologyItems(items, lang)}
@@ -175,8 +175,8 @@ export default async function ChallengePage({ params }: Props) {
       {game.gameType === "quiz" && quizQuestions.length === 0 && (
         <p className="text-slate-400 text-center py-12">{dict.category.noQuestions}</p>
       )}
-      </div>
       </ClientOnly>
+      </div>
     </div>
   );
 }
