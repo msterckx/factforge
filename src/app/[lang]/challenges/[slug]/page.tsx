@@ -19,6 +19,7 @@ import QuizChallenge from "@/components/challenges/QuizChallenge";
 import ConnectionsGame from "@/components/challenges/ConnectionsGame";
 import MapChallenge from "@/components/challenges/MapChallenge";
 import type { QuizQuestion } from "@/components/challenges/QuizChallenge";
+import StartChallengeButton from "./StartChallengeButton";
 
 interface Props {
   params: Promise<{ lang: string; slug: string }>;
@@ -112,8 +113,10 @@ export default async function ChallengePage({ params }: Props) {
       </Link>
 
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{title}</h1>
-      <p className="text-slate-500 text-sm mb-6 whitespace-pre-line">{subtitle}</p>
+      <p className="text-slate-500 text-sm mb-4 whitespace-pre-line">{subtitle}</p>
+      <StartChallengeButton label={d.startChallenge} />
 
+      <div id="challenge-game">
       {game.gameType === "chronology" && (
         <ChronologyGame
           items={mapToChronologyItems(items, lang)}
@@ -170,6 +173,7 @@ export default async function ChallengePage({ params }: Props) {
       {game.gameType === "quiz" && quizQuestions.length === 0 && (
         <p className="text-slate-400 text-center py-12">{dict.category.noQuestions}</p>
       )}
+      </div>
     </div>
   );
 }

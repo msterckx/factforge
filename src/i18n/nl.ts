@@ -66,6 +66,7 @@ export const nl: Dictionary = {
     guessThePersonSubtitle: "Herken een beroemd gezicht voordat de tijd op is",
     comingSoon: "Binnenkort",
     backToHome: "Terug naar home",
+    startChallenge: "Start uitdaging",
     typeTheName: "Typ de naam...",
     submit: "Indienen",
     correct: "Goed!",
