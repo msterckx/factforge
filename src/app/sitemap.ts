@@ -1,8 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import type { MetadataRoute } from "next";
 import { SUPPORTED_LANGS } from "@/i18n";
 import { getAllChallengeGames } from "@/data/challengeGame";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://gameoftrivia.be";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gameoftrivia.com";
 
 const STATIC_PATHS = ["/", "/contact"];
 
