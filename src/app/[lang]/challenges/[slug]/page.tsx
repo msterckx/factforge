@@ -20,6 +20,7 @@ import ConnectionsGame from "@/components/challenges/ConnectionsGame";
 import MapChallenge from "@/components/challenges/MapChallenge";
 import type { QuizQuestion } from "@/components/challenges/QuizChallenge";
 import StartChallengeButton from "./StartChallengeButton";
+import ClientOnly from "@/components/ClientOnly";
 
 interface Props {
   params: Promise<{ lang: string; slug: string }>;
@@ -116,6 +117,7 @@ export default async function ChallengePage({ params }: Props) {
       <p className="text-slate-500 text-sm mb-4 whitespace-pre-line">{subtitle}</p>
       <StartChallengeButton label={d.startChallenge} />
 
+      <ClientOnly>
       <div id="challenge-game">
       {game.gameType === "chronology" && (
         <ChronologyGame
@@ -174,6 +176,7 @@ export default async function ChallengePage({ params }: Props) {
         <p className="text-slate-400 text-center py-12">{dict.category.noQuestions}</p>
       )}
       </div>
+      </ClientOnly>
     </div>
   );
 }
