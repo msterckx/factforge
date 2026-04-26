@@ -22,6 +22,12 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
   const [mapSvg, setMapSvg] = useState(game.mapSvg ?? "");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<{ text: string; error: boolean } | null>(null);
+  const [titleEn, setTitleEn] = useState(game.titleEn);
+  const [titleNl, setTitleNl] = useState(game.titleNl);
+  const [subtitleEn, setSubtitleEn] = useState(game.subtitleEn);
+  const [subtitleNl, setSubtitleNl] = useState(game.subtitleNl);
+  const [translatingTitle, setTranslatingTitle] = useState(false);
+  const [translatingSubtitle, setTranslatingSubtitle] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/categories").then((r) => r.json()).then(setDbCategories).catch(() => {});
@@ -56,6 +62,22 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
     setUploading(false);
   }
 
+  async function translateField(text: string, setLoading: (v: boolean) => void, setNl: (v: string) => void) {
+    if (!text.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/translate-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (res.ok) setNl(data.text);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const selectedCategory = dbCategories.find((c) => c.id === quizCategoryId);
   const availableSubcategories = selectedCategory?.subcategories ?? [];
 
@@ -70,10 +92,10 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       gameType,
       icon:              fd.get("icon"),
       category:          fd.get("category"),
-      titleEn:           fd.get("titleEn"),
-      titleNl:           fd.get("titleNl"),
-      subtitleEn:        fd.get("subtitleEn"),
-      subtitleNl:        fd.get("subtitleNl"),
+      titleEn,
+      titleNl,
+      subtitleEn,
+      subtitleNl,
       available:         fd.get("available") === "true",
       sortOrder:         Number(fd.get("sortOrder")),
       quizCategoryId:    quizCategoryId,
@@ -135,21 +157,63 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
             <option value="other">Other</option>
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Title (EN)</label>
-          <input name="titleEn" defaultValue={game.titleEn} required className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <div className="col-span-2 grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Title (EN)</label>
+            <input
+              value={titleEn}
+              onChange={(e) => setTitleEn(e.target.value)}
+              required
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-slate-700">Title (NL)</label>
+              <button
+                type="button"
+                onClick={() => translateField(titleEn, setTranslatingTitle, setTitleNl)}
+                disabled={translatingTitle || !titleEn.trim()}
+                className="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {translatingTitle ? "Translating…" : "Auto-translate"}
+              </button>
+            </div>
+            <input
+              value={titleNl}
+              onChange={(e) => setTitleNl(e.target.value)}
+              required
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Title (NL)</label>
-          <input name="titleNl" defaultValue={game.titleNl} required className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Subtitle (EN) <span className="text-slate-400 font-normal">— used for SEO</span></label>
+          <textarea
+            value={subtitleEn}
+            onChange={(e) => setSubtitleEn(e.target.value)}
+            rows={4}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y"
+          />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Subtitle (EN)</label>
-          <input name="subtitleEn" defaultValue={game.subtitleEn} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Subtitle (NL)</label>
-          <input name="subtitleNl" defaultValue={game.subtitleNl} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+        <div className="col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-slate-700">Subtitle (NL)</label>
+            <button
+              type="button"
+              onClick={() => translateField(subtitleEn, setTranslatingSubtitle, setSubtitleNl)}
+              disabled={translatingSubtitle || !subtitleEn.trim()}
+              className="text-xs px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {translatingSubtitle ? "Translating…" : "Auto-translate"}
+            </button>
+          </div>
+          <textarea
+            value={subtitleNl}
+            onChange={(e) => setSubtitleNl(e.target.value)}
+            rows={4}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Sort Order</label>
