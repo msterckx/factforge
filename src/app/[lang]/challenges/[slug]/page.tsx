@@ -112,7 +112,7 @@ export default async function ChallengePage({ params }: Props) {
       </Link>
 
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{title}</h1>
-      <p className="text-slate-500 text-sm mb-6">{subtitle}</p>
+      <p className="text-slate-500 text-sm mb-6 whitespace-pre-line">{subtitle}</p>
 
       {game.gameType === "chronology" && (
         <ChronologyGame
