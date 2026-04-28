@@ -6,7 +6,7 @@ import { getAllChallengeGames } from "@/data/challengeGame";
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gameoftrivia.com";
 
-const STATIC_PATHS = ["/", "/contact"];
+const STATIC_PATHS = ["/", "/contact", "/challenges"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
