@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, Spectral } from "next/font/google";
 import Script from "next/script";
+import { headers } from "next/headers";
+import { isValidLang, DEFAULT_LANG } from "@/i18n";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -37,13 +39,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const rawLang = headersList.get("x-lang") ?? DEFAULT_LANG;
+  const lang = isValidLang(rawLang) ? rawLang : DEFAULT_LANG;
+
   return (
-    <html lang="en">
+    <html lang={lang}>
       <body className={`${inter.className} ${playfair.variable} ${spectral.variable} antialiased bg-[#FCF5F6] text-slate-900`}>
         {children}
         <Script id="sw-register" strategy="afterInteractive">{`
