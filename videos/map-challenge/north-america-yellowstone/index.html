@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>North America — Zoom to Yellowstone</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+    }
+    #stage {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+    }
+    #map-svg { position: absolute; top: 0; left: 0; }
+
+    .graticule { fill: none; stroke: #0e2650; stroke-width: 0.4; }
+    .land { fill: #3a7a4a; }
+
+    /* Title card — lower-left */
+    #title-overlay {
+      position: absolute;
+      bottom: 90px;
+      left: 90px;
+      color: white;
+      font-family: Georgia, 'Times New Roman', serif;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #title-overlay h1 {
+      font-size: 54px;
+      font-weight: normal;
+      letter-spacing: 0.06em;
+      text-shadow: 0 2px 30px rgba(0,0,0,0.9);
+    }
+    #title-overlay p {
+      font-size: 20px;
+      opacity: 0.65;
+      margin-top: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* Yellowstone label — appears at screen centre after zoom */
+    #ys-label {
+      position: absolute;
+      left: 50%;
+      top: 578px;                  /* 38px below dot centre at 540px */
+      transform: translateX(-50%);
+      color: white;
+      font-family: Georgia, serif;
+      text-align: center;
+      opacity: 0;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #ys-label .name {
+      font-size: 38px;
+      font-weight: normal;
+      text-shadow: 0 2px 22px rgba(0,0,0,0.95);
+      letter-spacing: 0.04em;
+    }
+    #ys-label .coords {
+      font-size: 14px;
+      opacity: 0.62;
+      margin-top: 8px;
+      letter-spacing: 0.18em;
+    }
+
+    /* Edge vignette for cinematic feel */
+    #vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 44%, rgba(0,0,0,0.58) 100%);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div id="stage"
+     data-composition-id="north-america-yellowstone"
+     data-start="0"
+     data-width="1920"
+     data-height="1080">
+
+  <!-- ── Map SVG (track 0, full 13 s) ──────────────────────────────────── -->
+  <svg id="map-svg" width="1920" height="1080" class="clip"
+       data-start="0" data-duration="13" data-track-index="0">
+    <defs>
+      <!-- Deep ocean gradient -->
+      <radialGradient id="oceanGrad" cx="50%" cy="50%" r="75%">
+        <stop offset="0%"   stop-color="#0d2048"/>
+        <stop offset="100%" stop-color="#060e1f"/>
+      </radialGradient>
+    </defs>
+
+    <!-- Ocean background -->
+    <rect width="1920" height="1080" fill="url(#oceanGrad)"/>
+
+    <!--
+      map-group: contains land + graticule.
+      GSAP zooms this group: translate(TX TY) scale(ZOOM) with svgOrigin "0 0"
+      so that Yellowstone's SVG coordinate maps exactly to screen centre.
+    -->
+    <g id="map-group" style="opacity:0;"></g>
+
+    <!--
+      markers: NOT inside map-group — they stay in screen space.
+      Positioned at (960, 540) = screen centre = where Yellowstone lands after zoom.
+    -->
+    <g id="markers">
+      <circle id="ys-pulse" cx="960" cy="540" r="6"
+              fill="none" stroke="#ff6b35" stroke-width="2.5" opacity="0"/>
+      <circle id="ys-dot"   cx="960" cy="540" r="5"
+              fill="#ff6b35" opacity="0"/>
+    </g>
+  </svg>
+
+  <!-- Cinematic vignette -->
+  <div id="vignette"></div>
+
+  <!-- Title card -->
+  <div id="title-overlay">
+    <h1>North America</h1>
+    <p>Exploring the Continent</p>
+  </div>
+
+  <!-- Location label — revealed after zoom -->
+  <div id="ys-label">
+    <div class="name">Yellowstone National Park</div>
+    <div class="coords">44.43°N &nbsp;&middot;&nbsp; 110.59°W</div>
+  </div>
+
+</div>
+
+<!-- ── Dependencies (CDN) ────────────────────────────────────────────────── -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+<script>
+(async () => {
+  const W = 1920, H = 1080;
+
+  // Albers conic conformal centred on North America
+  const projection = d3.geoAlbers()
+    .center([0, 47])
+    .rotate([100, 0])      // 100°W as central meridian
+    .parallels([30, 62])
+    .scale(720)
+    .translate([W / 2, H / 2]);
+
+  const path = d3.geoPath().projection(projection);
+
+  // Yellowstone: 44.4280°N, 110.5885°W → SVG pixel position
+  const [yx, yy] = projection([-110.5885, 44.4280]);
+
+  // Load world atlas (50m for better zoom detail) + admin-1 borders in parallel
+  const [world, admin1] = await Promise.all([
+    d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'),
+    d3.json('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_1_states_provinces.geojson')
+  ]);
+
+  const land = topojson.feature(world, world.objects.land);
+
+  // Filter admin-1 to US, Canada, Mexico only
+  const naAdmin1 = {
+    type: 'FeatureCollection',
+    features: admin1.features.filter(f => ['US', 'CA', 'MX'].includes(f.properties.iso_a2))
+  };
+
+  const g = d3.select('#map-group');
+
+  // Subtle lat/lon grid
+  g.append('path')
+    .datum(d3.geoGraticule()())
+    .attr('class', 'graticule')
+    .attr('d', path);
+
+  // Green landmass
+  g.append('path')
+    .datum(land)
+    .attr('class', 'land')
+    .attr('d', path);
+
+  // State / province borders (US, Canada, Mexico)
+  g.append('path')
+    .datum(naAdmin1)
+    .attr('fill', 'none')
+    .attr('stroke', 'rgba(255,255,255,0.28)')
+    .attr('stroke-width', 0.4)
+    .attr('d', path);
+
+  // ── Zoom maths ────────────────────────────────────────────────────────────
+  // With svgOrigin "0 0", scale(ZOOM) maps (yx, yy) → (yx*ZOOM, yy*ZOOM).
+  // Adding (TX, TY) centres that point on screen.
+  const ZOOM = 8;
+  const TX   = W / 2 - yx * ZOOM;
+  const TY   = H / 2 - yy * ZOOM;
+
+  // ── GSAP Timeline ─────────────────────────────────────────────────────────
+  const tl = gsap.timeline({ paused: true });
+
+  // 0 – 1.5 s   map fades in
+  tl.to('#map-group', { opacity: 1, duration: 1.5, ease: 'power1.inOut' }, 0);
+
+  // 0.8 – 2 s   title fades in
+  tl.to('#title-overlay', { opacity: 1, duration: 1.2, ease: 'power1.inOut' }, 0.8);
+
+  // 3 – 3.5 s   title fades out before zoom
+  tl.to('#title-overlay', { opacity: 0, duration: 0.5, ease: 'power1.in' }, 3.0);
+
+  // 3.5 – 8.5 s  smooth zoom to Yellowstone
+  // svgOrigin: "0 0" anchors scale at SVG coordinate origin so TX/TY maths holds
+  tl.to('#map-group', {
+    svgOrigin: '0 0',
+    x: TX,
+    y: TY,
+    scale: ZOOM,
+    duration: 5,
+    ease: 'power2.inOut'
+  }, 3.5);
+
+  // 8.5 – 8.9 s  location dot appears
+  tl.to('#ys-dot', { opacity: 1, duration: 0.4, ease: 'power2.out' }, 8.5);
+
+  // 8.8 – 10.2 s  first pulse ring expands and fades
+  tl.to('#ys-pulse', { opacity: 0.85, duration: 0.1 }, 8.8);
+  tl.to('#ys-pulse', {
+    attr: { r: 32 }, opacity: 0, duration: 1.4, ease: 'power1.out'
+  }, 8.9);
+
+  // 9.2 – 9.9 s  location label fades in
+  tl.to('#ys-label', { opacity: 1, duration: 0.7, ease: 'power1.inOut' }, 9.2);
+
+  // 10.6 – 12 s  second pulse ring (subtler)
+  tl.set('#ys-pulse', { attr: { r: 6 } }, 10.6);
+  tl.to('#ys-pulse', { opacity: 0.55, duration: 0.1 }, 10.6);
+  tl.to('#ys-pulse', {
+    attr: { r: 32 }, opacity: 0, duration: 1.4, ease: 'power1.out'
+  }, 10.7);
+
+  // Anchor timeline at 13 s (matches data-duration on SVG)
+  tl.to('#ys-dot', { opacity: 1, duration: 0 }, 13);
+
+  // Register with HyperFrames via the composition-ID registry (polled by runtime)
+  window.__timelines = window.__timelines || {};
+  window.__timelines['north-america-yellowstone'] = tl;
+})();
+</script>
+</body>
+</html>
