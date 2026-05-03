@@ -363,31 +363,20 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
     if (game.mapSvg?.endsWith(".geojson")) {
       // Custom GeoJSON mode — parks, reserves, etc.
-      // Game features come from the custom file; NE countries drawn as outline-only background.
-      // We filter NE countries to just the relevant continent to avoid anti-meridian artifacts:
-      // large features like Russia that straddle ±180° project as huge filled rectangles and
-      // cover the entire viewport when ALL countries are included.
-      const NA_ISO = new Set([
-        "AG","AI","AW","BB","BL","BM","BQ","BS","BZ","CA","CR","CU","CW","DM",
-        "DO","GD","GL","GP","GT","HN","HT","JM","KN","KY","LC","MF","MQ","MS",
-        "MX","NI","PA","PM","PR","SV","SX","TC","TT","US","VC","VG","VI",
-      ]);
-      Promise.all([
-        fetch(NE_URL).then((r) => r.json()),
-        fetch(game.mapSvg).then((r) => r.json()),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ]).then(([worldGeo, customGeo]: [any, any]) => {
-        if (aborted) return;
-        const iso = (f: GeoFeature) => f.properties?.iso_a2_eh ?? f.properties?.iso_a2 ?? "";
-        const bgFeatures   = (worldGeo.features as GeoFeature[])
-          .filter((f) => f.geometry != null && NA_ISO.has(iso(f)));
+      // No Natural Earth background: any country dataset causes anti-meridian projection
+      // artifacts that fill the viewport with a solid rectangle. Parks are rendered on
+      // ocean + graticule only; relative positions provide geographic context.
+      fetch(game.mapSvg)
+        .then((r) => r.json())
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const gameFeatures = (customGeo.features as any[]).filter((f) => f.geometry != null);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const getKey = (f: any): string => String(f.id ?? f.properties?.regionKey ?? "");
-        // bgFill "none": countries render as outlines so parks stand out against the ocean
-        renderMap(svgEl, bgFeatures, gameFeatures, getKey, 60, "none");
-      }).catch(console.error);
+        .then((customGeo: any) => {
+          if (aborted) return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const gameFeatures = (customGeo.features as any[]).filter((f) => f.geometry != null);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const getKey = (f: any): string => String(f.id ?? f.properties?.regionKey ?? "");
+          renderMap(svgEl, [], gameFeatures, getKey, 40);
+        }).catch(console.error);
     } else {
       // Natural Earth ISO mode — country-level challenges
       fetch(NE_URL)
