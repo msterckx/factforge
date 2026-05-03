@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { geoMercator, geoPath, geoGraticule } from "d3-geo";
 import type { Dictionary } from "@/i18n/en";
 import type { MapRegion, ChallengeGame } from "@/data/challengeGame";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
@@ -20,7 +21,18 @@ interface Props {
   lang: string;
 }
 
+// Minimal GeoJSON types (Natural Earth feature)
+interface GeoFeature {
+  type: "Feature";
+  geometry: { type: string; coordinates: unknown };
+  properties: { ISO_A2: string; NAME: string } | null;
+}
+
 const STARTING_LIVES = 5;
+
+// SVG viewport for the D3 map
+const VW = 960;
+const VH = 600;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -98,7 +110,6 @@ function GameOverOverlay({ message }: { message: string }) {
 
 // ── Lightbox ───────────────────────────────────────────────────────────────────
 function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
-  // Close on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
     window.addEventListener("keydown", onKey);
@@ -194,7 +205,6 @@ function RegionInfoPanel({
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function MapChallenge({ regions, game, dict, challengeId, lang }: Props) {
   const mode = game.mapLabelMode ?? "country";
-  const svgPath = game.mapSvg ?? "/maps/africa.svg";
 
   // Build chips from regions
   const allChips = useMemo<Chip[]>(() => {
@@ -210,49 +220,39 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   }, [regions, mode, lang]);
 
   const [bank, setBank]               = useState<Chip[]>(() => shuffle(allChips));
-  const [placed, setPlaced]           = useState<Record<string, string>>({}); // regionKey → label
+  const [placed, setPlaced]           = useState<Record<string, string>>({});
   const [lives, setLives]             = useState(STARTING_LIVES);
   const [gameWon, setGameWon]         = useState(false);
   const [gameLost, setGameLost]       = useState(false);
   const [glitterActive, setGlitterActive] = useState(false);
-  const [wrongKey, setWrongKey]       = useState<string | null>(null);    // briefly flash red
+  const [wrongKey, setWrongKey]       = useState<string | null>(null);
   const [started, setStarted]         = useState(false);
   const [hoveredChipKey, setHoveredChipKey] = useState<string | null>(null);
-  const [justPlacedKey, setJustPlacedKey]   = useState<string | null>(null); // triggers pulse anim
+  const [geoReady, setGeoReady]       = useState(false);
 
-  // Lookup map for quick access by regionKey (trimmed to match SVG IDs)
   const regionsByKey = useMemo(() => {
     const map: Record<string, MapRegion> = {};
     for (const r of regions) map[r.regionKey.trim()] = r;
     return map;
   }, [regions]);
 
-  // Set of valid drop-target IDs — only these get colored/hovered
   const regionKeySet = useMemo(() => new Set(allChips.map((c) => c.regionKey)), [allChips]);
 
-  // Hover tracked as refs — direct DOM manipulation avoids re-rendering 62 paths on every move
   const mouseHoverRef = useRef<string | null>(null);
   const dragHoverRef  = useRef<string | null>(null);
-
-  // SVG inline content
-  const [svgContent, setSvgContent]   = useState<string | null>(null);
-
-  // Circle elements should not react to hover/drag — only change color on correct drop
-  const circleKeySet = useMemo<Set<string>>(() => {
-    if (!svgContent) return new Set();
-    const set = new Set<string>();
-    for (const m of svgContent.matchAll(/<circle[^>]*?\bid="([^"]+)"/g)) set.add(m[1]);
-    return set;
-  }, [svgContent]);
-  const svgRef                        = useRef<SVGSVGElement | null>(null);
-  const containerRef                  = useRef<HTMLDivElement>(null);
+  const svgRef        = useRef<SVGSVGElement | null>(null);
+  const containerRef  = useRef<HTMLDivElement>(null);
+  // Track placed state in a ref so restart() can read current values without stale closure
+  const placedRef     = useRef(placed);
+  useEffect(() => { placedRef.current = placed; }, [placed]);
 
   const { markComplete } = useCompletedChallenges();
 
-  // ── Direct DOM colour helpers (bypass React re-render for hover) ─────────────
+  // ── Colour helpers ────────────────────────────────────────────────────────────
+  // Unplaced interactive regions use the same light sage as before; background
+  // land uses the animation's dark green so the ocean+land palette matches.
   const SVG_COLORS = {
-    default: { fill: "#c8d8b4", stroke: "#6b7c52", sw: "0.4" },
-    circle:  { fill: "#fbbf24", stroke: "#d97706", sw: "2"   },
+    default: { fill: "#c8d8b4", stroke: "#6b7c52", sw: "0.5" },
     hover:   { fill: "#93c5fd", stroke: "#2563eb", sw: "0.8" },
     drag:    { fill: "#fbbf24", stroke: "#d97706", sw: "0.8" },
     placed:  { fill: "#4ade80", stroke: "#15803d", sw: "0.8" },
@@ -268,51 +268,103 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   }
 
   function restorePath(id: string) {
-    if (placed[id]) { setPathColor(id, SVG_COLORS.placed); return; }
-    const el = svgRef.current?.querySelector<SVGElement>(`#${CSS.escape(id)}`);
-    setPathColor(id, el?.tagName.toLowerCase() === "circle" ? SVG_COLORS.circle : SVG_COLORS.default);
+    if (placedRef.current[id]) { setPathColor(id, SVG_COLORS.placed); return; }
+    setPathColor(id, SVG_COLORS.default);
   }
 
-  // After dangerouslySetInnerHTML re-renders (placed/wrongKey change), re-apply hover
+  // ── D3 map render ─────────────────────────────────────────────────────────────
+  // Runs once when regionKeySet is stable. Fetches Natural Earth 50m GeoJSON,
+  // auto-fits projection to the challenge's countries, draws ocean + land + regions.
   useEffect(() => {
-    if (mouseHoverRef.current) setPathColor(mouseHoverRef.current, SVG_COLORS.hover);
-    if (dragHoverRef.current)  setPathColor(dragHoverRef.current,  SVG_COLORS.drag);
-  }); // runs after every render
+    const svgEl = svgRef.current;
+    if (!svgEl || regionKeySet.size === 0) return;
 
-  // ── Fetch SVG ────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    fetch(svgPath)
-      .then((r) => r.text())
-      .then((text) => {
-        const inner = text.replace(/<\/?svg[^>]*>/gi, "").trim();
-        setSvgContent(rewriteInkscapeLabels(inner));
+    let aborted = false;
+
+    // Small helper to create and optionally append a namespaced SVG element
+    function mkSvg(tag: string, a: Record<string, string | number> = {}, parent?: Element): SVGElement {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag) as SVGElement;
+      for (const [k, v] of Object.entries(a)) el.setAttribute(k, String(v));
+      parent?.appendChild(el);
+      return el;
+    }
+
+    fetch("https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson")
+      .then((r) => r.json())
+      .then((geojson: { features: GeoFeature[] }) => {
+        if (aborted) return;
+
+        const all     = geojson.features;
+        const game    = all.filter((f) => f.properties && regionKeySet.has(f.properties.ISO_A2));
+        const bg      = all.filter((f) => !f.properties || !regionKeySet.has(f.properties.ISO_A2));
+
+        // Auto-fit Mercator projection to the bounding box of the challenge countries
+        const projection = geoMercator().fitExtent(
+          [[40, 40], [VW - 40, VH - 40]],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { type: "FeatureCollection", features: game } as any
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pathGen = geoPath().projection(projection as any);
+
+        // Clear previous content
+        while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
+
+        // ── Defs: ocean radial gradient (matches animation palette) ──────────
+        const defs = mkSvg("defs", {}, svgEl);
+        const grad = mkSvg("radialGradient", { id: "mc-ocean", cx: "50%", cy: "50%", r: "75%" }, defs);
+        mkSvg("stop", { offset: "0%",   "stop-color": "#0d2048" }, grad);
+        mkSvg("stop", { offset: "100%", "stop-color": "#060e1f" }, grad);
+
+        // Ocean background
+        mkSvg("rect", { width: VW, height: VH, fill: "url(#mc-ocean)" }, svgEl);
+
+        // Subtle graticule grid
+        const gratPath = mkSvg("path", { fill: "none", stroke: "#0e2650", "stroke-width": "0.4" }, svgEl);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        gratPath.setAttribute("d", pathGen(geoGraticule()() as any) ?? "");
+
+        // Background land (non-game countries) — animation green
+        for (const f of bg) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const d = pathGen(f as any);
+          if (!d) continue;
+          mkSvg("path", { d, fill: "#3a7a4a", stroke: "#2d6038", "stroke-width": "0.3" }, svgEl);
+        }
+
+        // Interactive game regions — light sage so they stand out as drop targets
+        for (const f of game) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const d = pathGen(f as any);
+          if (!d || !f.properties) continue;
+          mkSvg("path", {
+            id:            f.properties.ISO_A2,
+            d,
+            fill:          SVG_COLORS.default.fill,
+            stroke:        SVG_COLORS.default.stroke,
+            "stroke-width": SVG_COLORS.default.sw,
+            cursor:        "pointer",
+          }, svgEl);
+        }
+
+        // Vignette overlay (matches animation)
+        const vignette = mkSvg("rect", { width: VW, height: VH, fill: "url(#mc-vignette)" }, svgEl);
+        const vigGrad  = mkSvg("radialGradient", { id: "mc-vignette", cx: "50%", cy: "50%", r: "75%" }, defs);
+        mkSvg("stop", { offset: "44%", "stop-color": "transparent" }, vigGrad);
+        mkSvg("stop", { offset: "100%", "stop-color": "rgba(0,0,0,0.45)" }, vigGrad);
+        vignette.setAttribute("pointer-events", "none");
+
+        setGeoReady(true);
       })
       .catch(console.error);
-  }, [svgPath]);
 
-  // Extract viewBox from fetched SVG text
-  const [viewBox, setViewBox] = useState("0 0 239.05701 217.31789");
-  useEffect(() => {
-    if (!svgContent) return;
-    fetch(svgPath)
-      .then((r) => r.text())
-      .then((text) => {
-        const vbMatch = text.match(/viewBox="([^"]+)"/);
-        if (vbMatch) {
-          setViewBox(vbMatch[1]);
-        } else {
-          // Fall back to width/height attributes (e.g. Inkscape SVGs)
-          const wMatch = text.match(/\bwidth="([^"a-z%]+)"/);
-          const hMatch = text.match(/\bheight="([^"a-z%]+)"/);
-          if (wMatch && hMatch) {
-            setViewBox(`0 0 ${parseFloat(wMatch[1])} ${parseFloat(hMatch[1])}`);
-          }
-        }
-      });
-  }, [svgContent, svgPath]);
+    return () => { aborted = true; };
+  // regionKeySet identity is stable across renders for the same game
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionKeySet]);
 
   // ── Drag state ───────────────────────────────────────────────────────────────
-  const dragging     = useRef<{ chip: Chip; ghost: HTMLDivElement } | null>(null);
+  const dragging = useRef<{ chip: Chip; ghost: HTMLDivElement } | null>(null);
 
   const getPathAtPoint = useCallback((clientX: number, clientY: number): string | null => {
     if (!svgRef.current) return null;
@@ -326,7 +378,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     return null;
   }, [regionKeySet]);
 
-  // ── Pointer handlers on chips ─────────────────────────────────────────────
+  // ── Pointer handlers on chips ──────────────────────────────────────────────
   function onChipDown(e: React.PointerEvent, chip: Chip) {
     e.preventDefault();
     if (gameWon || gameLost) return;
@@ -339,17 +391,15 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       const dx = me.clientX - startX;
       const dy = me.clientY - startY;
 
-      // Initiate drag once pointer moves more than 6px
       if (!dragStarted && Math.sqrt(dx * dx + dy * dy) > 6) {
         dragStarted = true;
-        setHoveredChipKey(null); // hide info panel while dragging
+        setHoveredChipKey(null);
 
         if (!started) {
           setStarted(true);
           trackChallengeStart(challengeId);
         }
 
-        // Build ghost
         const ghost = document.createElement("div");
         ghost.textContent = chip.label;
         ghost.style.cssText = `
@@ -370,8 +420,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         const key = getPathAtPoint(me.clientX, me.clientY);
         if (key !== dragHoverRef.current) {
           if (dragHoverRef.current) restorePath(dragHoverRef.current);
-          if (key && !circleKeySet.has(key)) setPathColor(key, SVG_COLORS.drag);
-          dragHoverRef.current = (key && !circleKeySet.has(key)) ? key : null;
+          if (key) setPathColor(key, SVG_COLORS.drag);
+          dragHoverRef.current = key ?? null;
         }
       }
     };
@@ -381,7 +431,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       window.removeEventListener("pointerup", onUp);
 
       if (!dragStarted) {
-        // Tap / click — toggle info panel for this chip
         if (!started) {
           setStarted(true);
           trackChallengeStart(challengeId);
@@ -405,17 +454,22 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   }
 
   function handleDrop(chip: Chip, dropKey: string) {
-    // Already correctly placed
     if (placed[dropKey]) return;
 
     if (dropKey === chip.regionKey) {
-      // Correct!
       const newPlaced = { ...placed, [dropKey]: chip.label };
       setPlaced(newPlaced);
       setBank((prev) => prev.filter((c) => c.regionKey !== chip.regionKey));
-      // Pulse animation on the circle/path
-      setJustPlacedKey(chip.regionKey);
-      setTimeout(() => setJustPlacedKey(null), 750);
+
+      // Apply placed colour immediately (no re-render needed)
+      setPathColor(dropKey, SVG_COLORS.placed);
+
+      // Pulse animation via CSS class
+      const pathEl = svgRef.current?.querySelector(`#${CSS.escape(dropKey)}`);
+      if (pathEl) {
+        pathEl.classList.add("region-correct-pulse");
+        setTimeout(() => pathEl.classList.remove("region-correct-pulse"), 750);
+      }
 
       if (Object.keys(newPlaced).length === allChips.length) {
         setGameWon(true);
@@ -426,9 +480,12 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         submitScore(allChips.length, allChips.length);
       }
     } else {
-      // Wrong
       const newLives = lives - 1;
       setLives(newLives);
+
+      // Flash wrong region red then restore
+      setPathColor(dropKey, SVG_COLORS.wrong);
+      setTimeout(() => restorePath(dropKey), 600);
       setWrongKey(dropKey);
       setTimeout(() => setWrongKey(null), 600);
 
@@ -450,8 +507,12 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     } catch { /* ignore */ }
   }
 
-  // ── Restart ──────────────────────────────────────────────────────────────────
+  // ── Restart ───────────────────────────────────────────────────────────────────
   function restart() {
+    // Reset all game region colours directly — no D3 re-render needed
+    for (const key of regionKeySet) {
+      setPathColor(key, SVG_COLORS.default);
+    }
     setBank(shuffle(allChips));
     setPlaced({});
     setLives(STARTING_LIVES);
@@ -462,14 +523,9 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     dragHoverRef.current = null;
     setStarted(false);
     setHoveredChipKey(null);
-    setJustPlacedKey(null);
   }
 
   // ── Render ────────────────────────────────────────────────────────────────────
-  if (!svgContent) {
-    return <div className="text-center py-20 text-slate-400">Loading map…</div>;
-  }
-
   const gameOver = gameWon || gameLost;
 
   return (
@@ -477,7 +533,16 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       {glitterActive && <GlitterBomb />}
       {gameLost && <GameOverOverlay message="Game Over" />}
 
-      {/* ── Lives bar ─────────────────────────────────────────────────────── */}
+      {/* ── Pulse animation CSS ─────────────────────────────────────────── */}
+      <style>{`
+        @keyframes region-pulse {
+          0%   { filter: brightness(1.8); }
+          100% { filter: brightness(1); }
+        }
+        .region-correct-pulse { animation: region-pulse 0.75s ease-out; }
+      `}</style>
+
+      {/* ── Lives bar ───────────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-4">
         <span className="text-sm text-slate-500 font-medium">Lives:</span>
         {Array.from({ length: STARTING_LIVES }, (_, i) => (
@@ -489,14 +554,20 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* ── SVG map ────────────────────────────────────────────────────── */}
+        {/* ── Map ─────────────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0">
-          <div className={svgPath.includes("south_america") ? "max-w-[90%]" : undefined}>
-          <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-700">
+          <div className="relative rounded-2xl overflow-hidden border border-slate-700 bg-[#060e1f]">
+            {/* Loading skeleton — same dark background so there's no flash */}
+            {!geoReady && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-slate-400 text-sm animate-pulse">Loading map…</span>
+              </div>
+            )}
             <svg
               ref={svgRef}
-              viewBox={viewBox}
+              viewBox={`0 0 ${VW} ${VH}`}
               className="w-full h-auto block"
+              style={{ opacity: geoReady ? 1 : 0, transition: "opacity 0.4s ease" }}
               onPointerOver={(e) => {
                 if (dragging.current) return;
                 let cur: Element | null = e.target as Element;
@@ -505,8 +576,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                     const id = cur.id;
                     if (id !== mouseHoverRef.current) {
                       if (mouseHoverRef.current) restorePath(mouseHoverRef.current);
-                      if (!placed[id] && !circleKeySet.has(id)) setPathColor(id, SVG_COLORS.hover);
-                      mouseHoverRef.current = circleKeySet.has(id) ? null : id;
+                      if (!placed[id]) setPathColor(id, SVG_COLORS.hover);
+                      mouseHoverRef.current = id;
                     }
                     return;
                   }
@@ -528,13 +599,11 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
                 if (!key || !placed[key]) return;
                 setHoveredChipKey((prev) => (prev === key ? null : key));
               }}
-              dangerouslySetInnerHTML={{ __html: buildSvgInner(svgContent, placed, wrongKey, regionKeySet, justPlacedKey) }}
             />
-          </div>
           </div>
         </div>
 
-        {/* ── Chip bank ──────────────────────────────────────────────────── */}
+        {/* ── Chip bank ───────────────────────────────────────────────── */}
         <div className="lg:w-56 xl:w-64 flex-shrink-0">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
             Labels ({bank.length})
@@ -558,7 +627,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
             )}
           </div>
 
-          {/* Restart */}
           {(gameOver || bank.length === 0) && (
             <button
               onClick={restart}
@@ -570,7 +638,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         </div>
       </div>
 
-      {/* ── Info panel (shown on chip click) ──────────────────────────── */}
+      {/* ── Info panel ──────────────────────────────────────────────────── */}
       {hoveredChipKey && regionsByKey[hoveredChipKey] && (
         <RegionInfoPanel
           region={regionsByKey[hoveredChipKey]}
@@ -582,81 +650,3 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     </div>
   );
 }
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-/**
- * When Inkscape duplicates a circle it keeps the original id and puts the
- * real name in inkscape:label. Rewrite the id to match the label so that
- * region keys can be set from the label value directly.
- */
-function rewriteInkscapeLabels(svgInner: string): string {
-  return svgInner.replace(/<circle([\s\S]*?)\/>/g, (_match, attrs) => {
-    const labelMatch = attrs.match(/inkscape:label="([^"]+)"/);
-    if (!labelMatch) return _match;
-    const label = labelMatch[1].trim();
-    if (!label) return _match;
-    // Replace whatever id= is there with the label value
-    const newAttrs = attrs.replace(/\bid="[^"]*"/, `id="${label}"`);
-    return `<circle${newAttrs}/>`;
-  });
-}
-
-/**
- * Apply game colours only to elements whose IDs are in regionKeySet.
- * Background paths (country shapes etc.) are left completely unchanged.
- * Circle elements (point markers) are handled alongside paths.
- */
-function buildSvgInner(
-  raw: string,
-  placed: Record<string, string>,
-  wrongKey: string | null,
-  regionKeySet: Set<string>,
-  justPlacedKey: string | null = null,
-): string {
-  // Strip any <style> block that would leak globally
-  const noStyle = raw.replace(/<style[\s\S]*?<\/style>/gi, "");
-
-  function gameColors(id: string, isCircle: boolean) {
-    if (placed[id])       return { fill: "#4ade80", stroke: "#15803d", sw: isCircle ? "2" : "0.8" };
-    if (id === wrongKey)  return { fill: "#f87171", stroke: "#dc2626", sw: isCircle ? "2" : "0.8" };
-    if (isCircle)         return { fill: "#fbbf24", stroke: "#d97706", sw: "2" };   // amber dot = unplaced target
-    return                       { fill: "#c8d8b4", stroke: "#6b7c52", sw: "0.4" }; // soft green = unplaced country
-  }
-
-  function applyColors(tag: string, attrs: string): string {
-    const idMatch = attrs.match(/\bid="([^"]+)"/);
-    const isGameElement = idMatch && regionKeySet.has(idMatch[1]);
-
-    // Non-game circles (decorative): leave completely unchanged
-    if (tag === "circle" && !isGameElement) return `<${tag}${attrs}/>`;
-
-    const cleaned = attrs
-      .replace(/\s*fill="[^"]*"/g, "")
-      .replace(/\s*stroke="[^"]*"/g, "")
-      .replace(/\s*stroke-width="[^"]*"/g, "")
-      .replace(/\s*class="[^"]*"/g, "")
-      .replace(/\s*style="[^"]*"/g, "");
-
-    if (!isGameElement) {
-      // Background country path — render in the same green as before
-      return `<path${cleaned} fill="#c8d8b4" stroke="#6b7c52" stroke-width="0.4"/>`;
-    }
-
-    const id = idMatch[1];
-    const isCircle = tag === "circle";
-    const { fill, stroke, sw } = gameColors(id, isCircle);
-    // Boost circle radius so small dots are actually clickable
-    const radiusAttr = isCircle
-      ? ` r="4"` + cleaned.replace(/\s*\br="[^"]*"/g, "")
-      : cleaned;
-    // Pulse animation class for just-placed elements
-    const pulseClass = id === justPlacedKey ? ` class="circle-correct-pulse"` : "";
-    return `<${tag}${radiusAttr}${pulseClass} fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer"/>`;
-  }
-
-  return noStyle
-    .replace(/<path([\s\S]*?)\/>/g,   (_m, attrs) => applyColors("path",   attrs))
-    .replace(/<circle([\s\S]*?)\/>/g, (_m, attrs) => applyColors("circle", attrs));
-}
-
