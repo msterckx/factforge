@@ -305,9 +305,10 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         // on an empty collection (it returns NaN scale/translate, breaking every path).
         if (game.length === 0) {
           console.error(
-            "[MapChallenge] No GeoJSON features matched region keys.",
-            "Expected keys:", [...regionKeySet],
-            "Sample ISO_A2 values in dataset:", all.slice(0, 8).map(iso),
+            "[MapChallenge] No GeoJSON features matched region keys.\n" +
+            "  Expected keys : " + JSON.stringify([...regionKeySet]) + "\n" +
+            "  Sample ISO_A2 : " + JSON.stringify(all.slice(0, 8).map(iso)) + "\n" +
+            "  First feature : " + JSON.stringify(geojson.features[0]?.properties),
           );
           return;
         }
