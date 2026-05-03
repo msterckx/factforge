@@ -24,8 +24,8 @@ interface Props {
 // Minimal GeoJSON types (Natural Earth feature)
 interface GeoFeature {
   type: "Feature";
-  geometry: { type: string; coordinates: unknown };
-  properties: { ISO_A2: string; NAME: string } | null;
+  geometry: { type: string; coordinates: unknown } | null;
+  properties: { ISO_A2: string; ISO_A2_EH?: string; NAME: string } | null;
 }
 
 const STARTING_LIVES = 5;
@@ -294,9 +294,23 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       .then((geojson: { features: GeoFeature[] }) => {
         if (aborted) return;
 
-        const all     = geojson.features;
-        const game    = all.filter((f) => f.properties && regionKeySet.has(f.properties.ISO_A2));
-        const bg      = all.filter((f) => !f.properties || !regionKeySet.has(f.properties.ISO_A2));
+        // Strip features with null geometry — fitExtent produces NaN for these
+        const all  = geojson.features.filter((f) => f.geometry != null);
+        // ISO_A2_EH is the more-complete field in newer Natural Earth versions; fall back to ISO_A2
+        const iso  = (f: GeoFeature) => f.properties?.ISO_A2_EH ?? f.properties?.ISO_A2 ?? "";
+        const game = all.filter((f) => regionKeySet.has(iso(f)));
+        const bg   = all.filter((f) => !regionKeySet.has(iso(f)));
+
+        // Guard: if no features matched, log the mismatch and bail — never call fitExtent
+        // on an empty collection (it returns NaN scale/translate, breaking every path).
+        if (game.length === 0) {
+          console.error(
+            "[MapChallenge] No GeoJSON features matched region keys.",
+            "Expected keys:", [...regionKeySet],
+            "Sample ISO_A2 values in dataset:", all.slice(0, 8).map(iso),
+          );
+          return;
+        }
 
         // Auto-fit Mercator projection to the bounding box of the challenge countries
         const projection = geoMercator().fitExtent(
@@ -304,6 +318,14 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           { type: "FeatureCollection", features: game } as any
         );
+
+        // Validate — fitExtent on degenerate geometry can still produce NaN
+        const [tx, ty] = projection.translate();
+        if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
+          console.error("[MapChallenge] Projection produced NaN — check feature geometry.");
+          return;
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pathGen = geoPath().projection(projection as any);
 
@@ -338,7 +360,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           const d = pathGen(f as any);
           if (!d || !f.properties) continue;
           mkSvg("path", {
-            id:            f.properties.ISO_A2,
+            id:            iso(f),
             d,
             fill:          SVG_COLORS.default.fill,
             stroke:        SVG_COLORS.default.stroke,
