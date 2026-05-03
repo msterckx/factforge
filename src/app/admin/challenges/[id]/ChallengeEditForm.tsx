@@ -316,7 +316,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
           <p className="text-sm font-semibold text-emerald-800">Map Settings</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">SVG map</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Map file <span className="text-slate-400 font-normal">(.svg or .geojson)</span></label>
               {/* Hidden input so the value is submitted with the form */}
               <input type="hidden" name="mapSvg" value={mapSvg} />
               <select
@@ -346,13 +346,13 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
             </div>
           </div>
 
-          {/* Upload a new SVG */}
+          {/* Upload a new map file */}
           <div className="flex flex-wrap items-center gap-3 pt-1">
-            <label className="text-xs text-slate-500 font-medium flex-shrink-0">Upload new SVG:</label>
+            <label className="text-xs text-slate-500 font-medium flex-shrink-0">Upload map file:</label>
             <input
               ref={svgFileRef}
               type="file"
-              accept=".svg,image/svg+xml"
+              accept=".svg,image/svg+xml,.geojson,application/geo+json"
               className="text-sm text-slate-600 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border file:border-slate-300 file:text-sm file:bg-white file:text-slate-700 hover:file:bg-slate-50"
             />
             <button
