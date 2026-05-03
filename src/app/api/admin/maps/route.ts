@@ -7,11 +7,13 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const isMapFile = (f: string) => f.endsWith(".svg") || f.endsWith(".geojson");
+
   // Maps bundled in the repo (public/maps/)
   const publicDir = path.join(process.cwd(), "public", "maps");
   const publicMaps: { label: string; value: string }[] = fs.existsSync(publicDir)
     ? fs.readdirSync(publicDir)
-        .filter((f) => f.endsWith(".svg"))
+        .filter(isMapFile)
         .map((f) => ({ label: f, value: `/maps/${f}` }))
     : [];
 
@@ -19,7 +21,7 @@ export async function GET() {
   const uploadedDir = path.join(process.env.DATABASE_DIR ?? process.cwd(), "maps");
   const uploadedMaps: { label: string; value: string }[] = fs.existsSync(uploadedDir)
     ? fs.readdirSync(uploadedDir)
-        .filter((f) => f.endsWith(".svg"))
+        .filter(isMapFile)
         .map((f) => ({ label: `${f} (uploaded)`, value: `/api/maps/${f}` }))
     : [];
 
