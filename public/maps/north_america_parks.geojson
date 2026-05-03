@@ -1,0 +1,113 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "Yellowstone_National_Park",
+      "properties": { "regionKey": "Yellowstone_National_Park", "name": "Yellowstone National Park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-111.15, 44.13], [-109.82, 44.13], [-109.82, 45.10],
+          [-111.15, 45.10], [-111.15, 44.13]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Yosemite_National_Park",
+      "properties": { "regionKey": "Yosemite_National_Park", "name": "Yosemite National Park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-120.07, 37.49], [-119.20, 37.49], [-119.20, 38.19],
+          [-120.07, 38.19], [-120.07, 37.49]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Nahanni_National_Park",
+      "properties": { "regionKey": "Nahanni_National_Park", "name": "Nahanni National Park Reserve" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-128.00, 60.50], [-122.50, 60.50], [-122.50, 62.70],
+          [-128.00, 62.70], [-128.00, 60.50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Torngat_Mountains_National_Park",
+      "properties": { "regionKey": "Torngat_Mountains_National_Park", "name": "Torngat Mountains National Park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-65.50, 57.50], [-63.00, 57.50], [-63.00, 59.90],
+          [-65.50, 59.90], [-65.50, 57.50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Tikal_National_Park",
+      "properties": { "regionKey": "Tikal_National_Park", "name": "Tikal National Park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-89.85, 17.05], [-89.45, 17.05], [-89.45, 17.45],
+          [-89.85, 17.45], [-89.85, 17.05]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Grand_Canyon_National_Park",
+      "properties": { "regionKey": "Grand_Canyon_National_Park", "name": "Grand Canyon National Park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-112.60, 35.97], [-111.55, 35.97], [-111.55, 36.48],
+          [-112.60, 36.48], [-112.60, 35.97]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Sian_Kaan_Biosphere_Reserve",
+      "properties": { "regionKey": "Sian_Kaan_Biosphere_Reserve", "name": "Sian Ka'an Biosphere Reserve" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-87.90, 19.08], [-87.20, 19.08], [-87.20, 20.25],
+          [-87.90, 20.25], [-87.90, 19.08]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "Denali_National_Park",
+      "properties": { "regionKey": "Denali_National_Park", "name": "Denali National Park" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-152.20, 62.40], [-148.40, 62.40], [-148.40, 64.10],
+          [-152.20, 64.10], [-152.20, 62.40]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "El_Vizcaino_Biosphere_Reserve",
+      "properties": { "regionKey": "El_Vizcaino_Biosphere_Reserve", "name": "El Vizcaíno Biosphere Reserve" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-115.20, 26.70], [-113.00, 26.70], [-113.00, 28.40],
+          [-115.20, 28.40], [-115.20, 26.70]
+        ]]
+      }
+    }
+  ]
+}

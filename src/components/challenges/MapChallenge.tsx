@@ -21,11 +21,11 @@ interface Props {
   lang: string;
 }
 
-// Minimal GeoJSON types (Natural Earth feature)
+// Minimal GeoJSON types (Natural Earth feature — CDN returns lowercase property names)
 interface GeoFeature {
   type: "Feature";
   geometry: { type: string; coordinates: unknown } | null;
-  properties: { ISO_A2: string; ISO_A2_EH?: string; NAME: string } | null;
+  properties: { iso_a2: string; iso_a2_eh?: string; name: string } | null;
 }
 
 const STARTING_LIVES = 5;
@@ -243,7 +243,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   const svgRef        = useRef<SVGSVGElement | null>(null);
   const containerRef  = useRef<HTMLDivElement>(null);
   // Track placed state in a ref so restart() can read current values without stale closure
-  const placedRef     = useRef(placed);
+  const placedRef = useRef(placed);
   useEffect(() => { placedRef.current = placed; }, [placed]);
 
   const { markComplete } = useCompletedChallenges();
@@ -273,15 +273,17 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   }
 
   // ── D3 map render ─────────────────────────────────────────────────────────────
-  // Runs once when regionKeySet is stable. Fetches Natural Earth 50m GeoJSON,
-  // auto-fits projection to the challenge's countries, draws ocean + land + regions.
+  // Runs once when regionKeySet is stable. Fetches GeoJSON, auto-fits projection,
+  // draws ocean + background land + interactive regions.
+  // Two modes:
+  //   • game.mapSvg ends with ".geojson" → custom GeoJSON (parks, etc.) + NE background
+  //   • otherwise → Natural Earth 50m, filtered by ISO code
   useEffect(() => {
     const svgEl = svgRef.current;
     if (!svgEl || regionKeySet.size === 0) return;
 
     let aborted = false;
 
-    // Small helper to create and optionally append a namespaced SVG element
     function mkSvg(tag: string, a: Record<string, string | number> = {}, parent?: Element): SVGElement {
       const el = document.createElementNS("http://www.w3.org/2000/svg", tag) as SVGElement;
       for (const [k, v] of Object.entries(a)) el.setAttribute(k, String(v));
@@ -289,97 +291,115 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       return el;
     }
 
-    fetch("https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson")
-      .then((r) => r.json())
-      .then((geojson: { features: GeoFeature[] }) => {
+    // Shared render: accepts the SVG element, feature sets, key extractor, and padding
+    // svgEl is passed explicitly so TypeScript retains its non-null narrowing inside the closure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function renderMap(el: SVGSVGElement, bgFeatures: any[], gameFeatures: any[], getKey: (f: any) => string, padding: number) {
+      if (gameFeatures.length === 0) {
+        console.error("[MapChallenge] No features matched region keys:", [...regionKeySet]);
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const projection = geoMercator().fitExtent(
+        [[padding, padding], [VW - padding, VH - padding]],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { type: "FeatureCollection", features: gameFeatures } as any
+      );
+      const [tx, ty] = projection.translate();
+      if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
+        console.error("[MapChallenge] Projection produced NaN — check feature geometry.");
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pathGen = geoPath().projection(projection as any);
+
+      while (el.firstChild) el.removeChild(el.firstChild);
+
+      const defs = mkSvg("defs", {}, el);
+      const grad = mkSvg("radialGradient", { id: "mc-ocean", cx: "50%", cy: "50%", r: "75%" }, defs);
+      mkSvg("stop", { offset: "0%",   "stop-color": "#0d2048" }, grad);
+      mkSvg("stop", { offset: "100%", "stop-color": "#060e1f" }, grad);
+
+      mkSvg("rect", { width: VW, height: VH, fill: "url(#mc-ocean)" }, el);
+
+      const gratPath = mkSvg("path", { fill: "none", stroke: "#0e2650", "stroke-width": "0.4" }, el);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      gratPath.setAttribute("d", pathGen(geoGraticule()() as any) ?? "");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const f of bgFeatures) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d = pathGen(f as any);
+        if (!d) continue;
+        mkSvg("path", { d, fill: "#3a7a4a", stroke: "#2d6038", "stroke-width": "0.3" }, el);
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const f of gameFeatures) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d = pathGen(f as any);
+        if (!d) continue;
+        mkSvg("path", {
+          id:             getKey(f),
+          d,
+          fill:           SVG_COLORS.default.fill,
+          stroke:         SVG_COLORS.default.stroke,
+          "stroke-width": SVG_COLORS.default.sw,
+          cursor:         "pointer",
+        }, el);
+      }
+
+      const vignette = mkSvg("rect", { width: VW, height: VH, fill: "url(#mc-vignette)" }, el);
+      const vigGrad  = mkSvg("radialGradient", { id: "mc-vignette", cx: "50%", cy: "50%", r: "75%" }, defs);
+      mkSvg("stop", { offset: "44%", "stop-color": "transparent" }, vigGrad);
+      mkSvg("stop", { offset: "100%", "stop-color": "rgba(0,0,0,0.45)" }, vigGrad);
+      vignette.setAttribute("pointer-events", "none");
+
+      setGeoReady(true);
+    }
+
+    const NE_URL = "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson";
+
+    if (game.mapSvg?.endsWith(".geojson")) {
+      // Custom GeoJSON mode — parks, reserves, etc.
+      // Game features come from the custom file; NE countries used as background land.
+      Promise.all([
+        fetch(NE_URL).then((r) => r.json()),
+        fetch(game.mapSvg).then((r) => r.json()),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ]).then(([worldGeo, customGeo]: [any, any]) => {
         if (aborted) return;
-
-        // Strip features with null geometry — fitExtent produces NaN for these
-        const all  = geojson.features.filter((f) => f.geometry != null);
-        // ISO_A2_EH is the more-complete field in newer Natural Earth versions; fall back to ISO_A2
-        const iso  = (f: GeoFeature) => f.properties?.ISO_A2_EH ?? f.properties?.ISO_A2 ?? "";
-        const game = all.filter((f) => regionKeySet.has(iso(f)));
-        const bg   = all.filter((f) => !regionKeySet.has(iso(f)));
-
-        // Guard: if no features matched, log the mismatch and bail — never call fitExtent
-        // on an empty collection (it returns NaN scale/translate, breaking every path).
-        if (game.length === 0) {
-          console.error(
-            "[MapChallenge] No GeoJSON features matched region keys.\n" +
-            "  Expected keys : " + JSON.stringify([...regionKeySet]) + "\n" +
-            "  Sample ISO_A2 : " + JSON.stringify(all.slice(0, 8).map(iso)) + "\n" +
-            "  First feature : " + JSON.stringify(geojson.features[0]?.properties),
-          );
-          return;
-        }
-
-        // Auto-fit Mercator projection to the bounding box of the challenge countries
-        const projection = geoMercator().fitExtent(
-          [[40, 40], [VW - 40, VH - 40]],
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          { type: "FeatureCollection", features: game } as any
-        );
-
-        // Validate — fitExtent on degenerate geometry can still produce NaN
-        const [tx, ty] = projection.translate();
-        if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
-          console.error("[MapChallenge] Projection produced NaN — check feature geometry.");
-          return;
-        }
-
+        const bgFeatures   = (worldGeo.features  as GeoFeature[]).filter((f) => f.geometry != null);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pathGen = geoPath().projection(projection as any);
-
-        // Clear previous content
-        while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
-
-        // ── Defs: ocean radial gradient (matches animation palette) ──────────
-        const defs = mkSvg("defs", {}, svgEl);
-        const grad = mkSvg("radialGradient", { id: "mc-ocean", cx: "50%", cy: "50%", r: "75%" }, defs);
-        mkSvg("stop", { offset: "0%",   "stop-color": "#0d2048" }, grad);
-        mkSvg("stop", { offset: "100%", "stop-color": "#060e1f" }, grad);
-
-        // Ocean background
-        mkSvg("rect", { width: VW, height: VH, fill: "url(#mc-ocean)" }, svgEl);
-
-        // Subtle graticule grid
-        const gratPath = mkSvg("path", { fill: "none", stroke: "#0e2650", "stroke-width": "0.4" }, svgEl);
+        const gameFeatures = (customGeo.features as any[]).filter((f) => f.geometry != null);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        gratPath.setAttribute("d", pathGen(geoGraticule()() as any) ?? "");
-
-        // Background land (non-game countries) — animation green
-        for (const f of bg) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const d = pathGen(f as any);
-          if (!d) continue;
-          mkSvg("path", { d, fill: "#3a7a4a", stroke: "#2d6038", "stroke-width": "0.3" }, svgEl);
-        }
-
-        // Interactive game regions — light sage so they stand out as drop targets
-        for (const f of game) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const d = pathGen(f as any);
-          if (!d || !f.properties) continue;
-          mkSvg("path", {
-            id:            iso(f),
-            d,
-            fill:          SVG_COLORS.default.fill,
-            stroke:        SVG_COLORS.default.stroke,
-            "stroke-width": SVG_COLORS.default.sw,
-            cursor:        "pointer",
-          }, svgEl);
-        }
-
-        // Vignette overlay (matches animation)
-        const vignette = mkSvg("rect", { width: VW, height: VH, fill: "url(#mc-vignette)" }, svgEl);
-        const vigGrad  = mkSvg("radialGradient", { id: "mc-vignette", cx: "50%", cy: "50%", r: "75%" }, defs);
-        mkSvg("stop", { offset: "44%", "stop-color": "transparent" }, vigGrad);
-        mkSvg("stop", { offset: "100%", "stop-color": "rgba(0,0,0,0.45)" }, vigGrad);
-        vignette.setAttribute("pointer-events", "none");
-
-        setGeoReady(true);
-      })
-      .catch(console.error);
+        const getKey = (f: any): string => String(f.id ?? f.properties?.regionKey ?? "");
+        // Extra padding so surrounding continent provides geographic context
+        renderMap(svgEl, bgFeatures, gameFeatures, getKey, 80);
+      }).catch(console.error);
+    } else {
+      // Natural Earth ISO mode — country-level challenges
+      fetch(NE_URL)
+        .then((r) => r.json())
+        .then((geojson: { features: GeoFeature[] }) => {
+          if (aborted) return;
+          const all          = geojson.features.filter((f) => f.geometry != null);
+          const iso          = (f: GeoFeature) => f.properties?.iso_a2_eh ?? f.properties?.iso_a2 ?? "";
+          const gameFeatures = all.filter((f) =>  regionKeySet.has(iso(f)));
+          const bgFeatures   = all.filter((f) => !regionKeySet.has(iso(f)));
+          if (gameFeatures.length === 0) {
+            console.error(
+              "[MapChallenge] No GeoJSON features matched region keys.\n" +
+              "  Expected keys : " + JSON.stringify([...regionKeySet]) + "\n" +
+              "  Sample iso_a2 : " + JSON.stringify(all.slice(0, 8).map(iso)) + "\n" +
+              "  First feature : " + JSON.stringify(geojson.features[0]?.properties),
+            );
+            return;
+          }
+          renderMap(svgEl, bgFeatures, gameFeatures, iso, 40);
+        })
+        .catch(console.error);
+    }
 
     return () => { aborted = true; };
   // regionKeySet identity is stable across renders for the same game
