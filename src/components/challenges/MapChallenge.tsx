@@ -294,10 +294,14 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     }
 
     // Shared render: accepts the SVG element, feature sets, key extractor, padding,
-    // and an optional bgFill override (e.g. "none" for outline-only background).
+    // an optional bgFill override, and directProject flag.
+    // directProject=true: project each polygon vertex directly via projection() instead of
+    // geoPath(). Needed for small polygon features where D3's spherical polygon winding
+    // detection incorrectly fills the global complement (full-world bbox) instead of the
+    // small interior area.
     // svgEl is passed explicitly so TypeScript retains its non-null narrowing inside the closure
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function renderMap(el: SVGSVGElement, bgFeatures: any[], gameFeatures: any[], getKey: (f: any) => string, padding: number, bgFill = "#3a7a4a") {
+    function renderMap(el: SVGSVGElement, bgFeatures: any[], gameFeatures: any[], getKey: (f: any) => string, padding: number, bgFill = "#3a7a4a", directProject = false) {
       if (gameFeatures.length === 0) {
         console.error("[MapChallenge] No features matched region keys:", [...regionKeySet]);
         return;
@@ -357,8 +361,21 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const f of gameFeatures) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = pathGen(f as any);
+        let d: string | null = null;
+        if (directProject && f.geometry?.type === "Polygon") {
+          // Project each vertex of the outer ring directly, bypassing D3's polygon
+          // clipping/winding pipeline which misidentifies small CCW rings as complement.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const ring: number[][] = f.geometry.coordinates[0];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pts = ring.slice(0, -1).map((c: number[]) => projection(c as [number, number])).filter(Boolean) as [number, number][];
+          if (pts.length >= 3) {
+            d = `M${pts[0][0]},${pts[0][1]}` + pts.slice(1).map((p) => `L${p[0]},${p[1]}`).join("") + "Z";
+          }
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          d = pathGen(f as any);
+        }
         if (!d) continue;
         mkSvg("path", {
           id:             getKey(f),
@@ -404,7 +421,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const getKey = (f: any): string => String(f.id ?? f.properties?.regionKey ?? "");
           console.log("[MapChallenge] custom GeoJSON loaded, features:", gameFeatures.length, "keys:", gameFeatures.map(getKey));
-          renderMap(svgEl, [], gameFeatures, getKey, 40);
+          renderMap(svgEl, [], gameFeatures, getKey, 40, "#3a7a4a", true);
         }).catch(console.error);
     } else {
       // Natural Earth ISO mode — country-level challenges
