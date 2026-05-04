@@ -302,11 +302,28 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         console.error("[MapChallenge] No features matched region keys:", [...regionKeySet]);
         return;
       }
+      // Build a MultiPoint from all feature vertices for fitExtent.
+      // D3's polygon bounding-box can produce a full-world bbox for small features
+      // (great-circle arc interpolation issue), causing scale to be ~5× too small.
+      // MultiPoint bboxes are computed from raw projected points — always correct.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const bboxCoords: number[][] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const flattenCoords = (c: any): void => {
+        if (!Array.isArray(c) || c.length === 0) return;
+        if (typeof c[0] === "number") { bboxCoords.push(c as number[]); return; }
+        for (const sub of c) flattenCoords(sub);
+      };
+      for (const f of gameFeatures) flattenCoords(f.geometry?.coordinates);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fitTarget: any = bboxCoords.length > 0
+        ? { type: "Feature", geometry: { type: "MultiPoint", coordinates: bboxCoords }, properties: null }
+        : { type: "FeatureCollection", features: gameFeatures };
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const projection = geoMercator().fitExtent(
         [[padding, padding], [VW - padding, VH - padding]],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { type: "FeatureCollection", features: gameFeatures } as any
+        fitTarget
       );
       const [tx, ty] = projection.translate();
       console.log("[MapChallenge] renderMap | bg:", bgFeatures.length, "game:", gameFeatures.length, "scale:", projection.scale(), "translate:", [tx, ty]);

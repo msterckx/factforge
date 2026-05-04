@@ -75,8 +75,8 @@
     },
     {
       "type": "Feature",
-      "id": "El_Vizcaino_Biosphere_Reserve",
-      "properties": { "regionKey": "El_Vizcaino_Biosphere_Reserve", "name": "El Vizcaíno Biosphere Reserve" },
+      "id": "Reserva_de_la_Biosfera_El_vizcaino",
+      "properties": { "regionKey": "Reserva_de_la_Biosfera_El_vizcaino", "name": "El Vizcaíno Biosphere Reserve" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -87,8 +87,8 @@
     },
     {
       "type": "Feature",
-      "id": "Sian_Kaan_Biosphere_Reserve",
-      "properties": { "regionKey": "Sian_Kaan_Biosphere_Reserve", "name": "Sian Ka'an Biosphere Reserve" },
+      "id": "Reserva_de_la_Biosfera_Sian_Ka_an",
+      "properties": { "regionKey": "Reserva_de_la_Biosfera_Sian_Ka_an", "name": "Sian Ka'an Biosphere Reserve" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
