@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "Bwindi_National_Park",
+      "properties": { "regionKey": "Bwindi_National_Park", "name": "Bwindi Impenetrable National Park" },
+      "geometry": { "type": "Point", "coordinates": [29.7, -1.0] }
+    },
+    {
+      "type": "Feature",
+      "id": "Etosha_National_Park",
+      "properties": { "regionKey": "Etosha_National_Park", "name": "Etosha National Park" },
+      "geometry": { "type": "Point", "coordinates": [16.5, -19.0] }
+    },
+    {
+      "type": "Feature",
+      "id": "Kruger_National_Park",
+      "properties": { "regionKey": "Kruger_National_Park", "name": "Kruger National Park" },
+      "geometry": { "type": "Point", "coordinates": [31.5, -24.0] }
+    },
+    {
+      "type": "Feature",
+      "id": "Maasai_Mara_National_Reserve",
+      "properties": { "regionKey": "Maasai_Mara_National_Reserve", "name": "Maasai Mara National Reserve" },
+      "geometry": { "type": "Point", "coordinates": [35.1, -1.5] }
+    },
+    {
+      "type": "Feature",
+      "id": "Okavango_Delta",
+      "properties": { "regionKey": "Okavango_Delta", "name": "Okavango Delta" },
+      "geometry": { "type": "Point", "coordinates": [22.8, -19.5] }
+    },
+    {
+      "type": "Feature",
+      "id": "Serengeti_National_Park",
+      "properties": { "regionKey": "Serengeti_National_Park", "name": "Serengeti National Park" },
+      "geometry": { "type": "Point", "coordinates": [34.8, -2.5] }
+    },
+    {
+      "type": "Feature",
+      "id": "South_Luangwa_National_Park",
+      "properties": { "regionKey": "South_Luangwa_National_Park", "name": "South Luangwa National Park" },
+      "geometry": { "type": "Point", "coordinates": [32.0, -13.5] }
+    },
+    {
+      "type": "Feature",
+      "id": "Virunga_National_Park",
+      "properties": { "regionKey": "Virunga_National_Park", "name": "Virunga National Park" },
+      "geometry": { "type": "Point", "coordinates": [29.3, -0.3] }
+    }
+  ]
+}

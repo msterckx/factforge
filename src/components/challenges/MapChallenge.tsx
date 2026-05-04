@@ -416,15 +416,29 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
     const NE_URL = "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson";
 
-    // Continental North/Central America ISO codes — large enough that D3 polygon winding
-    // is reliable (no complement misidentification) and none cross the antimeridian.
-    const NA_ISO = new Set(["US","CA","MX","GT","BZ","HN","SV","NI","CR","PA",
-      "CU","HT","DO","JM","GL"]);
+    // Per-continent ISO sets for the background land layer.
+    // Large continental countries render correctly with D3's polygon pipeline;
+    // tiny island nations are excluded to avoid winding-complement artifacts.
+    const BG_ISO: Record<string, Set<string>> = {
+      africa: new Set(["ZA","NA","BW","ZW","ZM","TZ","KE","UG","RW","BI","CD",
+        "AO","MZ","MG","MW","SO","ET","ER","DJ","SD","SS","CF","CG","GA","CM",
+        "NG","GH","CI","SN","GN","SL","LR","TG","BJ","NE","ML","BF","MR","GM",
+        "GW","TD","LY","DZ","MA","TN","EG","MU"]),
+      south_america: new Set(["BR","AR","CL","CO","VE","PE","BO","PY","UY","EC",
+        "GY","SR","FK","PA","CR"]),
+      north_america: new Set(["US","CA","MX","GT","BZ","HN","SV","NI","CR","PA",
+        "CU","HT","DO","JM","GL"]),
+    };
+    const bgIso = (mapSvg: string): Set<string> => {
+      if (mapSvg.includes("africa"))        return BG_ISO.africa;
+      if (mapSvg.includes("south_america")) return BG_ISO.south_america;
+      return BG_ISO.north_america;
+    };
 
     if (game.mapSvg?.endsWith(".geojson")) {
       // Custom GeoJSON mode (parks, reserves, etc.).
       // Game features are projected directly (bypassing D3's polygon pipeline).
-      // Background: NA/Central American countries from Natural Earth for geographic context.
+      // Background: continent countries from Natural Earth for geographic context.
       Promise.all([
         fetch(game.mapSvg).then((r) => r.json()),
         fetch(NE_URL).then((r) => r.json()),
@@ -436,8 +450,9 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const getKey = (f: any): string => String(f.id ?? f.properties?.regionKey ?? "");
           const isoFn = (f: GeoFeature) => f.properties?.iso_a2_eh ?? f.properties?.iso_a2 ?? "";
+          const iso = bgIso(game.mapSvg!);
           const bgFeatures = (neGeo.features as GeoFeature[]).filter(
-            (f) => f.geometry != null && NA_ISO.has(isoFn(f))
+            (f) => f.geometry != null && iso.has(isoFn(f))
           );
           renderMap(svgEl, bgFeatures, gameFeatures, getKey, 40, "#3a7a4a", true);
         }).catch(console.error);

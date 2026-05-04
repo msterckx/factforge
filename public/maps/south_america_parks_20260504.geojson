@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "Canaima_National_Park",
+      "properties": { "regionKey": "Canaima_National_Park", "name": "Canaima National Park" },
+      "geometry": { "type": "Point", "coordinates": [-62.5, 6.2] }
+    },
+    {
+      "type": "Feature",
+      "id": "Central_Suriname_Nature_Reserve",
+      "properties": { "regionKey": "Central_Suriname_Nature_Reserve", "name": "Central Suriname Nature Reserve" },
+      "geometry": { "type": "Point", "coordinates": [-56.5, 3.8] }
+    },
+    {
+      "type": "Feature",
+      "id": "Madidi_National_Park",
+      "properties": { "regionKey": "Madidi_National_Park", "name": "Madidi National Park" },
+      "geometry": { "type": "Point", "coordinates": [-68.2, -14.2] }
+    },
+    {
+      "type": "Feature",
+      "id": "Manu_National_Park",
+      "properties": { "regionKey": "Manu_National_Park", "name": "Manu National Park" },
+      "geometry": { "type": "Point", "coordinates": [-71.5, -12.0] }
+    },
+    {
+      "type": "Feature",
+      "id": "Pantanal_Matogrossense_National_Park",
+      "properties": { "regionKey": "Pantanal_Matogrossense_National_Park", "name": "Pantanal Matogrossense National Park" },
+      "geometry": { "type": "Point", "coordinates": [-57.5, -17.8] }
+    },
+    {
+      "type": "Feature",
+      "id": "Parque_Nacional_Los_Glaciares",
+      "properties": { "regionKey": "Parque_Nacional_Los_Glaciares", "name": "Los Glaciares National Park" },
+      "geometry": { "type": "Point", "coordinates": [-72.8, -49.5] }
+    },
+    {
+      "type": "Feature",
+      "id": "Tayrona_National_Natural_Park",
+      "properties": { "regionKey": "Tayrona_National_Natural_Park", "name": "Tayrona National Natural Park" },
+      "geometry": { "type": "Point", "coordinates": [-74.0, 11.3] }
+    },
+    {
+      "type": "Feature",
+      "id": "Torres_del_Paine_National_Park",
+      "properties": { "regionKey": "Torres_del_Paine_National_Park", "name": "Torres del Paine National Park" },
+      "geometry": { "type": "Point", "coordinates": [-72.9, -51.1] }
+    }
+  ]
+}
