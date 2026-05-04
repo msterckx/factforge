@@ -360,13 +360,16 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       for (const f of gameFeatures) {
         const key = getKey(f);
 
-        // Point features → SVG circle (used for park/reserve location pins)
+        // Point features → downward-pointing triangle (map-pin style)
         if (directProject && f.geometry?.type === "Point") {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const pt = projection(f.geometry.coordinates as [number, number]);
           if (!pt) continue;
-          mkSvg("circle", {
-            id: key, cx: pt[0], cy: pt[1], r: 10,
+          const [cx, cy] = pt;
+          const w = 13, h = 18; // half-width, height
+          const d = `M${cx},${cy + h * 0.45} L${cx - w},${cy - h * 0.55} L${cx + w},${cy - h * 0.55} Z`;
+          mkSvg("path", {
+            id: key, d,
             fill:           SVG_COLORS.default.fill,
             stroke:         SVG_COLORS.default.stroke,
             "stroke-width": "1.5",

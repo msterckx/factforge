@@ -5,109 +5,55 @@
       "type": "Feature",
       "id": "Denali_National_Park",
       "properties": { "regionKey": "Denali_National_Park", "name": "Denali National Park" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-151.8, 61.8], [-148.8, 61.8], [-148.8, 64.8],
-          [-151.8, 64.8], [-151.8, 61.8]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-150.3, 63.3] }
     },
     {
       "type": "Feature",
       "id": "Nahanni_National_Park",
       "properties": { "regionKey": "Nahanni_National_Park", "name": "Nahanni National Park Reserve" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-126.8, 60.1], [-123.8, 60.1], [-123.8, 63.1],
-          [-126.8, 63.1], [-126.8, 60.1]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-125.3, 61.6] }
     },
     {
       "type": "Feature",
       "id": "Torngat_Mountains_National_Park",
       "properties": { "regionKey": "Torngat_Mountains_National_Park", "name": "Torngat Mountains National Park" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-65.8, 57.2], [-62.8, 57.2], [-62.8, 60.2],
-          [-65.8, 60.2], [-65.8, 57.2]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-64.3, 58.7] }
     },
     {
       "type": "Feature",
       "id": "Yellowstone_National_Park",
       "properties": { "regionKey": "Yellowstone_National_Park", "name": "Yellowstone National Park" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-112.0, 43.1], [-109.0, 43.1], [-109.0, 46.1],
-          [-112.0, 46.1], [-112.0, 43.1]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-110.5, 44.6] }
     },
     {
       "type": "Feature",
       "id": "Yosemite_National_Park",
       "properties": { "regionKey": "Yosemite_National_Park", "name": "Yosemite National Park" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-121.1, 36.3], [-118.1, 36.3], [-118.1, 39.3],
-          [-121.1, 39.3], [-121.1, 36.3]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-119.6, 37.8] }
     },
     {
       "type": "Feature",
       "id": "Grand_Canyon_National_Park",
       "properties": { "regionKey": "Grand_Canyon_National_Park", "name": "Grand Canyon National Park" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-113.6, 34.6], [-110.6, 34.6], [-110.6, 37.6],
-          [-113.6, 37.6], [-113.6, 34.6]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-112.1, 36.1] }
     },
     {
       "type": "Feature",
       "id": "Reserva_de_la_Biosfera_El_vizcaino",
       "properties": { "regionKey": "Reserva_de_la_Biosfera_El_vizcaino", "name": "El Vizcaíno Biosphere Reserve" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-115.6, 26.0], [-112.6, 26.0], [-112.6, 29.0],
-          [-115.6, 29.0], [-115.6, 26.0]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-114.1, 27.5] }
     },
     {
       "type": "Feature",
       "id": "Reserva_de_la_Biosfera_Sian_Ka_an",
       "properties": { "regionKey": "Reserva_de_la_Biosfera_Sian_Ka_an", "name": "Sian Ka'an Biosphere Reserve" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-87.85, 18.95], [-84.85, 18.95], [-84.85, 21.95],
-          [-87.85, 21.95], [-87.85, 18.95]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-86.6, 20.2] }
     },
     {
       "type": "Feature",
       "id": "Tikal_National_Park",
       "properties": { "regionKey": "Tikal_National_Park", "name": "Tikal National Park" },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-91.1, 15.7], [-88.1, 15.7], [-88.1, 18.7],
-          [-91.1, 18.7], [-91.1, 15.7]
-        ]]
-      }
+      "geometry": { "type": "Point", "coordinates": [-89.6, 17.2] }
     }
   ]
 }
