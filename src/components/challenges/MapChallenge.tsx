@@ -405,23 +405,32 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
     const NE_URL = "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson";
 
+    // Continental North/Central America ISO codes — large enough that D3 polygon winding
+    // is reliable (no complement misidentification) and none cross the antimeridian.
+    const NA_ISO = new Set(["US","CA","MX","GT","BZ","HN","SV","NI","CR","PA",
+      "CU","HT","DO","JM","GL"]);
+
     if (game.mapSvg?.endsWith(".geojson")) {
-      // Custom GeoJSON mode — parks, reserves, etc.
-      // No Natural Earth background: any country dataset causes anti-meridian projection
-      // artifacts that fill the viewport with a solid rectangle. Parks are rendered on
-      // ocean + graticule only; relative positions provide geographic context.
+      // Custom GeoJSON mode (parks, reserves, etc.).
+      // Game features are projected directly (bypassing D3's polygon pipeline).
+      // Background: NA/Central American countries from Natural Earth for geographic context.
       console.log("[MapChallenge] fetching custom GeoJSON:", game.mapSvg);
-      fetch(game.mapSvg)
-        .then((r) => r.json())
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then((customGeo: any) => {
+      Promise.all([
+        fetch(game.mapSvg).then((r) => r.json()),
+        fetch(NE_URL).then((r) => r.json()),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ]).then(([customGeo, neGeo]: any[]) => {
           if (aborted) return;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const gameFeatures = (customGeo.features as any[]).filter((f) => f.geometry != null);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const getKey = (f: any): string => String(f.id ?? f.properties?.regionKey ?? "");
-          console.log("[MapChallenge] custom GeoJSON loaded, features:", gameFeatures.length, "keys:", gameFeatures.map(getKey));
-          renderMap(svgEl, [], gameFeatures, getKey, 40, "#3a7a4a", true);
+          const isoFn = (f: GeoFeature) => f.properties?.iso_a2_eh ?? f.properties?.iso_a2 ?? "";
+          const bgFeatures = (neGeo.features as GeoFeature[]).filter(
+            (f) => f.geometry != null && NA_ISO.has(isoFn(f))
+          );
+          console.log("[MapChallenge] custom GeoJSON loaded, features:", gameFeatures.length, "bg:", bgFeatures.length);
+          renderMap(svgEl, bgFeatures, gameFeatures, getKey, 40, "#3a7a4a", true);
         }).catch(console.error);
     } else {
       // Natural Earth ISO mode — country-level challenges
