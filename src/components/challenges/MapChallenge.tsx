@@ -377,6 +377,12 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       vignette.setAttribute("pointer-events", "none");
 
       console.log("[MapChallenge] renderMap complete, SVG child count:", el.children.length);
+      // Log actual pixel bbox of first park path to diagnose over/under-sized rendering
+      const firstPark = el.querySelector("path[id]") as SVGGraphicsElement | null;
+      if (firstPark) {
+        const b = firstPark.getBBox();
+        console.log("[MapChallenge] first park path id:", firstPark.id, "bbox:", Math.round(b.x), Math.round(b.y), Math.round(b.width), "×", Math.round(b.height));
+      }
       setGeoReady(true);
     }
 
