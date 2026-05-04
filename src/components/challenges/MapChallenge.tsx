@@ -282,6 +282,8 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     const svgEl = svgRef.current;
     if (!svgEl || regionKeySet.size === 0) return;
 
+    console.log("[MapChallenge] effect fired | mapSvg:", game.mapSvg, "| regionKeys:", [...regionKeySet]);
+
     let aborted = false;
 
     function mkSvg(tag: string, a: Record<string, string | number> = {}, parent?: Element): SVGElement {
@@ -307,6 +309,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         { type: "FeatureCollection", features: gameFeatures } as any
       );
       const [tx, ty] = projection.translate();
+      console.log("[MapChallenge] renderMap | bg:", bgFeatures.length, "game:", gameFeatures.length, "scale:", projection.scale(), "translate:", [tx, ty]);
       if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
         console.error("[MapChallenge] Projection produced NaN — check feature geometry.");
         return;
@@ -356,6 +359,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       mkSvg("stop", { offset: "100%", "stop-color": "rgba(0,0,0,0.45)" }, vigGrad);
       vignette.setAttribute("pointer-events", "none");
 
+      console.log("[MapChallenge] renderMap complete, SVG child count:", el.children.length);
       setGeoReady(true);
     }
 
@@ -366,6 +370,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       // No Natural Earth background: any country dataset causes anti-meridian projection
       // artifacts that fill the viewport with a solid rectangle. Parks are rendered on
       // ocean + graticule only; relative positions provide geographic context.
+      console.log("[MapChallenge] fetching custom GeoJSON:", game.mapSvg);
       fetch(game.mapSvg)
         .then((r) => r.json())
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -375,6 +380,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           const gameFeatures = (customGeo.features as any[]).filter((f) => f.geometry != null);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const getKey = (f: any): string => String(f.id ?? f.properties?.regionKey ?? "");
+          console.log("[MapChallenge] custom GeoJSON loaded, features:", gameFeatures.length, "keys:", gameFeatures.map(getKey));
           renderMap(svgEl, [], gameFeatures, getKey, 40);
         }).catch(console.error);
     } else {
