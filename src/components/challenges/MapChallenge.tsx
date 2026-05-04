@@ -282,8 +282,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
     const svgEl = svgRef.current;
     if (!svgEl || regionKeySet.size === 0) return;
 
-    console.log("[MapChallenge] effect fired | mapSvg:", game.mapSvg, "| regionKeys:", [...regionKeySet]);
-
     let aborted = false;
 
     function mkSvg(tag: string, a: Record<string, string | number> = {}, parent?: Element): SVGElement {
@@ -330,7 +328,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         fitTarget
       );
       const [tx, ty] = projection.translate();
-      console.log("[MapChallenge] renderMap | bg:", bgFeatures.length, "game:", gameFeatures.length, "scale:", projection.scale(), "translate:", [tx, ty]);
       if (!Number.isFinite(tx) || !Number.isFinite(ty)) {
         console.error("[MapChallenge] Projection produced NaN — check feature geometry.");
         return;
@@ -361,10 +358,28 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const f of gameFeatures) {
+        const key = getKey(f);
+
+        // Point features → SVG circle (used for park/reserve location pins)
+        if (directProject && f.geometry?.type === "Point") {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pt = projection(f.geometry.coordinates as [number, number]);
+          if (!pt) continue;
+          mkSvg("circle", {
+            id: key, cx: pt[0], cy: pt[1], r: 10,
+            fill:           SVG_COLORS.default.fill,
+            stroke:         SVG_COLORS.default.stroke,
+            "stroke-width": "1.5",
+            cursor:         "pointer",
+          }, el);
+          continue;
+        }
+
+        // Polygon features → path
         let d: string | null = null;
         if (directProject && f.geometry?.type === "Polygon") {
-          // Project each vertex of the outer ring directly, bypassing D3's polygon
-          // clipping/winding pipeline which misidentifies small CCW rings as complement.
+          // Project each vertex directly, bypassing D3's polygon winding pipeline
+          // which misidentifies small CCW rings as their global complement.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const ring: number[][] = f.geometry.coordinates[0];
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -378,7 +393,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         }
         if (!d) continue;
         mkSvg("path", {
-          id:             getKey(f),
+          id:             key,
           d,
           fill:           SVG_COLORS.default.fill,
           stroke:         SVG_COLORS.default.stroke,
@@ -393,13 +408,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       mkSvg("stop", { offset: "100%", "stop-color": "rgba(0,0,0,0.45)" }, vigGrad);
       vignette.setAttribute("pointer-events", "none");
 
-      console.log("[MapChallenge] renderMap complete, SVG child count:", el.children.length);
-      // Log actual pixel bbox of first park path to diagnose over/under-sized rendering
-      const firstPark = el.querySelector("path[id]") as SVGGraphicsElement | null;
-      if (firstPark) {
-        const b = firstPark.getBBox();
-        console.log("[MapChallenge] first park path id:", firstPark.id, "bbox:", Math.round(b.x), Math.round(b.y), Math.round(b.width), "×", Math.round(b.height));
-      }
       setGeoReady(true);
     }
 
@@ -414,7 +422,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       // Custom GeoJSON mode (parks, reserves, etc.).
       // Game features are projected directly (bypassing D3's polygon pipeline).
       // Background: NA/Central American countries from Natural Earth for geographic context.
-      console.log("[MapChallenge] fetching custom GeoJSON:", game.mapSvg);
       Promise.all([
         fetch(game.mapSvg).then((r) => r.json()),
         fetch(NE_URL).then((r) => r.json()),
@@ -429,7 +436,6 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           const bgFeatures = (neGeo.features as GeoFeature[]).filter(
             (f) => f.geometry != null && NA_ISO.has(isoFn(f))
           );
-          console.log("[MapChallenge] custom GeoJSON loaded, features:", gameFeatures.length, "bg:", bgFeatures.length);
           renderMap(svgEl, bgFeatures, gameFeatures, getKey, 40, "#3a7a4a", true);
         }).catch(console.error);
     } else {
