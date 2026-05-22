@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = await db.select().from(categories).where(eq(categories.slug, slug)).get();
   if (!category) return {};
   let name = category.name;
-  if (lang !== "en") {
+  if (isValidLang(lang) && lang !== "en") {
     const trans = db
       .select({ name: categoryTranslations.name })
       .from(categoryTranslations)
