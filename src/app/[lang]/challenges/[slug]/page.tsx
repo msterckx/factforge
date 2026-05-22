@@ -32,7 +32,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const game = getChallengeGameBySlug(slug);
   if (!game) return {};
   const title = lang === "nl" ? game.titleNl || game.titleEn : game.titleEn;
-  return { title };
+  const description = lang === "nl" ? game.subtitleNl || game.subtitleEn : game.subtitleEn;
+  return { title, description };
 }
 
 export default async function ChallengePage({ params }: Props) {

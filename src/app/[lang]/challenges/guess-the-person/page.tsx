@@ -11,7 +11,11 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
-  return { title: lang === "nl" ? "Raad de Persoon" : "Guess the Person" };
+  const dict = await getDictionary(isValidLang(lang) ? (lang as Lang) : "en");
+  return {
+    title: lang === "nl" ? "Raad de Persoon" : "Guess the Person",
+    description: dict.challenges.guessThePersonSubtitle,
+  };
 }
 
 export default async function GuessThePersonPage({ params }: Props) {
