@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .get();
     if (trans) name = trans.name;
   }
-  return { title: name };
+  return { title: name, description: `${name} — quiz questions on Game of Trivia` };
 }
 
 export default async function CategoryPage({ params }: Props) {

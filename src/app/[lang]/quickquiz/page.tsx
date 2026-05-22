@@ -15,7 +15,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
   const dict = await getDictionary(isValidLang(lang) ? (lang as Lang) : "en");
-  return { title: dict.quickquiz.title };
+  return { title: dict.quickquiz.title, description: dict.quickquiz.subtitle };
 }
 
 export default async function QuickQuizPage({ params }: Props) {

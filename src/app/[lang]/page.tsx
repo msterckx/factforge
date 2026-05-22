@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { isValidLang, getDictionary, type Lang } from "@/i18n";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -12,6 +13,12 @@ import type { GameEntry, ScoreMap } from "@/components/challenges/GamePicker";
 
 interface Props {
   params: Promise<{ lang: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
+  const dict = await getDictionary(isValidLang(lang) ? (lang as Lang) : "en");
+  return { description: dict.home.subtitle };
 }
 
 export default async function HomePage({ params }: Props) {

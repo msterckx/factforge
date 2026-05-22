@@ -18,7 +18,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
   const dict = await getDictionary(isValidLang(lang) ? (lang as Lang) : "en");
-  return { title: dict.challenges.title };
+  return { title: dict.challenges.title, description: dict.challenges.subtitle };
 }
 
 export default async function ChallengesPage({ params }: Props) {
