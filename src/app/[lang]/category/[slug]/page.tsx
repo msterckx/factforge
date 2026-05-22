@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { db } from "@/db";
 import { categories, questions, subcategories, questionTranslations, categoryTranslations, subcategoryTranslations } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -10,6 +11,22 @@ import { isValidLang, getDictionary, type Lang } from "@/i18n";
 
 interface Props {
   params: Promise<{ lang: string; slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang, slug } = await params;
+  const category = await db.select().from(categories).where(eq(categories.slug, slug)).get();
+  if (!category) return {};
+  let name = category.name;
+  if (lang !== "en") {
+    const trans = db
+      .select({ name: categoryTranslations.name })
+      .from(categoryTranslations)
+      .where(and(eq(categoryTranslations.categoryId, category.id), eq(categoryTranslations.language, lang)))
+      .get();
+    if (trans) name = trans.name;
+  }
+  return { title: name };
 }
 
 export default async function CategoryPage({ params }: Props) {

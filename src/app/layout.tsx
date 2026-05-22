@@ -25,7 +25,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Game of Trivia",
+  title: {
+    template: "%s | Game of Trivia",
+    default: "Game of Trivia",
+  },
   description: "Test your knowledge across multiple categories",
   manifest: "/manifest.json",
   icons: {

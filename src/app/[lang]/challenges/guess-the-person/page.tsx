@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { isValidLang, getDictionary, type Lang } from "@/i18n";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -6,6 +7,11 @@ import GuessThePersonGame from "@/components/challenges/GuessThePersonGame";
 
 interface Props {
   params: Promise<{ lang: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
+  return { title: lang === "nl" ? "Raad de Persoon" : "Guess the Person" };
 }
 
 export default async function GuessThePersonPage({ params }: Props) {

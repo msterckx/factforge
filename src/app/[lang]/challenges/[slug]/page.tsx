@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { isValidLang, getDictionary, type Lang } from "@/i18n";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -24,6 +25,14 @@ import ClientOnly from "@/components/ClientOnly";
 
 interface Props {
   params: Promise<{ lang: string; slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang, slug } = await params;
+  const game = getChallengeGameBySlug(slug);
+  if (!game) return {};
+  const title = lang === "nl" ? game.titleNl || game.titleEn : game.titleEn;
+  return { title };
 }
 
 export default async function ChallengePage({ params }: Props) {
