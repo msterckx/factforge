@@ -16,9 +16,13 @@ export default function LangSwitcher({ currentLang }: Props) {
     return pathname.replace(/^\/[a-z]{2}(\/|$)/, `/${lang}$1`);
   }
 
+  const visibleLangs = SUPPORTED_LANGS.filter((l) => l !== "nl");
+
+  if (visibleLangs.length <= 1) return null;
+
   return (
     <div className="flex items-center gap-1 text-sm">
-      {SUPPORTED_LANGS.map((lang) => (
+      {visibleLangs.map((lang) => (
         <Link
           key={lang}
           href={getPathForLang(lang)}
