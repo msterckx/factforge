@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import { db } from "@/db";
 import { questions, questionTranslations } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -9,6 +10,12 @@ import { notFound } from "next/navigation";
 
 interface Props {
   params: Promise<{ lang: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lang } = await params;
+  const dict = await getDictionary(isValidLang(lang) ? (lang as Lang) : "en");
+  return { title: dict.quickquiz.title };
 }
 
 export default async function QuickQuizPage({ params }: Props) {
