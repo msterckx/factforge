@@ -17,6 +17,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     capitalEn?: string | null; capitalNl?: string | null;
     infoImageEn?: string | null; infoImageNl?: string | null;
     infoTextEn?: string | null; infoTextNl?: string | null;
+    infographData?: string | null;
   };
 
   const [row] = db.update(mapRegions)

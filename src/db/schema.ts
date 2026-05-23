@@ -166,6 +166,7 @@ export const mapRegions = sqliteTable("map_regions", {
   infoImageNl: text("info_image_nl"),         // image URL shown after correct drop (NL)
   infoTextEn:  text("info_text_en"),          // extra info text shown after correct drop (EN)
   infoTextNl:  text("info_text_nl"),          // extra info text shown after correct drop (NL)
+  infographData: text("infograph_data"),       // JSON: { countryIso2, country, area, areaBarPct, established, landscape, wildlife, images[] }
   enabled:     integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt:  text("created_at").notNull().default(sql`(datetime('now'))`),
 });
