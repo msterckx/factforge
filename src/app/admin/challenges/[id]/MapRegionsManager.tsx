@@ -10,6 +10,54 @@ interface Props {
   mapSvg?: string | null;
 }
 
+interface InfographFields {
+  countryIso2: string;
+  country: string;
+  area: string;
+  areaBarPct: string; // stored as string in form, parsed to number on save
+  established: string;
+  landscape: string;
+  wildlife: string;
+  images: string; // newline-separated URLs
+}
+
+const EMPTY_INFOGRAPH: InfographFields = {
+  countryIso2: "", country: "", area: "", areaBarPct: "", established: "", landscape: "", wildlife: "", images: "",
+};
+
+function parseInfographJson(json: string | null | undefined): InfographFields {
+  if (!json) return EMPTY_INFOGRAPH;
+  try {
+    const d = JSON.parse(json);
+    return {
+      countryIso2:  d.countryIso2  ?? "",
+      country:      d.country      ?? "",
+      area:         d.area         ?? "",
+      areaBarPct:   String(d.areaBarPct ?? ""),
+      established:  d.established  ?? "",
+      landscape:    d.landscape    ?? "",
+      wildlife:     d.wildlife     ?? "",
+      images:       Array.isArray(d.images) ? d.images.join("\n") : "",
+    };
+  } catch { return EMPTY_INFOGRAPH; }
+}
+
+function buildInfographJson(f: InfographFields): string | null {
+  const images = f.images.split("\n").map((s) => s.trim()).filter(Boolean);
+  const hasData = f.countryIso2 || f.country || f.area || f.established || f.landscape || f.wildlife || images.length;
+  if (!hasData) return null;
+  return JSON.stringify({
+    countryIso2: f.countryIso2,
+    country:     f.country,
+    area:        f.area,
+    areaBarPct:  Number(f.areaBarPct) || 0,
+    established: f.established,
+    landscape:   f.landscape,
+    wildlife:    f.wildlife,
+    images,
+  });
+}
+
 type EditState = {
   id: number;
   labelEn: string; labelNl: string;
@@ -17,6 +65,7 @@ type EditState = {
   infoImageEn: string;
   infoTextEn: string;
   infoTextNl: string; // auto-translated; empty = not yet translated
+  infograph: InfographFields;
 };
 
 type AddState = {
@@ -25,11 +74,12 @@ type AddState = {
   infoImageEn: string;
   infoTextEn: string;
   infoTextNl: string;
+  infograph: InfographFields;
 };
 
 const EMPTY_ADD: AddState = {
   regionKey: "", labelEn: "", labelNl: "", capitalEn: "", capitalNl: "",
-  infoImageEn: "", infoTextEn: "", infoTextNl: "",
+  infoImageEn: "", infoTextEn: "", infoTextNl: "", infograph: EMPTY_INFOGRAPH,
 };
 
 export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Props) {
@@ -162,14 +212,15 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        labelEn:     editing.labelEn,
-        labelNl:     editing.labelNl,
-        capitalEn:   editing.capitalEn   || null,
-        capitalNl:   editing.capitalNl   || null,
-        infoImageEn: editing.infoImageEn || null,
-        infoImageNl: null, // always fall back to EN image
-        infoTextEn:  editing.infoTextEn  || null,
-        infoTextNl:  editing.infoTextNl  || null,
+        labelEn:       editing.labelEn,
+        labelNl:       editing.labelNl,
+        capitalEn:     editing.capitalEn   || null,
+        capitalNl:     editing.capitalNl   || null,
+        infoImageEn:   editing.infoImageEn || null,
+        infoImageNl:   null, // always fall back to EN image
+        infoTextEn:    editing.infoTextEn  || null,
+        infoTextNl:    editing.infoTextNl  || null,
+        infographData: buildInfographJson(editing.infograph),
       }),
     });
     const data = await res.json();
@@ -194,15 +245,16 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gameId,
-        regionKey:   addForm.regionKey,
-        labelEn:     addForm.labelEn,
-        labelNl:     addForm.labelNl,
-        capitalEn:   addForm.capitalEn   || null,
-        capitalNl:   addForm.capitalNl   || null,
-        infoImageEn: addForm.infoImageEn || null,
-        infoImageNl: null,
-        infoTextEn:  addForm.infoTextEn  || null,
-        infoTextNl:  addForm.infoTextNl  || null,
+        regionKey:     addForm.regionKey,
+        labelEn:       addForm.labelEn,
+        labelNl:       addForm.labelNl,
+        capitalEn:     addForm.capitalEn   || null,
+        capitalNl:     addForm.capitalNl   || null,
+        infoImageEn:   addForm.infoImageEn || null,
+        infoImageNl:   null,
+        infoTextEn:    addForm.infoTextEn  || null,
+        infoTextNl:    addForm.infoTextNl  || null,
+        infographData: buildInfographJson(addForm.infograph),
       }),
     });
     const data = await res.json();
@@ -339,6 +391,7 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                               infoImageEn: r.infoImageEn ?? "",
                               infoTextEn: r.infoTextEn ?? "",
                               infoTextNl: r.infoTextNl ?? "",
+                              infograph: parseInfographJson(r.infographData),
                             })}
                             className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded mr-1"
                           >
@@ -409,6 +462,45 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                               <img src={editing.infoImageEn} alt="" className="h-24 object-cover rounded-lg" />
                             </div>
                           )}
+
+                          {/* Infograph section */}
+                          <div className="pt-3 border-t border-slate-200">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Infograph data (park slideshow panel)</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs text-slate-500 mb-1">Country ISO-2 (e.g. BO)</label>
+                                <input className={inputCls} placeholder="BO" value={editing.infograph.countryIso2} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, countryIso2: e.target.value } })} />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-slate-500 mb-1">Country name</label>
+                                <input className={inputCls} placeholder="Bolivia" value={editing.infograph.country} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, country: e.target.value } })} />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-slate-500 mb-1">Area</label>
+                                <input className={inputCls} placeholder="~18,958 km²" value={editing.infograph.area} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, area: e.target.value } })} />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-slate-500 mb-1">Area bar % (0–100)</label>
+                                <input className={inputCls} type="number" min="0" max="100" placeholder="45" value={editing.infograph.areaBarPct} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, areaBarPct: e.target.value } })} />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-slate-500 mb-1">Established</label>
+                                <input className={inputCls} placeholder="1995" value={editing.infograph.established} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, established: e.target.value } })} />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-slate-500 mb-1">Landscape</label>
+                                <input className={inputCls} placeholder="Andes, cloud forest…" value={editing.infograph.landscape} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, landscape: e.target.value } })} />
+                              </div>
+                              <div className="col-span-2">
+                                <label className="block text-xs text-slate-500 mb-1">Wildlife</label>
+                                <input className={inputCls} placeholder="jaguar / spectacled bear…" value={editing.infograph.wildlife} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, wildlife: e.target.value } })} />
+                              </div>
+                              <div className="col-span-2">
+                                <label className="block text-xs text-slate-500 mb-1">Image URLs (one per line)</label>
+                                <textarea className={textareaCls} placeholder={"https://…\nhttps://…"} value={editing.infograph.images} onChange={(e) => setEditing({ ...editing, infograph: { ...editing.infograph, images: e.target.value } })} />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -465,6 +557,45 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                         {addForm.infoTextNl && (
                           <p className="text-xs text-slate-500 italic leading-relaxed">{addForm.infoTextNl}</p>
                         )}
+                      </div>
+
+                      {/* Infograph section */}
+                      <div className="pt-3 border-t border-slate-200">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Infograph data (optional)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Country ISO-2 (e.g. BO)</label>
+                            <input className={inputCls} placeholder="BO" value={addForm.infograph.countryIso2} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, countryIso2: e.target.value } })} />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Country name</label>
+                            <input className={inputCls} placeholder="Bolivia" value={addForm.infograph.country} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, country: e.target.value } })} />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Area</label>
+                            <input className={inputCls} placeholder="~18,958 km²" value={addForm.infograph.area} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, area: e.target.value } })} />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Area bar % (0–100)</label>
+                            <input className={inputCls} type="number" min="0" max="100" placeholder="45" value={addForm.infograph.areaBarPct} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, areaBarPct: e.target.value } })} />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Established</label>
+                            <input className={inputCls} placeholder="1995" value={addForm.infograph.established} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, established: e.target.value } })} />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Landscape</label>
+                            <input className={inputCls} placeholder="Andes, cloud forest…" value={addForm.infograph.landscape} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, landscape: e.target.value } })} />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-xs text-slate-500 mb-1">Wildlife</label>
+                            <input className={inputCls} placeholder="jaguar / spectacled bear…" value={addForm.infograph.wildlife} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, wildlife: e.target.value } })} />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-xs text-slate-500 mb-1">Image URLs (one per line)</label>
+                            <textarea className={textareaCls} placeholder={"https://…\nhttps://…"} value={addForm.infograph.images} onChange={(e) => setAddForm({ ...addForm, infograph: { ...addForm.infograph, images: e.target.value } })} />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </td>

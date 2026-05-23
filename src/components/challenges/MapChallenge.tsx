@@ -6,6 +6,7 @@ import type { Dictionary } from "@/i18n/en";
 import type { MapRegion, ChallengeGame } from "@/data/challengeGame";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 import { trackChallengeStart, trackChallengeComplete, trackChallengeFail } from "@/lib/gtag";
+import ParkInfographPanel from "./ParkInfographPanel";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Chip {
@@ -762,12 +763,20 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
       {/* ── Info panel ──────────────────────────────────────────────────── */}
       {hoveredChipKey && regionsByKey[hoveredChipKey] && (
-        <RegionInfoPanel
-          region={regionsByKey[hoveredChipKey]}
-          lang={lang}
-          didYouKnow={dict.mapDidYouKnow}
-          onDismiss={() => setHoveredChipKey(null)}
-        />
+        regionsByKey[hoveredChipKey].infographData ? (
+          <ParkInfographPanel
+            region={regionsByKey[hoveredChipKey]}
+            lang={lang}
+            onDismiss={() => setHoveredChipKey(null)}
+          />
+        ) : (
+          <RegionInfoPanel
+            region={regionsByKey[hoveredChipKey]}
+            lang={lang}
+            didYouKnow={dict.mapDidYouKnow}
+            onDismiss={() => setHoveredChipKey(null)}
+          />
+        )
       )}
     </div>
   );
