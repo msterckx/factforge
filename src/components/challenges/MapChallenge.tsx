@@ -523,17 +523,32 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           trackChallengeStart(challengeId);
         }
 
+        // Pin ghost: label + downward arrow whose tip sits exactly at the cursor
         const ghost = document.createElement("div");
-        ghost.textContent = chip.label;
         ghost.style.cssText = `
           position: fixed; z-index: 9999; pointer-events: none;
-          padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
-          background: #1e293b; color: #f8fafc; white-space: nowrap;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.35); opacity: 0.95;
-          transform: translate(-50%,-50%);
+          display: flex; flex-direction: column; align-items: center;
+          transform: translate(-50%, -100%);
           left: ${me.clientX}px; top: ${me.clientY}px;
         `;
+        const lbl = document.createElement("span");
+        lbl.textContent = chip.label;
+        lbl.style.cssText = `
+          padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 700;
+          background: #1e293b; color: #f8fafc; white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.45); margin-bottom: 3px;
+        `;
+        const tip = document.createElement("div");
+        tip.style.cssText = `
+          width: 0; height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 9px solid #1e293b;
+        `;
+        ghost.appendChild(lbl);
+        ghost.appendChild(tip);
         document.body.appendChild(ghost);
+        document.body.style.cursor = "crosshair";
         dragging.current = { chip, ghost };
       }
 
@@ -564,6 +579,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
 
       if (!dragging.current) return;
       dragging.current.ghost.remove();
+      document.body.style.cursor = "";
       const dropKey = getPathAtPoint(ue.clientX, ue.clientY);
       if (dragHoverRef.current) { restorePath(dragHoverRef.current); dragHoverRef.current = null; }
       dragging.current = null;
