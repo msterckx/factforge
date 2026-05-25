@@ -165,7 +165,7 @@ function RegionInfoPanel({
       {lightboxOpen && image && (
         <Lightbox src={image} alt={name} onClose={() => setLightboxOpen(false)} />
       )}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] w-[min(480px,90vw)] rounded-2xl border border-emerald-300/60 overflow-hidden animate-fade-in shadow-2xl backdrop-blur-md bg-white/75">
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] w-[min(480px,90vw)] rounded-2xl border border-emerald-300/60 overflow-hidden animate-pop-in shadow-2xl backdrop-blur-md bg-white/75">
         <div className="flex items-center justify-between px-4 py-2 bg-emerald-100/80 border-b border-emerald-200/60">
           <span className="text-sm font-semibold text-emerald-900">{name}</span>
           <button
@@ -609,6 +609,9 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         pathEl.classList.add("region-correct-pulse");
         setTimeout(() => pathEl.classList.remove("region-correct-pulse"), 750);
       }
+
+      // Auto-show info panel after the pulse settles
+      setTimeout(() => setHoveredChipKey(dropKey), 800);
 
       if (Object.keys(newPlaced).length === allChips.length) {
         setGameWon(true);
