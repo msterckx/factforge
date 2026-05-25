@@ -487,7 +487,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
   }, [regionKeySet]);
 
   // ── Drag state ───────────────────────────────────────────────────────────────
-  const dragging = useRef<{ chip: Chip; ghost: HTMLDivElement } | null>(null);
+  const dragging = useRef<{ chip: Chip; ghost: HTMLDivElement; hint: HTMLSpanElement; targetCenter: { x: number; y: number } | null } | null>(null);
 
   const getPathAtPoint = useCallback((clientX: number, clientY: number): string | null => {
     if (!svgRef.current) return null;
@@ -523,7 +523,15 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           trackChallengeStart(challengeId);
         }
 
-        // Pin ghost: label + downward arrow whose tip sits exactly at the cursor
+        // Compute target centroid in screen coords for proximity hint
+        const targetEl = svgRef.current?.querySelector<SVGElement>(`#${CSS.escape(chip.regionKey)}`);
+        let targetCenter: { x: number; y: number } | null = null;
+        if (targetEl) {
+          const r = targetEl.getBoundingClientRect();
+          targetCenter = { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+        }
+
+        // Pin ghost: label + proximity hint + downward arrow whose tip sits at cursor
         const ghost = document.createElement("div");
         ghost.style.cssText = `
           position: fixed; z-index: 9999; pointer-events: none;
@@ -531,13 +539,20 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
           transform: translate(-50%, -100%);
           left: ${me.clientX}px; top: ${me.clientY}px;
         `;
-        const lbl = document.createElement("span");
-        lbl.textContent = chip.label;
+        const lbl = document.createElement("div");
         lbl.style.cssText = `
+          display: flex; align-items: center; gap: 5px;
           padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 700;
           background: #1e293b; color: #f8fafc; white-space: nowrap;
           box-shadow: 0 2px 8px rgba(0,0,0,0.45); margin-bottom: 3px;
         `;
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = chip.label;
+        const hint = document.createElement("span");
+        hint.style.cssText = `font-size: 13px; line-height: 1;`;
+        hint.textContent = "❄️";
+        lbl.appendChild(nameSpan);
+        lbl.appendChild(hint);
         const tip = document.createElement("div");
         tip.style.cssText = `
           width: 0; height: 0;
@@ -549,12 +564,20 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
         ghost.appendChild(tip);
         document.body.appendChild(ghost);
         document.body.style.cursor = "crosshair";
-        dragging.current = { chip, ghost };
+        dragging.current = { chip, ghost, hint, targetCenter };
       }
 
       if (dragStarted && dragging.current) {
         dragging.current.ghost.style.left = `${me.clientX}px`;
         dragging.current.ghost.style.top  = `${me.clientY}px`;
+
+        // Proximity hint
+        const { hint, targetCenter } = dragging.current;
+        if (targetCenter) {
+          const dist = Math.hypot(me.clientX - targetCenter.x, me.clientY - targetCenter.y);
+          hint.textContent = dist < 40 ? "🔥" : dist < 100 ? "♨️" : dist < 200 ? "🌡️" : "❄️";
+        }
+
         const key = getPathAtPoint(me.clientX, me.clientY);
         if (key !== dragHoverRef.current) {
           if (dragHoverRef.current) restorePath(dragHoverRef.current);
