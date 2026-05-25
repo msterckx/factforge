@@ -100,7 +100,7 @@ export default function ParkInfographPanel({ region, lang, onDismiss }: Props) {
       onClick={onDismiss}
     >
       <div
-        className="relative w-[min(860px,95vw)] max-h-[90vh] rounded-2xl overflow-hidden bg-[#0f1f15] text-white shadow-2xl flex flex-col"
+        className="relative w-[min(860px,95vw)] max-h-[90vh] rounded-2xl overflow-hidden bg-[#0f1f15] text-white shadow-2xl flex flex-col animate-pop-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
