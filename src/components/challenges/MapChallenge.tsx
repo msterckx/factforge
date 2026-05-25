@@ -778,7 +778,7 @@ export default function MapChallenge({ regions, game, dict, challengeId, lang }:
       </div>
 
       {/* ── Info panel ──────────────────────────────────────────────────── */}
-      {hoveredChipKey && regionsByKey[hoveredChipKey] && (
+      {hoveredChipKey && placed[hoveredChipKey] && regionsByKey[hoveredChipKey] && (
         regionsByKey[hoveredChipKey].infographData ? (
           <ParkInfographPanel
             region={regionsByKey[hoveredChipKey]}
