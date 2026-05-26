@@ -563,7 +563,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
           </div>
 
           {/* ── Answer panel (dark navy) ─────────────────────────────────── */}
-          <aside className="xl:w-[266px] flex-shrink-0 bg-gradient-to-b from-[#162938] to-[#112230] rounded-2xl p-6 sm:p-7 text-white border border-white/10 shadow-[0_16px_35px_rgba(11,24,38,0.25)]">
+          <aside className="xl:w-[310px] flex-shrink-0 bg-gradient-to-b from-[#162938] to-[#112230] rounded-2xl p-6 sm:p-7 text-white border border-white/10 shadow-[0_16px_35px_rgba(11,24,38,0.25)]">
             {/* Title */}
             <h2 className="flex items-center justify-center gap-4 m-0 mb-2 text-[#eef6ff] text-lg sm:text-xl font-black uppercase tracking-widest leading-none">
               <span className="flex-1 h-0.5 rounded-full bg-white/40" />
