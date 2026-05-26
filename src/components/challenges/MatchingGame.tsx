@@ -23,6 +23,16 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// ── Person silhouette ─────────────────────────────────────────────────────────
+function PersonSilhouette() {
+  return (
+    <svg viewBox="0 0 50 60" fill="none" className="w-full h-full" aria-hidden="true">
+      <circle cx="25" cy="19" r="13" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M3 57 C3 42 13 35 25 35 C37 35 47 42 47 57" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // ── Glitter bomb ──────────────────────────────────────────────────────────────
 const COLORS = ["#fbbf24","#4ade80","#f59e0b","#86efac","#fde68a","#a3e635","#34d399","#fcd34d"];
 const SHAPES = ["50%","0%","2px"];
@@ -412,118 +422,150 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
           )}
         </div>
         <div className="flex items-center gap-3">
-          {selectedItem && !allCorrect && !gameOver && (
-            <p className="text-xs text-amber-600 font-medium truncate max-w-[120px] sm:max-w-none">
-              &ldquo;{selectedItem.name}&rdquo; — tap a tile
-            </p>
-          )}
           {!allCorrect && (
             <Lives current={lives} max={maxLives} />
           )}
         </div>
       </div>
 
-      {/* Tile grid — all N tiles shown at once */}
+      {/* Main game area: grid + right answer panel */}
       <div className="relative mb-4">
         {glitterActive && <GlitterBomb />}
         {gameOver && <GameOverOverlay />}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2">
-          {Array.from({ length: items.length }, (_, i) => {
-            const item = placed[i];
-            const isWrong    = wrongSlot === i;
-            const isDragOver = dragOverSlot === i;
-            const wasHinted  = hintedSlots.has(i);
-            const wasPlayerPlaced = !!item && !wasHinted;
+        <div className="flex flex-col sm:flex-row gap-3">
 
-            if (item) {
+          {/* Tile grid */}
+          <div className="flex-1 grid grid-cols-3 gap-1.5 sm:gap-2">
+            {Array.from({ length: items.length }, (_, i) => {
+              const item = placed[i];
+              const isWrong    = wrongSlot === i;
+              const isDragOver = dragOverSlot === i;
+              const wasHinted  = hintedSlots.has(i);
+              const wasPlayerPlaced = !!item && !wasHinted;
+
+              if (item) {
+                return (
+                  <div
+                    key={`filled-${i}`}
+                    onClick={() => { setInfoItem((prev) => prev?.id === item.id ? null : item); setSelectedItem(null); }}
+                    className={`relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border select-none cursor-pointer ${
+                      infoItem?.id === item.id
+                        ? "border-amber-400 ring-2 ring-amber-300"
+                        : wasPlayerPlaced
+                        ? "caesar-correct caesar-shine border-slate-200"
+                        : "outline outline-2 outline-indigo-400 border-transparent"
+                    }`}
+                  >
+                    <div className="absolute top-1 left-1 z-20 bg-black/50 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
+                      {i + 1}
+                    </div>
+                    {wasHinted && (
+                      <div className="absolute top-1 right-1 z-20 text-[9px] text-indigo-300 font-bold leading-none">💡</div>
+                    )}
+                    <div className="aspect-square w-full bg-stone-200 overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={resolveImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
+                    </div>
+                    <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-center ${wasPlayerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
+                      <p className="text-[10px] sm:text-[11px] font-semibold text-slate-800 leading-tight truncate">{item.name}</p>
+                      {item.reign && <p className="text-[9px] sm:text-[10px] text-slate-400 leading-tight">{item.reign}</p>}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Empty tile — silhouette placeholder, is a drop target
               return (
                 <div
-                  key={`filled-${i}`}
-                  onClick={() => { setInfoItem((prev) => prev?.id === item.id ? null : item); setSelectedItem(null); }}
-                  className={`relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border select-none cursor-pointer ${
-                    infoItem?.id === item.id
-                      ? "border-amber-400 ring-2 ring-amber-300"
-                      : wasPlayerPlaced
-                      ? "caesar-correct caesar-shine border-slate-200"
-                      : "outline outline-2 outline-indigo-400 border-transparent"
-                  }`}
+                  key={`empty-${i}`}
+                  data-slot={i}
+                  onClick={() => handleSlotClick(i)}
+                  className={[
+                    "relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border-2 border-dashed select-none",
+                    selectedItem && !gameOver ? "cursor-pointer" : "cursor-default",
+                    isWrong ? "slot-wrong" : "",
+                    isDragOver && !isWrong
+                      ? "border-amber-400 bg-amber-50"
+                      : selectedItem && !isWrong
+                      ? "border-amber-300 bg-amber-50/40"
+                      : !isWrong
+                      ? "border-slate-300 bg-slate-50"
+                      : "",
+                  ].join(" ")}
                 >
-                  <div className="absolute top-1 left-1 z-20 bg-black/50 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
+                  <div className="absolute top-1 left-1 z-20 bg-slate-400/60 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
                     {i + 1}
                   </div>
-                  {wasHinted && (
-                    <div className="absolute top-1 right-1 z-20 text-[9px] text-indigo-300 font-bold leading-none">💡</div>
-                  )}
-                  <div className="aspect-square w-full bg-stone-200 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={resolveImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
+                  {/* Silhouette + clue inside the square area */}
+                  <div className="aspect-square w-full flex flex-col pt-5 pb-1 px-1.5">
+                    <div className={`flex-1 flex items-center justify-center ${isDragOver ? "text-amber-400" : "text-slate-300"}`}>
+                      <div className="w-8 h-8 sm:w-10 sm:h-10">
+                        <PersonSilhouette />
+                      </div>
+                    </div>
+                    <p className="text-center text-[9px] sm:text-[10px] font-medium text-slate-500 leading-snug line-clamp-2 flex-shrink-0">
+                      {items[i]?.clue || "?"}
+                    </p>
                   </div>
-                  <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-center ${wasPlayerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
-                    <p className="text-[10px] sm:text-[11px] font-semibold text-slate-800 leading-tight truncate">{item.name}</p>
-                    {item.reign && <p className="text-[9px] sm:text-[10px] text-slate-400 leading-tight">{item.reign}</p>}
+                  {/* Drop target footer */}
+                  <div className={`px-1 py-0.5 sm:py-1 text-center border-t transition-colors ${
+                    isDragOver ? "bg-amber-100 border-amber-300" : "bg-slate-100 border-slate-200"
+                  }`}>
+                    <p className={`text-[8px] sm:text-[9px] font-semibold leading-tight uppercase tracking-wide ${
+                      isDragOver ? "text-amber-600" : "text-slate-400"
+                    }`}>
+                      Drop answer here
+                    </p>
                   </div>
                 </div>
               );
-            }
+            })}
+          </div>
 
-            // Empty tile — shows the clue, is a drop target
-            return (
-              <div
-                key={`empty-${i}`}
-                data-slot={i}
-                onClick={() => handleSlotClick(i)}
-                className={[
-                  "relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border-2 border-dashed select-none",
-                  selectedItem && !gameOver ? "cursor-pointer" : "cursor-default",
-                  isWrong ? "slot-wrong" : "",
-                  isDragOver && !isWrong ? "border-amber-400 bg-amber-100" : !isWrong ? "border-slate-300 bg-slate-50" : "",
-                ].join(" ")}
-              >
-                <div className="absolute top-1 left-1 z-20 bg-slate-400/60 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
-                  {i + 1}
-                </div>
-                <div className="aspect-square w-full flex items-center justify-center p-2 pt-6">
-                  <p className="text-center text-[10px] sm:text-[11px] font-medium text-slate-600 leading-snug">
-                    {items[i]?.clue || "?"}
-                  </p>
-                </div>
-                <div className="px-1 py-0.5 sm:px-1.5 sm:py-1 text-center bg-slate-100 border-t border-slate-200">
-                  <p className="text-[9px] sm:text-[10px] text-slate-400 font-semibold leading-tight">Who?</p>
-                </div>
+          {/* Right panel — answer options (vertical) */}
+          {pool.length > 0 && !allCorrect && !gameOver && (
+            <div className="sm:w-44 flex-shrink-0">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                {dict.dragOrTap}
+              </p>
+              {selectedItem && (
+                <p className="text-[10px] text-amber-600 font-medium mb-2 truncate">
+                  &ldquo;{selectedItem.name}&rdquo; — tap a card
+                </p>
+              )}
+              {/* Mobile: horizontal wrap; sm+: vertical list */}
+              <div className="flex flex-wrap sm:flex-col gap-1.5">
+                {pool.map((item) => (
+                  <div
+                    key={item.id}
+                    onPointerDown={(e) => handleChipPointerDown(e, item)}
+                    onPointerMove={handleChipPointerMove}
+                    onPointerUp={handleChipPointerUp}
+                    onPointerCancel={handleChipPointerCancel}
+                    style={{ touchAction: "none", userSelect: "none" }}
+                    className={[
+                      "flex items-center justify-between gap-1.5 px-2.5 py-1.5 sm:py-2 rounded-lg border text-xs sm:text-sm font-medium transition-all cursor-grab active:cursor-grabbing",
+                      selectedItem?.id === item.id
+                        ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
+                        : "bg-white border-slate-200 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
+                    ].join(" ")}
+                  >
+                    <span className="truncate">{item.name}</span>
+                    <span className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center text-[8px] font-bold leading-none transition-colors ${
+                      selectedItem?.id === item.id
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : "border-slate-300"
+                    }`}>
+                      {selectedItem?.id === item.id && "✓"}
+                    </span>
+                  </div>
+                ))}
               </div>
-            );
-          })}
+            </div>
+          )}
+
         </div>
       </div>
-
-      {/* Chip pool */}
-      {pool.length > 0 && !allCorrect && !gameOver && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            {dict.dragOrTap}
-          </p>
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            {pool.map((item) => (
-              <div
-                key={item.id}
-                onPointerDown={(e) => handleChipPointerDown(e, item)}
-                onPointerMove={handleChipPointerMove}
-                onPointerUp={handleChipPointerUp}
-                onPointerCancel={handleChipPointerCancel}
-                style={{ touchAction: "none", userSelect: "none" }}
-                className={[
-                  "px-2.5 py-1.5 sm:px-3 rounded-full border text-xs sm:text-sm font-medium transition-all cursor-grab active:cursor-grabbing",
-                  selectedItem?.id === item.id
-                    ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
-                    : "bg-white border-slate-300 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
-                ].join(" ")}
-              >
-                {item.name}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Info panel */}
       {infoItem && (
