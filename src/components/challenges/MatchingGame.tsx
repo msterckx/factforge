@@ -498,15 +498,8 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
                       {items[i]?.clue || item.name}
                     </div>
 
-                    {/* Card meta — col 1, row 2 */}
-                    <div className="flex items-center min-w-0">
-                      {item.reign && (
-                        <span className="text-[11px] sm:text-xs font-semibold text-slate-400 truncate">{item.reign}</span>
-                      )}
-                    </div>
-
-                    {/* Answer pill — col 2, row 2 */}
-                    <div className="flex items-center justify-center gap-2 min-h-[40px] sm:min-h-[46px] rounded-lg border border-[#a7d7b7] bg-[#eaf7ee] text-sm font-black text-[#152f20]">
+                    {/* Answer pill — row 2, spans both columns */}
+                    <div className="col-span-2 flex items-center justify-center gap-2 min-h-[40px] sm:min-h-[46px] rounded-lg border border-[#a7d7b7] bg-[#eaf7ee] text-sm font-black text-[#152f20]">
                       <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#2f9b58] text-white flex items-center justify-center text-xs sm:text-sm font-black flex-shrink-0">✓</span>
                       <span className="truncate text-xs sm:text-sm">{item.name}</span>
                     </div>
@@ -519,12 +512,10 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
                 <div
                   key={`empty-${i}`}
                   data-slot={i}
-                  onClick={() => handleSlotClick(i)}
                   className={[
                     "match-card relative grid grid-rows-[1fr_auto] gap-x-5 gap-y-3.5 p-5 pb-4 min-h-[180px] sm:min-h-[210px]",
-                    "bg-gradient-to-b from-white to-slate-50/80 rounded-xl overflow-hidden select-none",
+                    "bg-gradient-to-b from-white to-slate-50/80 rounded-xl overflow-hidden select-none cursor-default",
                     "border shadow-[0_10px_22px_rgba(18,35,52,0.10)] transition-all",
-                    selectedItem && !gameOver ? "cursor-pointer" : "cursor-default",
                     isWrong ? "slot-wrong" : "",
                     isDragOver && !isWrong
                       ? "border-amber-400 ring-2 ring-amber-400/50"
@@ -550,21 +541,20 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
                     {items[i]?.clue || "?"}
                   </div>
 
-                  {/* Card meta — col 1, row 2 */}
-                  <div className="flex items-center min-w-0">
-                    {items[i]?.reign && (
-                      <span className="text-[11px] sm:text-xs font-semibold text-slate-400 truncate">{items[i].reign}</span>
-                    )}
-                  </div>
-
-                  {/* Drop zone — col 2, row 2 */}
-                  <div className={[
-                    "flex items-center justify-center min-h-[40px] sm:min-h-[46px] rounded-lg border-2 border-dashed",
-                    "text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-colors",
-                    isDragOver
-                      ? "border-amber-400 bg-amber-100/60 text-amber-700"
-                      : "border-[#c8d3df] bg-slate-50/70 text-[#7c8ba0]",
-                  ].join(" ")}>
+                  {/* Drop zone — row 2, spans both columns, owns the click */}
+                  <div
+                    onClick={() => handleSlotClick(i)}
+                    className={[
+                      "col-span-2 flex items-center justify-center min-h-[40px] sm:min-h-[46px] rounded-lg border-2 border-dashed",
+                      "text-[10px] sm:text-[11px] font-black uppercase tracking-wider transition-colors",
+                      selectedItem && !gameOver ? "cursor-pointer" : "cursor-default",
+                      isDragOver
+                        ? "border-amber-400 bg-amber-100/60 text-amber-700"
+                        : selectedItem && !gameOver
+                        ? "border-amber-400 bg-amber-50/60 text-amber-600"
+                        : "border-[#c8d3df] bg-slate-50/70 text-[#7c8ba0]",
+                    ].join(" ")}
+                  >
                     Drop answer here
                   </div>
                 </div>
@@ -573,7 +563,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
           </div>
 
           {/* ── Answer panel (dark navy) ─────────────────────────────────── */}
-          <aside className="xl:w-[380px] flex-shrink-0 bg-gradient-to-b from-[#162938] to-[#112230] rounded-2xl p-6 sm:p-7 text-white border border-white/10 shadow-[0_16px_35px_rgba(11,24,38,0.25)]">
+          <aside className="xl:w-[266px] flex-shrink-0 bg-gradient-to-b from-[#162938] to-[#112230] rounded-2xl p-6 sm:p-7 text-white border border-white/10 shadow-[0_16px_35px_rgba(11,24,38,0.25)]">
             {/* Title */}
             <h2 className="flex items-center justify-center gap-4 m-0 mb-2 text-[#eef6ff] text-lg sm:text-xl font-black uppercase tracking-widest leading-none">
               <span className="flex-1 h-0.5 rounded-full bg-white/40" />
