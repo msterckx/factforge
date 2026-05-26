@@ -115,7 +115,7 @@ export default async function ChallengePage({ params }: Props) {
   const mapRegions = game.gameType === "map" ? getMapRegions(game.id) : [];
 
   return (
-    <div className="max-w-[1664px] mx-auto">
+    <div className="max-w-[1408px] mx-auto">
       <Link
         href={`/${lang}`}
         className="inline-flex items-center text-sm text-slate-500 hover:text-slate-700 mb-6 transition-colors"
