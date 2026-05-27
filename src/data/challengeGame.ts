@@ -32,9 +32,10 @@ export function mapToChronologyItems(items: ChallengeItem[], lang: string): Chro
     milestone:   lang === "nl"
       ? (item.milestoneNl || item.milestoneEn) ?? undefined
       : item.milestoneEn ?? undefined,
-    clue:        lang === "nl"
+    clue:         lang === "nl"
       ? (item.clueNl || item.clueEn) ?? undefined
       : item.clueEn ?? undefined,
+    infographData: item.infographData ?? null,
   }));
 }
 

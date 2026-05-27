@@ -6,6 +6,7 @@ import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 import { trackChallengeStart, trackChallengeComplete, trackChallengeFail } from "@/lib/gtag";
 import { resolveImageUrl } from "@/lib/imageUrl";
+import PersonInfographPanel, { type PersonInfographData } from "./PersonInfographPanel";
 
 interface Props {
   items: ChronologyItem[];
@@ -154,6 +155,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
   const [pool, setPool] = useState<ChronologyItem[]>(() => shuffle(items));
   const [selectedItem, setSelectedItem] = useState<ChronologyItem | null>(null);
   const [infoItem, setInfoItem] = useState<ChronologyItem | null>(null);
+  const [infographItem, setInfographItem] = useState<{ name: string; data: PersonInfographData } | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [wrongSlot, setWrongSlot] = useState<number | null>(null);
   const [glitterActive, setGlitterActive] = useState(false);
@@ -199,6 +201,15 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
   }, [allCorrect, gameOver]);
 
   // ── Placement — any tile, any order ───────────────────────────────────────
+  function openInfograph(item: ChronologyItem) {
+    if (!item.infographData) return false;
+    try {
+      const data = JSON.parse(item.infographData) as PersonInfographData;
+      setInfographItem({ name: item.name, data });
+      return true;
+    } catch { return false; }
+  }
+
   function tryPlace(item: ChronologyItem, slotIndex: number) {
     if (placed[slotIndex] !== undefined || gameOver || allCorrect) return;
     if (item.id === slotIndex + 1) {
@@ -207,6 +218,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
       setSelectedItem(null);
       setInfoItem(null);
       setPlayerPlaced((p) => p + 1);
+      openInfograph(item);
     } else {
       const newLives = lives - 1;
       setLives(newLives);
@@ -234,6 +246,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
     setHintedSlots((prev) => { const s = new Set(prev); s.add(slotIndex); return s; });
     setSelectedItem(null);
     setInfoItem(null);
+    setInfographItem(null);
 
     const newLives = Math.max(0, lives - 2);
     setLives(newLives);
@@ -350,6 +363,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
     setPool(shuffle(items));
     setSelectedItem(null);
     setInfoItem(null);
+    setInfographItem(null);
     setWrongSlot(null);
     setGlitterActive(false);
     setWrongAttempts(0);
@@ -467,7 +481,14 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
                 return (
                   <div
                     key={`filled-${i}`}
-                    onClick={() => { setInfoItem((prev) => prev?.id === item.id ? null : item); setSelectedItem(null); }}
+                    onClick={() => {
+                      setSelectedItem(null);
+                      if (item.infographData) {
+                        if (infographItem?.name === item.name) { setInfographItem(null); } else { openInfograph(item); }
+                      } else {
+                        setInfoItem((prev) => prev?.id === item.id ? null : item);
+                      }
+                    }}
                     className={[
                       "match-card relative grid grid-rows-[1fr_auto] gap-x-5 gap-y-3.5 p-5 pb-4 min-h-[180px] sm:min-h-[210px]",
                       "bg-gradient-to-b from-white to-slate-50/80 rounded-xl overflow-hidden select-none cursor-pointer",
@@ -625,6 +646,15 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
 
         </div>
       </div>
+
+      {/* Person infograph modal */}
+      {infographItem && (
+        <PersonInfographPanel
+          name={infographItem.name}
+          data={infographItem.data}
+          onDismiss={() => setInfographItem(null)}
+        />
+      )}
 
       {/* Info panel */}
       {infoItem && (

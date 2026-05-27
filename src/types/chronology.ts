@@ -5,6 +5,7 @@ export interface ChronologyItem {
   fact?: string; // kept optional for static data files; not used in DB-backed items
   imageUrl: string;
   description: string;
-  milestone?: string; // chronology: clue shown on the tile
-  clue?: string;      // matching: clue shown on the tile
+  milestone?: string;       // chronology: clue shown on the tile
+  clue?: string;            // matching: clue shown on the tile
+  infographData?: string | null; // matching: JSON person infograph data
 }
