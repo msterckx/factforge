@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { geoMercator, geoPath } from "d3-geo";
+import { resolveImageUrl } from "@/lib/imageUrl";
 
 export interface PersonInfographData {
   born:             string;
@@ -115,7 +116,7 @@ export default function PersonInfographPanel({ name, data, onDismiss }: Props) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={i}
-                  src={src}
+                  src={resolveImageUrl(src)}
                   alt=""
                   className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-700 ${
                     i === slideIndex ? "opacity-100" : "opacity-0"
