@@ -11,6 +11,7 @@ export interface PersonInfographData {
   originCountryId?: number;
   role:             string;
   period:           string;
+  description?:     string;
   ghostText?:       string;
   caption?:         string;
   images:           string[];
@@ -198,10 +199,17 @@ export default function PersonInfographPanel({ name, data, onDismiss }: Props) {
             )}
 
             {/* Role + Period */}
-            <div className="space-y-4 flex-1">
+            <div className="space-y-4">
               {data.role && <DataRow label="Role" value={data.role} />}
               {data.period && <DataRow label="Historical Period" value={data.period} accent />}
             </div>
+
+            {/* Description */}
+            {data.description && (
+              <div className="mt-5 pt-4 border-t border-white/10">
+                <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{data.description}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

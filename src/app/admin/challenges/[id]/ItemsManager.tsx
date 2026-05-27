@@ -17,6 +17,7 @@ interface InfographFields {
   originCountryId: string;
   role: string;
   period: string;
+  description: string;
   ghostText: string;
   caption: string;
   images: string; // newline-separated URLs, same as map infograph
@@ -24,7 +25,7 @@ interface InfographFields {
 
 const DEFAULT_INFOGRAPH: InfographFields = {
   born: "", died: "", origin: "", originCountryId: "",
-  role: "", period: "", ghostText: "", caption: "",
+  role: "", period: "", description: "", ghostText: "", caption: "",
   images: "",
 };
 
@@ -39,6 +40,7 @@ function parseInfograph(raw: string | null | undefined): InfographFields {
       originCountryId: p.originCountryId != null ? String(p.originCountryId) : "",
       role:            p.role            ?? "",
       period:          p.period          ?? "",
+      description:     p.description     ?? "",
       ghostText:       p.ghostText       ?? "",
       caption:         p.caption         ?? "",
       images:          Array.isArray(p.images) ? p.images.join("\n") : "",
@@ -57,7 +59,8 @@ function serializeInfograph(ig: InfographFields): string | null {
     originCountryId: ig.originCountryId ? Number(ig.originCountryId) : undefined,
     role:            ig.role,
     period:          ig.period,
-    ghostText:       ig.ghostText || undefined,
+    description:     ig.description || undefined,
+    ghostText:       ig.ghostText   || undefined,
     caption:         ig.caption   || undefined,
     images,
   });
@@ -99,6 +102,16 @@ function InfographEditor({ value, onChange }: { value: InfographFields; onChange
           {inp("Historical Period", "period", "World War II")}
           {inp("Ghost text", "ghostText", "WWII (optional)")}
           {inp("Caption", "caption", "Adolf Hitler · 1889–1945 (optional)", true)}
+          <div className="col-span-2">
+            <label className="block text-xs font-medium text-slate-500 mb-0.5">Description (optional)</label>
+            <textarea
+              rows={3}
+              value={value.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="A few sentences about this person…"
+              className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white resize-y"
+            />
+          </div>
           <div className="col-span-2">
             <label className="block text-xs font-medium text-slate-500 mb-1">Images (one URL per line)</label>
             <textarea
