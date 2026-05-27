@@ -171,6 +171,8 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
   const isDragging = useRef(false);
   const ghostRef  = useRef<HTMLDivElement | null>(null);
 
+  const shuffledAnswers = useMemo(() => shuffle(items), []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const placedCount  = Object.keys(placed).length;
   const allCorrect   = placedCount === items.length && !gameOver;
   const maxScore     = items.length * 10;
@@ -597,7 +599,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
 
             {/* All answer options — matched ones show checkmark */}
             <div className="flex flex-col gap-2.5">
-              {items.map((answerItem) => {
+              {shuffledAnswers.map((answerItem) => {
                 const isMatched   = placed[answerItem.id - 1] !== undefined;
                 const isSelected  = selectedItem?.id === answerItem.id;
                 const isAvailable = !isMatched && !gameOver && !allCorrect;
