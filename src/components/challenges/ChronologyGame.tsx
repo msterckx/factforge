@@ -6,6 +6,7 @@ import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges } from "@/hooks/useCompletedChallenges";
 import { trackChallengeStart, trackChallengeComplete, trackChallengeFail } from "@/lib/gtag";
 import { resolveImageUrl } from "@/lib/imageUrl";
+import PersonInfographPanel, { type PersonInfographData } from "@/components/challenges/PersonInfographPanel";
 
 interface Props {
   items: ChronologyItem[];
@@ -129,10 +130,11 @@ function Lives({ current, max }: { current: number; max: number }) {
 export default function ChronologyGame({ items, dict, challengeId, startingLives = 5 }: Props) {
   const maxLives = Math.max(1, startingLives);
   const { markComplete } = useCompletedChallenges();
+
   const [placed, setPlaced] = useState<Record<number, ChronologyItem>>({});
-  const [pool, setPool] = useState<ChronologyItem[]>(() => shuffle(items));
+  const [resetKey, setResetKey] = useState(0);
   const [selectedItem, setSelectedItem] = useState<ChronologyItem | null>(null);
-  const [infoItem, setInfoItem] = useState<ChronologyItem | null>(null);
+  const [infographItem, setInfographItem] = useState<{ name: string; data: PersonInfographData } | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [wrongSlot, setWrongSlot] = useState<number | null>(null);
   const [glitterActive, setGlitterActive] = useState(false);
@@ -143,15 +145,25 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
   const [hintedSlots, setHintedSlots] = useState<Set<number>>(new Set());
   const [gameOver, setGameOver] = useState(false);
 
+  // Stable shuffled order for the options panel; re-shuffles on reset via resetKey
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const shuffledOptions = useMemo(() => shuffle([...items]), [resetKey]);
+
+  const placedIds = useMemo(
+    () => new Set(Object.values(placed).map((p) => p.id)),
+    [placed]
+  );
+  const availableItems = shuffledOptions.filter((item) => !placedIds.has(item.id));
+
   // Pointer drag state
   const dragItem   = useRef<ChronologyItem | null>(null);
   const dragStart  = useRef<{ x: number; y: number } | null>(null);
   const isDragging = useRef(false);
   const ghostRef   = useRef<HTMLDivElement | null>(null);
 
-  const placedCount = Object.keys(placed).length;
-  const allCorrect  = placedCount === items.length && !gameOver;
-  const maxScore    = items.length * 10;
+  const placedCount  = Object.keys(placed).length;
+  const allCorrect   = placedCount === items.length && !gameOver;
+  const maxScore     = items.length * 10;
   const currentScore = Math.max(0, playerPlaced * 10 - wrongAttempts * 2);
 
   useEffect(() => { trackChallengeStart(challengeId); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -167,8 +179,12 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
   useEffect(() => {
     if ((allCorrect || gameOver) && !scoreSubmitted) {
       setScoreSubmitted(true);
-      if (allCorrect) { markComplete(challengeId, currentScore, maxScore); trackChallengeComplete(challengeId, currentScore, maxScore); }
-      else { trackChallengeFail(challengeId); }
+      if (allCorrect) {
+        markComplete(challengeId, currentScore, maxScore);
+        trackChallengeComplete(challengeId, currentScore, maxScore);
+      } else {
+        trackChallengeFail(challengeId);
+      }
       fetch("/api/challenges/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,15 +194,23 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allCorrect, gameOver]);
 
+  // ── Infograph ─────────────────────────────────────────────────────────────
+  function openInfograph(item: ChronologyItem) {
+    if (!item.infographData) return;
+    try {
+      const data = JSON.parse(item.infographData) as PersonInfographData;
+      setInfographItem({ name: item.name, data });
+    } catch { /* ignore parse errors */ }
+  }
+
   // ── Core placement logic ──────────────────────────────────────────────────
   function tryPlace(item: ChronologyItem, slotIndex: number) {
     if (placed[slotIndex] !== undefined || gameOver || allCorrect) return;
     if (item.id === items[slotIndex].id) {
       setPlaced((prev) => ({ ...prev, [slotIndex]: item }));
-      setPool((prev) => prev.filter((c) => c.id !== item.id));
       setSelectedItem(null);
-      setInfoItem(item);
       setPlayerPlaced((p) => p + 1);
+      openInfograph(item);
     } else {
       const newLives = lives - 1;
       setLives(newLives);
@@ -200,16 +224,13 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
 
   // ── Reveal next tile (costs 2 lives) ─────────────────────────────────────
   function handleRevealNext() {
-    if (gameOver || allCorrect || lives < 2) return;
+    if (gameOver || allCorrect || lives < 2 || availableItems.length === 0) return;
     const item = items[placedCount];
     if (!item) return;
-
     const isLastItem = placedCount + 1 === items.length;
     setPlaced((prev) => ({ ...prev, [placedCount]: item }));
-    setPool((prev) => prev.filter((c) => c.id !== item.id));
     setHintedSlots((prev) => { const s = new Set(prev); s.add(placedCount); return s; });
     setSelectedItem(null);
-
     const newLives = Math.max(0, lives - 2);
     setLives(newLives);
     if (newLives === 0 && !isLastItem) setGameOver(true);
@@ -281,7 +302,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
     if (!isDragging.current && Math.sqrt(dx * dx + dy * dy) > 8) {
       isDragging.current = true;
       setSelectedItem(null);
-      setInfoItem(null);
       createGhost(dragItem.current.name, e.clientX, e.clientY);
     }
 
@@ -318,18 +338,11 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
     isDragging.current = false;
   }
 
-  // ── Milestone card tap ────────────────────────────────────────────────────
-  function handleMilestoneClick(slotIndex: number) {
-    if (placed[slotIndex] !== undefined || gameOver || allCorrect) return;
-    if (selectedItem) tryPlace(selectedItem, slotIndex);
-  }
-
   // ── Reset ─────────────────────────────────────────────────────────────────
   function handleReset() {
     setPlaced({});
-    setPool(shuffle(items));
     setSelectedItem(null);
-    setInfoItem(null);
+    setInfographItem(null);
     setWrongSlot(null);
     setGlitterActive(false);
     setWrongAttempts(0);
@@ -338,6 +351,7 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
     setLives(maxLives);
     setHintedSlots(new Set());
     setGameOver(false);
+    setResetKey((k) => k + 1);
     removeGhost();
     dragItem.current = null;
     isDragging.current = false;
@@ -351,28 +365,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
           35%  { transform: scale(1.08); }
           100% { transform: scale(1); }
         }
-        @keyframes caesarGlow {
-          0%   { box-shadow: 0 0 0 2px #4ade80, 0 0 8px 1px #4ade8088; }
-          50%  { box-shadow: 0 0 0 2px #86efac, 0 0 16px 4px #4ade80bb; }
-          100% { box-shadow: 0 0 0 2px #4ade80, 0 0 6px 1px #4ade8033; }
-        }
-        @keyframes caesarShine {
-          0%   { left: -80%; }
-          100% { left: 130%; }
-        }
-        .caesar-correct {
-          animation: caesarPop 0.35s ease-out, caesarGlow 1.4s ease-in-out 0.35s 1 forwards;
-          outline: 2px solid #4ade80;
-        }
-        .caesar-shine::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%);
-          animation: caesarShine 0.9s ease-in-out 0.35s 1 forwards;
-          pointer-events: none;
-          border-radius: inherit;
-        }
         @keyframes wrongFlash {
           0%   { background-color: #fef2f2; border-color: #f87171; transform: translateX(0); }
           25%  { transform: translateX(-4px); }
@@ -385,11 +377,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
           60%  { opacity: 1; }
           100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); opacity: 0; }
         }
-        @keyframes msAppear {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .ms-appear { animation: msAppear 0.3s ease-out forwards; }
         @keyframes gameOverFade {
           from { opacity: 0; }
           to   { opacity: 1; }
@@ -403,17 +390,19 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes heartLose {
-          0%   { transform: scale(1); }
-          30%  { transform: scale(1.4); }
-          60%  { transform: scale(0.8); }
-          100% { transform: scale(1); }
-        }
-        .heart-lose { animation: heartLose 0.4s ease-out forwards; }
       `}</style>
 
+      {/* Infograph panel */}
+      {infographItem && (
+        <PersonInfographPanel
+          name={infographItem.name}
+          data={infographItem.data}
+          onDismiss={() => setInfographItem(null)}
+        />
+      )}
+
       {/* Status bar */}
-      <div className="flex items-center justify-between mb-3 min-h-[28px]">
+      <div className="flex items-center justify-between mb-4 min-h-[28px]">
         <div className="flex items-center gap-3">
           {allCorrect ? (
             <p className="text-sm font-semibold text-green-700">{dict.perfectOrder} 🎉</p>
@@ -428,189 +417,280 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
         <div className="flex items-center gap-3">
           {selectedItem && !allCorrect && !gameOver && (
             <p className="text-xs text-amber-600 font-medium truncate max-w-[120px] sm:max-w-none">
-              &ldquo;{selectedItem.name}&rdquo; — tap tile
+              &ldquo;{selectedItem.name}&rdquo; — tap slot
             </p>
           )}
-          {!allCorrect && (
-            <Lives current={lives} max={maxLives} />
-          )}
+          {!allCorrect && <Lives current={lives} max={maxLives} />}
         </div>
       </div>
 
-      {/* Tile grid */}
-      <div className="relative mb-4">
-        {glitterActive && <GlitterBomb />}
-        {gameOver && <GameOverOverlay />}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2">
+      {/* Main two-column layout */}
+      <div className="flex flex-col xl:flex-row gap-4 xl:gap-6">
 
-          {/* Placed tiles */}
-          {Array.from({ length: placedCount }, (_, i) => {
-            const item = placed[i];
-            if (!item) return null;
-            const wasHinted = hintedSlots.has(i);
-            const wasPlayerPlaced = !wasHinted;
-            return (
-              <div
-                key={`placed-${i}`}
-                onClick={() => { setInfoItem(item); }}
-                className={`relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border select-none cursor-pointer ${
-                  infoItem?.id === item.id
-                    ? "border-amber-400 ring-2 ring-amber-300"
-                    : wasPlayerPlaced
-                    ? "caesar-correct caesar-shine border-slate-200"
-                    : "outline outline-2 outline-indigo-400 border-transparent"
-                }`}
+        {/* ── Left: Timeline panel ── */}
+        <div className="flex-1 min-w-0 relative">
+          {glitterActive && <GlitterBomb />}
+          {gameOver && <GameOverOverlay />}
+
+          {/* Timeline rows with rail */}
+          <div className="relative sm:pl-8">
+            {/* Vertical rail line */}
+            <div className="hidden sm:block absolute left-3 top-6 bottom-6 w-0.5 rounded-full bg-slate-300" />
+
+            <div className="flex flex-col gap-2.5">
+              {items.map((item, i) => {
+                const isPlaced    = placed[i] !== undefined;
+                const placedItem  = placed[i];
+                const isActive    = !isPlaced && i === placedCount && !allCorrect && !gameOver;
+                const isWrong     = wrongSlot === i;
+                const isDragOver  = dragOverSlot === i;
+                const wasHinted   = hintedSlots.has(i);
+
+                return (
+                  <div
+                    key={i}
+                    className={[
+                      "relative flex flex-col gap-2 sm:grid sm:items-center sm:gap-3",
+                      "p-3 rounded-xl border shadow-sm transition-colors",
+                      "sm:grid-cols-[44px_minmax(130px,170px)_1fr]",
+                      isActive  ? "bg-blue-50/80 border-blue-200" :
+                      isPlaced  ? "bg-white border-slate-200" :
+                                  "bg-white/50 border-slate-200/60",
+                    ].join(" ")}
+                  >
+                    {/* Rail node */}
+                    <div
+                      className={[
+                        "hidden sm:block absolute -left-5 top-1/2 -translate-y-1/2",
+                        "w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm",
+                        isPlaced ? "bg-slate-700" :
+                        isActive ? "bg-blue-500" :
+                                   "bg-white border-slate-300",
+                      ].join(" ")}
+                    />
+
+                    {/* Number + clue — side by side on mobile, grid cells on sm+ */}
+                    <div className="flex gap-3 items-start sm:contents">
+                      {/* Number badge */}
+                      <div
+                        className={[
+                          "flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center",
+                          "rounded-lg font-black text-sm border",
+                          isActive  ? "bg-blue-100 text-blue-700 border-blue-200" :
+                          isPlaced  ? "bg-slate-100 text-slate-600 border-slate-200" :
+                                      "bg-slate-50 text-slate-400 border-slate-200/70",
+                        ].join(" ")}
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </div>
+
+                      {/* Clue */}
+                      <div className="flex-1 sm:flex-none min-w-0">
+                        <span className="block text-[10px] font-extrabold text-blue-500 uppercase tracking-wide mb-0.5">
+                          Clue
+                        </span>
+                        <span className="text-sm font-semibold text-slate-700 leading-snug">
+                          {item.milestone || "?"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Drop zone or resolved answer */}
+                    {isPlaced ? (
+                      <div
+                        onClick={() => openInfograph(placedItem)}
+                        className={[
+                          "flex items-center gap-3 px-3 py-2 rounded-lg bg-white/80 border border-transparent",
+                          placedItem?.infographData
+                            ? "cursor-pointer hover:border-slate-200 hover:bg-white transition-colors"
+                            : "",
+                        ].join(" ")}
+                      >
+                        <div className="w-16 h-12 flex-shrink-0 rounded-md overflow-hidden border border-slate-200 bg-slate-100">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={resolveImageUrl(placedItem.imageUrl)}
+                            alt={placedItem.name}
+                            className="w-full h-full object-cover object-top"
+                            draggable={false}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-slate-800 leading-tight truncate">
+                            {placedItem.name}
+                          </div>
+                          {placedItem.reign && (
+                            <div className="text-xs text-slate-500 mt-0.5">{placedItem.reign}</div>
+                          )}
+                        </div>
+                        <div
+                          className={[
+                            "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white",
+                            wasHinted ? "bg-indigo-500" : "bg-green-600",
+                          ].join(" ")}
+                        >
+                          {wasHinted ? "💡" : "✓"}
+                        </div>
+                      </div>
+                    ) : isActive ? (
+                      <div
+                        data-slot={i}
+                        onClick={() => { if (selectedItem) tryPlace(selectedItem, i); }}
+                        className={[
+                          "flex items-center justify-center min-h-[56px] px-4 rounded-lg",
+                          "border-2 border-dashed text-xs font-extrabold uppercase tracking-wide transition-colors",
+                          isWrong ? "slot-wrong" : "",
+                          isDragOver && !isWrong
+                            ? "border-blue-400 bg-blue-100 text-blue-600"
+                            : !isWrong
+                            ? "border-blue-300 bg-blue-50/60 text-blue-400"
+                            : "",
+                          selectedItem && !isWrong ? "cursor-pointer" : "cursor-default",
+                        ].join(" ")}
+                      >
+                        Drop answer here
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center min-h-[48px] rounded-lg border border-dashed border-slate-200/60">
+                        <span className="text-slate-300 text-xs">—</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2 sm:gap-3 mt-4">
+            {!allCorrect && !gameOver && (
+              <button
+                onClick={handleRevealNext}
+                disabled={lives < 2 || availableItems.length === 0}
+                className="px-4 sm:px-5 py-2 border border-indigo-300 text-indigo-600 text-sm font-medium rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                <div className="absolute top-1 left-1 z-20 bg-black/50 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
-                  {i + 1}
-                </div>
-                {wasHinted && (
-                  <div className="absolute top-1 right-1 z-20 text-[9px] text-indigo-300 font-bold leading-none">💡</div>
-                )}
-                <div className="aspect-square w-full bg-stone-200 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={resolveImageUrl(item.imageUrl)} alt={item.name} className="w-full h-full object-cover object-top" draggable={false} />
-                </div>
-                <div className={`px-1 py-0.5 sm:px-1.5 sm:py-1 text-center ${wasPlayerPlaced ? "bg-green-50" : "bg-indigo-50"}`}>
-                  <p className="text-[10px] sm:text-[11px] font-semibold text-slate-800 leading-tight truncate">{item.name}</p>
-                  <p className="text-[9px] sm:text-[10px] text-slate-400 leading-tight">{item.reign}</p>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Active milestone tile — shows clue, is the drop target */}
-          {!allCorrect && !gameOver && (() => {
-            const activeItem = items[placedCount];
-            if (!activeItem) return null;
-            const isWrong = wrongSlot === placedCount;
-            const isDragOver = dragOverSlot === placedCount;
-            return (
-              <div
-                key={`active-${placedCount}`}
-                data-slot={placedCount}
-                onClick={() => handleMilestoneClick(placedCount)}
-                className={[
-                  "relative flex flex-col rounded-lg sm:rounded-xl overflow-hidden border-2 border-dashed select-none",
-                  selectedItem ? "cursor-pointer" : "cursor-default",
-                  isWrong ? "slot-wrong" : "",
-                  isDragOver && !isWrong ? "border-amber-400 bg-amber-100" : !isWrong ? "border-amber-300 bg-amber-50" : "",
-                ].join(" ")}
-              >
-                <div className="absolute top-1 left-1 z-20 bg-amber-500/70 text-white text-[9px] sm:text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center leading-none">
-                  {placedCount + 1}
-                </div>
-                <div className="aspect-square w-full flex items-center justify-center p-2">
-                  <p className="text-center text-sm sm:text-base font-semibold text-amber-800 leading-snug">
-                    {activeItem.milestone || "?"}
-                  </p>
-                </div>
-                <div className="px-1 py-0.5 sm:px-1.5 sm:py-1 text-center bg-amber-100 border-t border-amber-200">
-                  <p className="text-[9px] sm:text-[10px] text-amber-600 font-semibold leading-tight">Who is this?</p>
-                </div>
-              </div>
-            );
-          })()}
-
-        </div>
-      </div>
-
-      {/* Chip pool */}
-      {pool.length > 0 && !allCorrect && !gameOver && (
-        <div className="mb-4">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            {dict.dragOrTap}
-          </p>
-          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-            {pool.map((item) => (
-              <div
-                key={item.id}
-                onPointerDown={(e) => handleChipPointerDown(e, item)}
-                onPointerMove={handleChipPointerMove}
-                onPointerUp={handleChipPointerUp}
-                onPointerCancel={handleChipPointerCancel}
-                style={{ touchAction: "none", userSelect: "none" }}
-                className={[
-                  "px-2.5 py-1.5 sm:px-3 rounded-full border text-xs sm:text-sm font-medium transition-all cursor-grab active:cursor-grabbing",
-                  selectedItem?.id === item.id
-                    ? "bg-amber-100 border-amber-400 text-amber-800 ring-2 ring-amber-300"
-                    : "bg-white border-slate-300 text-slate-700 hover:border-amber-300 hover:bg-amber-50",
-                ].join(" ")}
-              >
-                {item.name}
-              </div>
-            ))}
+                💡 Reveal next
+                <span className="text-xs text-indigo-400 font-normal">−2 ♥</span>
+              </button>
+            )}
+            <button
+              onClick={handleReset}
+              className="px-4 sm:px-5 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              {dict.tryAgain}
+            </button>
           </div>
         </div>
-      )}
 
-      {/* Did-you-know modal */}
-      {infoItem && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => setInfoItem(null)}
-        >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        {/* ── Right: Options panel ── */}
+        <div className="xl:w-[360px] flex-shrink-0">
           <div
-            className="relative z-10 bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-            style={{ animation: "msAppear 0.25s ease-out forwards" }}
+            className="rounded-2xl overflow-hidden border border-white/10"
+            style={{ background: "linear-gradient(180deg, #162938 0%, #071522 100%)" }}
           >
-            {infoItem.imageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={resolveImageUrl(infoItem.imageUrl)}
-                alt={infoItem.name}
-                className="w-full h-56 sm:h-72 object-cover object-top"
-                draggable={false}
-              />
-            )}
-            <div className="p-5 sm:p-7">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-800 leading-tight">{infoItem.name}</p>
-                  {infoItem.reign && (
-                    <p className="text-sm text-amber-700 font-semibold mt-0.5">{infoItem.reign}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setInfoItem(null)}
-                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 text-xl leading-none rounded-full hover:bg-slate-100 transition-colors"
-                  aria-label="Close"
-                >×</button>
+            {/* Panel header */}
+            <div className="px-5 pt-5 pb-3">
+              <div className="flex items-center gap-3 mb-1.5">
+                <div className="h-px flex-1 bg-white/20" />
+                <h3 className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-white whitespace-nowrap">
+                  Timeline Options
+                </h3>
+                <div className="h-px flex-1 bg-white/20" />
               </div>
-              {infoItem.description && (
-                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">{infoItem.description}</p>
-              )}
-              <button
-                onClick={() => setInfoItem(null)}
-                className="mt-5 w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors text-sm"
-              >
-                Continue
-              </button>
+              <p className="text-center text-[11px] text-slate-400">
+                Drag an option into the correct chronological slot
+              </p>
+            </div>
+
+            {/* Options list */}
+            <div className="mx-4 rounded-xl overflow-hidden bg-[#eef3f8] border border-slate-200/50">
+              {shuffledOptions.map((item, idx) => {
+                const isItemPlaced = placedIds.has(item.id);
+                const isSelected   = selectedItem?.id === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    onPointerDown={
+                      !isItemPlaced && !gameOver && !allCorrect
+                        ? (e) => handleChipPointerDown(e, item)
+                        : undefined
+                    }
+                    onPointerMove={!isItemPlaced ? handleChipPointerMove : undefined}
+                    onPointerUp={!isItemPlaced ? handleChipPointerUp : undefined}
+                    onPointerCancel={!isItemPlaced ? handleChipPointerCancel : undefined}
+                    style={!isItemPlaced ? { touchAction: "none", userSelect: "none" } : undefined}
+                    className={[
+                      "flex items-center gap-2 min-h-[58px] px-2.5 py-2 border-b border-slate-200 last:border-b-0 transition-colors",
+                      isItemPlaced
+                        ? "bg-white/60 opacity-50"
+                        : isSelected
+                        ? "bg-amber-50 ring-2 ring-inset ring-amber-400"
+                        : "bg-white cursor-grab active:cursor-grabbing hover:bg-slate-50",
+                    ].join(" ")}
+                  >
+                    {/* Index */}
+                    <div className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-xs font-black">
+                      {idx + 1}
+                    </div>
+
+                    {/* Drag handle (3×2 dot grid) */}
+                    {!isItemPlaced ? (
+                      <div className="flex-shrink-0 opacity-40" style={{ display: "grid", gridTemplateColumns: "repeat(2, 4px)", gap: "3px" }}>
+                        {Array.from({ length: 6 }).map((_, k) => (
+                          <div key={k} className="w-1 h-1 rounded-full bg-slate-500" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex-shrink-0 w-[14px]" />
+                    )}
+
+                    {/* Thumbnail */}
+                    <div className="flex-shrink-0 w-14 h-10 rounded-md overflow-hidden border border-slate-200 bg-slate-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={resolveImageUrl(item.imageUrl)}
+                        alt={item.name}
+                        className="w-full h-full object-cover object-top"
+                        draggable={false}
+                      />
+                    </div>
+
+                    {/* Name + reign */}
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-xs font-bold leading-tight truncate ${isItemPlaced ? "text-slate-400" : "text-slate-800"}`}>
+                        {item.name}
+                      </div>
+                      {item.reign && (
+                        <div className="text-[10px] text-slate-500 mt-0.5">{item.reign}</div>
+                      )}
+                    </div>
+
+                    {/* Status circle */}
+                    <div
+                      className={[
+                        "flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black",
+                        isItemPlaced ? "bg-green-600 text-white" : "border-2 border-slate-300",
+                      ].join(" ")}
+                    >
+                      {isItemPlaced && "✓"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Tip box */}
+            <div className="mx-4 my-4 rounded-xl p-3.5 flex gap-3 items-start bg-black/30 border border-white/5">
+              <span className="text-xl flex-shrink-0 leading-none mt-0.5">💡</span>
+              <div className="text-[11px] text-slate-300 leading-relaxed">
+                <strong className="text-white">TIP:</strong> The earliest event goes at position 01.
+                Order from earliest to latest.
+              </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Buttons */}
-      <div className="flex flex-wrap gap-2 sm:gap-3">
-        {!allCorrect && !gameOver && (
-          <button
-            onClick={handleRevealNext}
-            disabled={lives < 2 || pool.length === 0}
-            className="px-4 sm:px-5 py-2 border border-indigo-300 text-indigo-600 text-sm font-medium rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
-          >
-            💡 Reveal next
-            <span className="text-xs text-indigo-400 font-normal">−2 ♥</span>
-          </button>
-        )}
-        <button
-          onClick={handleReset}
-          className="px-4 sm:px-5 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors"
-        >
-          {dict.tryAgain}
-        </button>
       </div>
     </div>
   );
