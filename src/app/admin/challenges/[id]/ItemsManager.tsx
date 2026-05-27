@@ -19,21 +19,19 @@ interface InfographFields {
   period: string;
   ghostText: string;
   caption: string;
-  images: [string, string, string, string];
+  images: string; // newline-separated URLs, same as map infograph
 }
 
 const DEFAULT_INFOGRAPH: InfographFields = {
   born: "", died: "", origin: "", originCountryId: "",
   role: "", period: "", ghostText: "", caption: "",
-  images: ["", "", "", ""],
+  images: "",
 };
 
 function parseInfograph(raw: string | null | undefined): InfographFields {
-  if (!raw) return { ...DEFAULT_INFOGRAPH, images: ["", "", "", ""] };
+  if (!raw) return { ...DEFAULT_INFOGRAPH };
   try {
     const p = JSON.parse(raw);
-    const imgs: [string, string, string, string] = ["", "", "", ""];
-    if (Array.isArray(p.images)) p.images.forEach((v: string, i: number) => { if (i < 4) imgs[i] = v ?? ""; });
     return {
       born:            p.born            ?? "",
       died:            p.died            ?? "",
@@ -43,13 +41,14 @@ function parseInfograph(raw: string | null | undefined): InfographFields {
       period:          p.period          ?? "",
       ghostText:       p.ghostText       ?? "",
       caption:         p.caption         ?? "",
-      images:          imgs,
+      images:          Array.isArray(p.images) ? p.images.join("\n") : "",
     };
-  } catch { return { ...DEFAULT_INFOGRAPH, images: ["", "", "", ""] }; }
+  } catch { return { ...DEFAULT_INFOGRAPH }; }
 }
 
 function serializeInfograph(ig: InfographFields): string | null {
-  const hasAny = ig.born || ig.died || ig.origin || ig.originCountryId || ig.role || ig.period || ig.images.some(Boolean);
+  const images = ig.images.split("\n").map((s) => s.trim()).filter(Boolean);
+  const hasAny = ig.born || ig.died || ig.origin || ig.originCountryId || ig.role || ig.period || images.length;
   if (!hasAny) return null;
   return JSON.stringify({
     born:            ig.born,
@@ -60,20 +59,15 @@ function serializeInfograph(ig: InfographFields): string | null {
     period:          ig.period,
     ghostText:       ig.ghostText || undefined,
     caption:         ig.caption   || undefined,
-    images:          ig.images.filter(Boolean),
+    images,
   });
 }
 
 function InfographEditor({ value, onChange }: { value: InfographFields; onChange: (v: InfographFields) => void }) {
   const [open, setOpen] = useState(false);
   const set = (key: keyof InfographFields, val: string) => onChange({ ...value, [key]: val });
-  const setImg = (i: number, val: string) => {
-    const imgs: [string, string, string, string] = [...value.images] as [string, string, string, string];
-    imgs[i] = val;
-    onChange({ ...value, images: imgs });
-  };
 
-  const inp = (label: string, key: keyof Omit<InfographFields, "images">, placeholder?: string, full?: boolean) => (
+  const inp = (label: string, key: keyof InfographFields, placeholder?: string, full?: boolean) => (
     <div className={full ? "col-span-2" : ""}>
       <label className="block text-xs font-medium text-slate-500 mb-0.5">{label}</label>
       <input
@@ -106,18 +100,14 @@ function InfographEditor({ value, onChange }: { value: InfographFields; onChange
           {inp("Ghost text", "ghostText", "WWII (optional)")}
           {inp("Caption", "caption", "Adolf Hitler · 1889–1945 (optional)", true)}
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-500 mb-1">Images (paths relative to infograph/person/)</label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {value.images.map((img, i) => (
-                <input
-                  key={i}
-                  value={img}
-                  onChange={(e) => setImg(i, e.target.value)}
-                  placeholder={`images/photo-${i + 1}.jpg`}
-                  className="border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
-                />
-              ))}
-            </div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Images (one URL per line)</label>
+            <textarea
+              rows={4}
+              value={value.images}
+              onChange={(e) => set("images", e.target.value)}
+              placeholder={"https://…\nhttps://…"}
+              className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white font-mono resize-y"
+            />
           </div>
         </div>
       )}
@@ -222,7 +212,7 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [vals, setVals] = useState({ position: 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "", dates: "", milestoneEn: "", milestoneNl: "", clueEn: "", clueNl: "", hint: "", achievement: "" });
-  const [igraph, setIgraph] = useState<InfographFields>({ ...DEFAULT_INFOGRAPH, images: ["", "", "", ""] });
+  const [igraph, setIgraph] = useState<InfographFields>({ ...DEFAULT_INFOGRAPH });
 
   async function save() {
     setSaving(true);
