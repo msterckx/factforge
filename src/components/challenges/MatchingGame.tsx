@@ -220,7 +220,6 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
       setSelectedItem(null);
       setInfoItem(null);
       setPlayerPlaced((p) => p + 1);
-      openInfograph(item);
     } else {
       const newLives = lives - 1;
       setLives(newLives);
@@ -641,7 +640,7 @@ export default function MatchingGame({ items, dict, challengeId, startingLives =
             <div className="mt-5 grid grid-cols-[auto_1fr] gap-3 sm:gap-4 p-4 rounded-xl bg-black/30 border border-white/[0.06]">
               <span className="text-2xl leading-none">💡</span>
               <p className="text-xs sm:text-sm text-slate-200 leading-relaxed m-0">
-                <strong className="text-white font-black">TIP:</strong> Read the clues carefully and match each one to the best answer.
+                <strong className="text-white font-black">TIP:</strong> Read the clues and match each one to the correct person. Click a matched card to learn more about them.
               </p>
             </div>
           </aside>
