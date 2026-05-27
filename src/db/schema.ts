@@ -189,6 +189,8 @@ export const challengeItems = sqliteTable("challenge_items", {
   // Puzzle fields
   hint:          text("hint"),            // e.g. "Athletics · Jamaica"
   achievement:   text("achievement"),     // e.g. "9 Olympic gold medals"
+  // Infograph data (matching game) — JSON: { born, died, origin, originCountryId, role, period, ghostText, caption, images[] }
+  infographData: text("infograph_data"),
   createdAt:     text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
