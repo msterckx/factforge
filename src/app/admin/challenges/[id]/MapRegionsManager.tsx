@@ -83,8 +83,9 @@ const EMPTY_ADD: AddState = {
 };
 
 export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Props) {
-  const router   = useRouter();
-  const fileRef  = useRef<HTMLInputElement>(null);
+  const router    = useRouter();
+  const fileRef   = useRef<HTMLInputElement>(null);
+  const jsonImportRef = useRef<HTMLInputElement>(null);
   const [regions, setRegions]         = useState(initialRegions);
   const [loading, setLoading]         = useState(false);
   const [msg, setMsg]                 = useState<string | null>(null);
@@ -95,6 +96,7 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
   const [savingId, setSavingId]       = useState<number | null>(null);
   const [translatingEdit, setTranslatingEdit] = useState(false);
   const [translatingAdd, setTranslatingAdd]   = useState(false);
+  const [jsonImporting, setJsonImporting]     = useState(false);
 
   const enabledCount = regions.filter((r) => r.enabled).length;
 
@@ -139,6 +141,64 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
       flash(data.error ?? "Failed to load defaults", true);
     }
     setLoading(false);
+  }
+
+  /* ── JSON Export ─────────────────────────────────────────────────── */
+  function handleJsonExport() {
+    const data = regions.map(({ regionKey, labelEn, labelNl, capitalEn, capitalNl, infoImageEn, infoTextEn, infoTextNl, infographData, enabled }) => ({
+      regionKey, labelEn, labelNl, capitalEn, capitalNl, infoImageEn, infoTextEn, infoTextNl, infographData, enabled,
+    }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `map-regions-${gameId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ── JSON Import ─────────────────────────────────────────────────── */
+  async function handleJsonImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMsg(null);
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error("Expected a JSON array");
+      if (data.length === 0) throw new Error("Array is empty");
+
+      const confirmed = confirm(
+        `Import ${data.length} region(s)?\n\nThis will DELETE all ${regions.length} existing region(s) and replace them.`
+      );
+      if (!confirmed) {
+        if (jsonImportRef.current) jsonImportRef.current.value = "";
+        return;
+      }
+
+      setJsonImporting(true);
+
+      await Promise.all(regions.map((r) => fetch(`/api/admin/map-regions/${r.id}`, { method: "DELETE" })));
+
+      for (const item of data) {
+        const res = await fetch("/api/admin/map-regions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...item, gameId }),
+        });
+        if (!res.ok) throw new Error(`Failed to create region "${item.regionKey}"`);
+      }
+
+      setJsonImporting(false);
+      if (jsonImportRef.current) jsonImportRef.current.value = "";
+      flash(`Imported ${data.length} regions.`);
+      router.refresh();
+    } catch (err) {
+      flash(err instanceof Error ? err.message : "Invalid JSON", true);
+      setJsonImporting(false);
+      if (jsonImportRef.current) jsonImportRef.current.value = "";
+    }
   }
 
   /* ── CSV Import ───────────────────────────────────────────────────── */
@@ -286,6 +346,30 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
             {loading ? "Loading…" : defaultsConfig.label}
           </button>
         )}
+
+        <span className="text-slate-300 hidden sm:inline">|</span>
+
+        <button
+          onClick={handleJsonExport}
+          disabled={regions.length === 0}
+          className="px-3 py-1.5 text-xs font-medium border border-slate-300 text-slate-600 rounded hover:bg-slate-50 disabled:opacity-40 transition-colors"
+        >
+          ↓ Export JSON
+        </button>
+        <button
+          onClick={() => jsonImportRef.current?.click()}
+          disabled={jsonImporting}
+          className="px-3 py-1.5 text-xs font-medium border border-blue-300 text-blue-600 rounded hover:bg-blue-50 disabled:opacity-40 transition-colors"
+        >
+          {jsonImporting ? "Importing…" : "↑ Import JSON"}
+        </button>
+        <input
+          ref={jsonImportRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleJsonImportFile}
+        />
 
         <span className="text-slate-300 hidden sm:inline">|</span>
 
