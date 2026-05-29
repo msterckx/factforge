@@ -210,7 +210,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       setPlaced((prev) => ({ ...prev, [slotIndex]: item }));
       setSelectedItem(null);
       setPlayerPlaced((p) => p + 1);
-      openInfograph(item);
     } else {
       const newLives = lives - 1;
       setLives(newLives);
@@ -684,8 +683,7 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
             <div className="mx-4 my-4 rounded-xl p-3.5 flex gap-3 items-start bg-black/30 border border-white/5">
               <span className="text-xl flex-shrink-0 leading-none mt-0.5">💡</span>
               <div className="text-[11px] text-slate-300 leading-relaxed">
-                <strong className="text-white">TIP:</strong> The earliest event goes at position 01.
-                Order from earliest to latest.
+                <strong className="text-white">TIP:</strong> The earliest event goes at position 01. Order from earliest to latest. Click a placed event to learn more about it.
               </div>
             </div>
           </div>
