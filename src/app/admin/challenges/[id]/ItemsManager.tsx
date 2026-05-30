@@ -5,22 +5,26 @@ import { useRouter } from "next/navigation";
 import type { ChallengeItem } from "@/data/challengeGame";
 import InfographAdminEditor, {
   type InfographAdminState,
+  type InfographTemplateField,
   EMPTY_INFOGRAPH_ADMIN,
   parseInfographAdmin,
+  parseInfographTemplate,
   serializeInfographAdmin,
+  applyInfographTemplate,
 } from "./InfographAdminEditor";
 
 interface Props {
   gameId: number;
   gameType: string;
   initialItems: ChallengeItem[];
+  infographFields?: string | null;
 }
 
-function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: ChallengeItem; gameType: string; onDeleted: () => void }) {
+function ItemRow({ gameId, item, gameType, template, onDeleted }: { gameId: number; item: ChallengeItem; gameType: string; template: InfographTemplateField[]; onDeleted: () => void }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [vals, setVals] = useState({ ...item });
-  const [igraph, setIgraph] = useState<InfographAdminState>(() => parseInfographAdmin(item.infographData));
+  const [igraph, setIgraph] = useState<InfographAdminState>(() => applyInfographTemplate(parseInfographAdmin(item.infographData), template));
 
   async function save() {
     setSaving(true);
@@ -94,7 +98,7 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
           {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
-          {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} />}
+          {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} template={template.length ? template : undefined} />}
         </div>
         <div className="flex gap-2">
           <button onClick={save} disabled={saving} className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium disabled:opacity-50">
@@ -109,11 +113,11 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
   );
 }
 
-function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType: string; onCreated: () => void }) {
+function NewItemRow({ gameId, gameType, template, onCreated }: { gameId: number; gameType: string; template: InfographTemplateField[]; onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [vals, setVals] = useState({ position: 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "", dates: "", milestoneEn: "", milestoneNl: "", clueEn: "", clueNl: "", hint: "", achievement: "" });
-  const [igraph, setIgraph] = useState<InfographAdminState>({ ...EMPTY_INFOGRAPH_ADMIN, fields: [] });
+  const [igraph, setIgraph] = useState<InfographAdminState>(() => applyInfographTemplate({ ...EMPTY_INFOGRAPH_ADMIN, fields: [] }, template));
 
   async function save() {
     setSaving(true);
@@ -168,7 +172,7 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
           {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
-          {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} />}
+          {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} template={template.length ? template : undefined} />}
         </div>
         <div className="flex gap-2">
           <button onClick={save} disabled={saving} className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium disabled:opacity-50">
@@ -183,7 +187,8 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
   );
 }
 
-export default function ItemsManager({ gameId, gameType, initialItems }: Props) {
+export default function ItemsManager({ gameId, gameType, initialItems, infographFields }: Props) {
+  const template = parseInfographTemplate(infographFields);
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [importing, setImporting] = useState(false);
@@ -303,10 +308,11 @@ export default function ItemsManager({ gameId, gameType, initialItems }: Props) 
                 gameId={gameId}
                 item={item}
                 gameType={gameType}
+                template={template}
                 onDeleted={refresh}
               />
             ))}
-            <NewItemRow gameId={gameId} gameType={gameType} onCreated={refresh} />
+            <NewItemRow gameId={gameId} gameType={gameType} template={template} onCreated={refresh} />
           </tbody>
         </table>
       </div>

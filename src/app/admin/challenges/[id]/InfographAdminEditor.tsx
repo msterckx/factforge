@@ -2,6 +2,54 @@
 
 import { useState } from "react";
 
+// ── Challenge-level field template ────────────────────────────────────────────
+
+export interface InfographTemplateField {
+  label:   string;
+  accent?: boolean;
+  showBar?: boolean;
+}
+
+export function parseInfographTemplate(raw: string | null | undefined): InfographTemplateField[] {
+  if (!raw) return [];
+  try {
+    const d = JSON.parse(raw);
+    if (!Array.isArray(d)) return [];
+    return (d as InfographTemplateField[]).filter((f) => f.label?.trim());
+  } catch { return []; }
+}
+
+export function serializeInfographTemplate(fields: InfographTemplateField[]): string | null {
+  const valid = fields.filter((f) => f.label.trim());
+  if (!valid.length) return null;
+  return JSON.stringify(valid.map((f) => ({
+    label: f.label,
+    ...(f.accent  ? { accent:  true } : {}),
+    ...(f.showBar ? { showBar: true } : {}),
+  })));
+}
+
+// Merges a template into an InfographAdminState, preserving existing values.
+export function applyInfographTemplate(
+  state: InfographAdminState,
+  template: InfographTemplateField[],
+): InfographAdminState {
+  if (!template.length) return state;
+  const byLabel: Record<string, { value: string; barPct: string }> = {};
+  for (const f of state.fields) byLabel[f.label] = { value: f.value, barPct: f.barPct };
+  return {
+    ...state,
+    fields: template.map((t) => ({
+      label:  t.label,
+      value:  byLabel[t.label]?.value  ?? "",
+      barPct: t.showBar ? (byLabel[t.label]?.barPct ?? "") : "",
+      accent: t.accent ?? false,
+    })),
+  };
+}
+
+// ── Per-item field state ──────────────────────────────────────────────────────
+
 export interface InfographAdminField {
   label:  string;
   value:  string;
@@ -106,15 +154,29 @@ export function serializeInfographAdmin(s: InfographAdminState): string | null {
 const inp = "w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white";
 
 interface Props {
-  value:    InfographAdminState;
-  onChange: (v: InfographAdminState) => void;
+  value:     InfographAdminState;
+  onChange:  (v: InfographAdminState) => void;
+  template?: InfographTemplateField[]; // when set, fields are locked to template structure
 }
 
-export default function InfographAdminEditor({ value, onChange }: Props) {
+export default function InfographAdminEditor({ value, onChange, template }: Props) {
   const [open, setOpen] = useState(false);
+  const hasTemplate = template && template.length > 0;
 
   function set<K extends keyof InfographAdminState>(key: K, val: InfographAdminState[K]) {
     onChange({ ...value, [key]: val });
+  }
+
+  function setFieldValue(idx: number, val: string) {
+    const fields = [...value.fields];
+    fields[idx] = { ...fields[idx], value: val };
+    onChange({ ...value, fields });
+  }
+
+  function setFieldBarPct(idx: number, val: string) {
+    const fields = [...value.fields];
+    fields[idx] = { ...fields[idx], barPct: val };
+    onChange({ ...value, fields });
   }
 
   function setField(idx: number, key: keyof InfographAdminField, val: string | boolean) {
@@ -162,7 +224,39 @@ export default function InfographAdminEditor({ value, onChange }: Props) {
             </div>
           </div>
 
-          {/* Variable fields */}
+          {/* Fields — template mode: value inputs only */}
+          {hasTemplate ? (
+            <div>
+              <div className="text-xs font-medium text-slate-500 mb-1">Key info values</div>
+              <div className="space-y-1.5">
+                {template.map((t, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <span className={`w-32 flex-shrink-0 text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 border border-slate-200 truncate ${t.accent ? "font-semibold text-indigo-600" : ""}`}>
+                      {t.label}
+                    </span>
+                    <input
+                      className={`${inp} flex-1 min-w-0`}
+                      placeholder="Value"
+                      value={value.fields[i]?.value ?? ""}
+                      onChange={(e) => setFieldValue(i, e.target.value)}
+                    />
+                    {t.showBar && (
+                      <input
+                        className={`${inp} w-14 flex-shrink-0`}
+                        placeholder="Bar%"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={value.fields[i]?.barPct ?? ""}
+                        onChange={(e) => setFieldBarPct(i, e.target.value)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+          /* Free-form fields mode */
           <div>
             <div className="text-xs font-medium text-slate-500 mb-1">
               Key info fields
@@ -220,6 +314,7 @@ export default function InfographAdminEditor({ value, onChange }: Props) {
               + Add field
             </button>
           </div>
+          )} {/* end free-form fields */}
 
           {/* Images */}
           <div>

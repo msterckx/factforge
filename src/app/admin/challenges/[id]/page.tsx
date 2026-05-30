@@ -43,7 +43,7 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
       {game.gameType !== "quiz" && game.gameType !== "map" && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
-          <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} />
+          <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} infographFields={game.infographFields} />
         </div>
       )}
       {game.gameType === "map" && (
