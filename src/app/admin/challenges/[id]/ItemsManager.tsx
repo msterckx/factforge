@@ -3,6 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { ChallengeItem } from "@/data/challengeGame";
+import InfographAdminEditor, {
+  type InfographAdminState,
+  EMPTY_INFOGRAPH_ADMIN,
+  parseInfographAdmin,
+  serializeInfographAdmin,
+} from "./InfographAdminEditor";
 
 interface Props {
   gameId: number;
@@ -10,136 +16,18 @@ interface Props {
   initialItems: ChallengeItem[];
 }
 
-interface InfographFields {
-  born: string;
-  died: string;
-  origin: string;
-  originCountryId: string;
-  role: string;
-  period: string;
-  description: string;
-  ghostText: string;
-  caption: string;
-  images: string; // newline-separated URLs, same as map infograph
-}
-
-const DEFAULT_INFOGRAPH: InfographFields = {
-  born: "", died: "", origin: "", originCountryId: "",
-  role: "", period: "", description: "", ghostText: "", caption: "",
-  images: "",
-};
-
-function parseInfograph(raw: string | null | undefined): InfographFields {
-  if (!raw) return { ...DEFAULT_INFOGRAPH };
-  try {
-    const p = JSON.parse(raw);
-    return {
-      born:            p.born            ?? "",
-      died:            p.died            ?? "",
-      origin:          p.origin          ?? "",
-      originCountryId: p.originCountryId != null ? String(p.originCountryId) : "",
-      role:            p.role            ?? "",
-      period:          p.period          ?? "",
-      description:     p.description     ?? "",
-      ghostText:       p.ghostText       ?? "",
-      caption:         p.caption         ?? "",
-      images:          Array.isArray(p.images) ? p.images.join("\n") : "",
-    };
-  } catch { return { ...DEFAULT_INFOGRAPH }; }
-}
-
-function serializeInfograph(ig: InfographFields): string | null {
-  const images = ig.images.split("\n").map((s) => s.trim()).filter(Boolean);
-  const hasAny = ig.born || ig.died || ig.origin || ig.originCountryId || ig.role || ig.period || images.length;
-  if (!hasAny) return null;
-  return JSON.stringify({
-    born:            ig.born,
-    died:            ig.died,
-    origin:          ig.origin,
-    originCountryId: ig.originCountryId ? Number(ig.originCountryId) : undefined,
-    role:            ig.role,
-    period:          ig.period,
-    description:     ig.description || undefined,
-    ghostText:       ig.ghostText   || undefined,
-    caption:         ig.caption   || undefined,
-    images,
-  });
-}
-
-function InfographEditor({ value, onChange }: { value: InfographFields; onChange: (v: InfographFields) => void }) {
-  const [open, setOpen] = useState(false);
-  const set = (key: keyof InfographFields, val: string) => onChange({ ...value, [key]: val });
-
-  const inp = (label: string, key: keyof InfographFields, placeholder?: string, full?: boolean) => (
-    <div className={full ? "col-span-2" : ""}>
-      <label className="block text-xs font-medium text-slate-500 mb-0.5">{label}</label>
-      <input
-        value={value[key]}
-        onChange={(e) => set(key, e.target.value)}
-        placeholder={placeholder}
-        className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
-      />
-    </div>
-  );
-
-  return (
-    <div className="col-span-2 border border-indigo-200 rounded bg-indigo-50/40">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
-      >
-        <span>Infograph data</span>
-        <span className="text-indigo-400">{open ? "▲" : "▼"}</span>
-      </button>
-      {open && (
-        <div className="px-3 pb-3 grid grid-cols-2 gap-2">
-          {inp("Born", "born", "1889")}
-          {inp("Died", "died", "1945")}
-          {inp("Origin country", "origin", "Austria")}
-          {inp("Country ID (ISO 3166-1 numeric)", "originCountryId", "40")}
-          {inp("Role", "role", "Dictator of Nazi Germany", true)}
-          {inp("Historical Period", "period", "World War II")}
-          {inp("Ghost text", "ghostText", "WWII (optional)")}
-          {inp("Caption", "caption", "Adolf Hitler · 1889–1945 (optional)", true)}
-          <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-500 mb-0.5">Description (optional)</label>
-            <textarea
-              rows={3}
-              value={value.description}
-              onChange={(e) => set("description", e.target.value)}
-              placeholder="A few sentences about this person…"
-              className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white resize-y"
-            />
-          </div>
-          <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-500 mb-1">Images (one URL per line)</label>
-            <textarea
-              rows={4}
-              value={value.images}
-              onChange={(e) => set("images", e.target.value)}
-              placeholder={"https://…\nhttps://…"}
-              className="w-full border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white font-mono resize-y"
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: ChallengeItem; gameType: string; onDeleted: () => void }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [vals, setVals] = useState({ ...item });
-  const [igraph, setIgraph] = useState<InfographFields>(() => parseInfograph(item.infographData));
+  const [igraph, setIgraph] = useState<InfographAdminState>(() => parseInfographAdmin(item.infographData));
 
   async function save() {
     setSaving(true);
     await fetch(`/api/admin/challenges/${gameId}/items/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfograph(igraph) : undefined }),
+      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfographAdmin(igraph) : undefined }),
     });
     setSaving(false);
     setEditing(false);
@@ -206,7 +94,7 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
           {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
-          {(gameType === "matching" || gameType === "chronology") && <InfographEditor value={igraph} onChange={setIgraph} />}
+          {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} />}
         </div>
         <div className="flex gap-2">
           <button onClick={save} disabled={saving} className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium disabled:opacity-50">
@@ -225,14 +113,14 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [vals, setVals] = useState({ position: 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "", dates: "", milestoneEn: "", milestoneNl: "", clueEn: "", clueNl: "", hint: "", achievement: "" });
-  const [igraph, setIgraph] = useState<InfographFields>({ ...DEFAULT_INFOGRAPH });
+  const [igraph, setIgraph] = useState<InfographAdminState>({ ...EMPTY_INFOGRAPH_ADMIN, fields: [] });
 
   async function save() {
     setSaving(true);
     await fetch(`/api/admin/challenges/${gameId}/items`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfograph(igraph) : undefined }),
+      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfographAdmin(igraph) : undefined }),
     });
     setSaving(false);
     setOpen(false);
@@ -280,7 +168,7 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
           {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
-          {(gameType === "matching" || gameType === "chronology") && <InfographEditor value={igraph} onChange={setIgraph} />}
+          {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} />}
         </div>
         <div className="flex gap-2">
           <button onClick={save} disabled={saving} className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium disabled:opacity-50">
