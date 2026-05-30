@@ -144,6 +144,7 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
   const [lives, setLives] = useState(maxLives);
   const [hintedSlots, setHintedSlots] = useState<Set<number>>(new Set());
   const [gameOver, setGameOver] = useState(false);
+  const [hoveredOptionId, setHoveredOptionId] = useState<number | null>(null);
 
   // Stable shuffled order for the options panel; re-shuffles on reset via resetKey
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,8 +161,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
   const dragStart  = useRef<{ x: number; y: number } | null>(null);
   const isDragging = useRef(false);
   const ghostRef   = useRef<HTMLDivElement | null>(null);
-  const hintSpanRef       = useRef<HTMLSpanElement | null>(null);
-  const dragTargetCenter  = useRef<{ x: number; y: number } | null>(null);
 
   const placedCount  = Object.keys(placed).length;
   const allCorrect   = placedCount === items.length && !gameOver;
@@ -246,9 +245,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       top: `${y - 22}px`,
       zIndex: "9999",
       pointerEvents: "none",
-      display: "flex",
-      alignItems: "center",
-      gap: "5px",
       background: "#fef3c7",
       border: "2px solid #f59e0b",
       borderRadius: "9999px",
@@ -260,16 +256,9 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
       userSelect: "none",
     });
-    const nameSpan = document.createElement("span");
-    nameSpan.textContent = name;
-    const hint = document.createElement("span");
-    hint.style.fontSize = "14px";
-    hint.textContent = "❄️";
-    el.appendChild(nameSpan);
-    el.appendChild(hint);
+    el.textContent = name;
     document.body.appendChild(el);
     ghostRef.current = el;
-    hintSpanRef.current = hint;
   }
 
   function moveGhost(x: number, y: number) {
@@ -284,8 +273,6 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       document.body.removeChild(ghostRef.current);
       ghostRef.current = null;
     }
-    hintSpanRef.current = null;
-    dragTargetCenter.current = null;
   }
 
   function slotUnderPoint(x: number, y: number): number | null {
@@ -316,26 +303,11 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       isDragging.current = true;
       setSelectedItem(null);
       createGhost(dragItem.current.name, e.clientX, e.clientY);
-
-      // Hot/cold: find target center only when dragging the correct item for the active slot
-      const correctSlotIndex = items.findIndex((x) => x.id === dragItem.current!.id);
-      if (correctSlotIndex === placedCount) {
-        const slotEl = document.querySelector("[data-slot]");
-        if (slotEl) {
-          const r = slotEl.getBoundingClientRect();
-          dragTargetCenter.current = { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
-        }
-      }
     }
 
     if (isDragging.current) {
       moveGhost(e.clientX, e.clientY);
       setDragOverSlot(slotUnderPoint(e.clientX, e.clientY));
-
-      if (hintSpanRef.current && dragTargetCenter.current) {
-        const dist = Math.hypot(e.clientX - dragTargetCenter.current.x, e.clientY - dragTargetCenter.current.y);
-        hintSpanRef.current.textContent = dist < 40 ? "🔥" : dist < 100 ? "♨️" : dist < 200 ? "🌡️" : "❄️";
-      }
     }
   }
 
@@ -379,10 +351,21 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
     setLives(maxLives);
     setHintedSlots(new Set());
     setGameOver(false);
+    setHoveredOptionId(null);
     setResetKey((k) => k + 1);
     removeGhost();
     dragItem.current = null;
     isDragging.current = false;
+  }
+
+  // ── Hot/cold helper ───────────────────────────────────────────────────────
+  function tempEmoji(item: ChronologyItem): string {
+    const correctSlot = items.findIndex((x) => x.id === item.id);
+    const diff = Math.abs(correctSlot - placedCount);
+    if (diff === 0) return "🔥";
+    if (diff === 1) return "♨️";
+    if (diff <= 3) return "🌡️";
+    return "❄️";
   }
 
   return (
@@ -635,6 +618,7 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
               {shuffledOptions.map((item, idx) => {
                 const isItemPlaced = placedIds.has(item.id);
                 const isSelected   = selectedItem?.id === item.id;
+                const isHovered    = !isItemPlaced && !gameOver && !allCorrect && hoveredOptionId === item.id;
 
                 return (
                   <div
@@ -647,6 +631,8 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
                     onPointerMove={!isItemPlaced ? handleChipPointerMove : undefined}
                     onPointerUp={!isItemPlaced ? handleChipPointerUp : undefined}
                     onPointerCancel={!isItemPlaced ? handleChipPointerCancel : undefined}
+                    onMouseEnter={!isItemPlaced && !gameOver && !allCorrect ? () => setHoveredOptionId(item.id) : undefined}
+                    onMouseLeave={!isItemPlaced ? () => setHoveredOptionId(null) : undefined}
                     style={!isItemPlaced ? { touchAction: "none", userSelect: "none" } : undefined}
                     className={[
                       "flex items-center gap-2 min-h-[58px] px-2.5 py-2 border-b border-slate-200 last:border-b-0 transition-colors",
@@ -694,15 +680,19 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
                       )}
                     </div>
 
-                    {/* Status circle */}
-                    <div
-                      className={[
-                        "flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black",
-                        isItemPlaced ? "bg-green-600 text-white" : "border-2 border-slate-300",
-                      ].join(" ")}
-                    >
-                      {isItemPlaced && "✓"}
-                    </div>
+                    {/* Hot/cold indicator (hover) or status circle (placed) */}
+                    {isHovered ? (
+                      <span className="flex-shrink-0 text-base leading-none">{tempEmoji(item)}</span>
+                    ) : (
+                      <div
+                        className={[
+                          "flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black",
+                          isItemPlaced ? "bg-green-600 text-white" : "border-2 border-slate-300",
+                        ].join(" ")}
+                      >
+                        {isItemPlaced && "✓"}
+                      </div>
+                    )}
                   </div>
                 );
               })}
