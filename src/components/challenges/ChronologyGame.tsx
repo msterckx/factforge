@@ -211,6 +211,7 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       setPlaced((prev) => ({ ...prev, [slotIndex]: item }));
       setSelectedItem(null);
       setPlayerPlaced((p) => p + 1);
+      if (item.infographData) setTimeout(() => openInfograph(item), 500);
     } else {
       const newLives = lives - 1;
       setLives(newLives);
