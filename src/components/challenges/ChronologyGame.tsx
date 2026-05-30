@@ -160,6 +160,8 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
   const dragStart  = useRef<{ x: number; y: number } | null>(null);
   const isDragging = useRef(false);
   const ghostRef   = useRef<HTMLDivElement | null>(null);
+  const hintSpanRef       = useRef<HTMLSpanElement | null>(null);
+  const dragTargetCenter  = useRef<{ x: number; y: number } | null>(null);
 
   const placedCount  = Object.keys(placed).length;
   const allCorrect   = placedCount === items.length && !gameOver;
@@ -244,6 +246,9 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       top: `${y - 22}px`,
       zIndex: "9999",
       pointerEvents: "none",
+      display: "flex",
+      alignItems: "center",
+      gap: "5px",
       background: "#fef3c7",
       border: "2px solid #f59e0b",
       borderRadius: "9999px",
@@ -255,9 +260,16 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
       userSelect: "none",
     });
-    el.textContent = name;
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = name;
+    const hint = document.createElement("span");
+    hint.style.fontSize = "14px";
+    hint.textContent = "❄️";
+    el.appendChild(nameSpan);
+    el.appendChild(hint);
     document.body.appendChild(el);
     ghostRef.current = el;
+    hintSpanRef.current = hint;
   }
 
   function moveGhost(x: number, y: number) {
@@ -272,6 +284,8 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       document.body.removeChild(ghostRef.current);
       ghostRef.current = null;
     }
+    hintSpanRef.current = null;
+    dragTargetCenter.current = null;
   }
 
   function slotUnderPoint(x: number, y: number): number | null {
@@ -302,11 +316,26 @@ export default function ChronologyGame({ items, dict, challengeId, startingLives
       isDragging.current = true;
       setSelectedItem(null);
       createGhost(dragItem.current.name, e.clientX, e.clientY);
+
+      // Hot/cold: find target center only when dragging the correct item for the active slot
+      const correctSlotIndex = items.findIndex((x) => x.id === dragItem.current!.id);
+      if (correctSlotIndex === placedCount) {
+        const slotEl = document.querySelector("[data-slot]");
+        if (slotEl) {
+          const r = slotEl.getBoundingClientRect();
+          dragTargetCenter.current = { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+        }
+      }
     }
 
     if (isDragging.current) {
       moveGhost(e.clientX, e.clientY);
       setDragOverSlot(slotUnderPoint(e.clientX, e.clientY));
+
+      if (hintSpanRef.current && dragTargetCenter.current) {
+        const dist = Math.hypot(e.clientX - dragTargetCenter.current.x, e.clientY - dragTargetCenter.current.y);
+        hintSpanRef.current.textContent = dist < 40 ? "🔥" : dist < 100 ? "♨️" : dist < 200 ? "🌡️" : "❄️";
+      }
     }
   }
 
