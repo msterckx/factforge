@@ -162,17 +162,11 @@ export default function InfographAdminEditor({ value, onChange }: Props) {
             </div>
           </div>
 
-          {/* Type label */}
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-0.5">Type label (e.g. "WWII" or "National Park")</label>
-            <input className={inp} placeholder="e.g. WWII" value={value.typeLabel} onChange={(e) => set("typeLabel", e.target.value)} />
-          </div>
-
           {/* Variable fields */}
           <div>
             <div className="text-xs font-medium text-slate-500 mb-1">
               Key info fields
-              <span className="ml-1 font-normal text-slate-400">(Label · Value · Bar% · ★accent)</span>
+              <span className="ml-1 font-normal text-slate-400">(Label · Value · Bar% · ★ accent — first ★ field becomes the top label)</span>
             </div>
             <div className="space-y-1.5">
               {value.fields.map((f, i) => (
