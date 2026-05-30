@@ -139,7 +139,7 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
     await fetch(`/api/admin/challenges/${gameId}/items/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...vals, infographData: gameType === "matching" ? serializeInfograph(igraph) : undefined }),
+      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfograph(igraph) : undefined }),
     });
     setSaving(false);
     setEditing(false);
@@ -159,7 +159,7 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
           <div className="font-medium text-slate-800 text-sm">{item.name}</div>
           {gameType === "chronology" && <div className="text-slate-400 text-xs">{item.dates}</div>}
           {gameType === "puzzle" && <div className="text-slate-400 text-xs">{item.hint}</div>}
-          {gameType === "matching" && item.infographData && (
+          {(gameType === "matching" || gameType === "chronology") && item.infographData && (
             <div className="text-indigo-400 text-xs">infograph ✓</div>
           )}
         </td>
@@ -206,7 +206,7 @@ function ItemRow({ gameId, item, gameType, onDeleted }: { gameId: number; item: 
           {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
-          {gameType === "matching" && <InfographEditor value={igraph} onChange={setIgraph} />}
+          {(gameType === "matching" || gameType === "chronology") && <InfographEditor value={igraph} onChange={setIgraph} />}
         </div>
         <div className="flex gap-2">
           <button onClick={save} disabled={saving} className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium disabled:opacity-50">
@@ -232,7 +232,7 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
     await fetch(`/api/admin/challenges/${gameId}/items`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...vals, infographData: gameType === "matching" ? serializeInfograph(igraph) : undefined }),
+      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfograph(igraph) : undefined }),
     });
     setSaving(false);
     setOpen(false);
@@ -280,7 +280,7 @@ function NewItemRow({ gameId, gameType, onCreated }: { gameId: number; gameType:
           {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
-          {gameType === "matching" && <InfographEditor value={igraph} onChange={setIgraph} />}
+          {(gameType === "matching" || gameType === "chronology") && <InfographEditor value={igraph} onChange={setIgraph} />}
         </div>
         <div className="flex gap-2">
           <button onClick={save} disabled={saving} className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium disabled:opacity-50">
