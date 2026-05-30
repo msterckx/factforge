@@ -144,11 +144,14 @@ export default function InfographPanel({ name, data, onDismiss }: Props) {
 
           {/* Right: data panel */}
           <div className="flex-1 flex flex-col px-6 py-5 overflow-y-auto">
-            {data.typeLabel && (
-              <div className="text-[10px] font-semibold text-[#a7c957] uppercase tracking-[0.2em] mb-1">
-                {data.typeLabel}
-              </div>
-            )}
+            {(() => {
+              const label = data.typeLabel ?? fields.find((f) => f.accent)?.value;
+              return label ? (
+                <div className="text-[10px] font-semibold text-[#a7c957] uppercase tracking-[0.2em] mb-1">
+                  {label}
+                </div>
+              ) : null;
+            })()}
 
             <h2 className="text-xl font-bold text-white leading-tight mb-4">{name}</h2>
 
