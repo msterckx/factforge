@@ -3,6 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { ChallengeGame } from "@/data/challengeGame";
+import {
+  type InfographTemplateField,
+  parseInfographTemplate,
+  serializeInfographTemplate,
+} from "./InfographAdminEditor";
 
 interface CategoryOption { id: number; name: string; slug: string; subcategories: { id: number; name: string }[] }
 interface MapOption { label: string; value: string }
@@ -29,6 +34,9 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
   const [subtitleNl, setSubtitleNl] = useState(game.subtitleNl);
   const [translatingTitle, setTranslatingTitle] = useState(false);
   const [translatingSubtitle, setTranslatingSubtitle] = useState(false);
+  const [infographTemplate, setInfographTemplate] = useState<InfographTemplateField[]>(
+    () => parseInfographTemplate(game.infographFields)
+  );
 
   useEffect(() => {
     fetch("/api/admin/categories").then((r) => r.json()).then(setDbCategories).catch(() => {});
@@ -109,6 +117,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       connectionsRightLabelNl: fd.get("connectionsRightLabelNl") || null,
       mapSvg:                  fd.get("mapSvg")       || null,
       mapLabelMode:            fd.get("mapLabelMode") || null,
+      infographFields:         serializeInfographTemplate(infographTemplate),
     };
     const res = await fetch(`/api/admin/challenges/${game.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
@@ -369,6 +378,74 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
               </span>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Infograph field template */}
+      {(gameType === "matching" || gameType === "chronology" || gameType === "map") && (
+        <div className="border border-indigo-200 bg-indigo-50/40 rounded-xl p-4 space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-indigo-800">Infograph field template</p>
+            <p className="text-xs text-indigo-500 mt-0.5">
+              Define the fields once here; each item only needs values. ★ marks an accent field — its value becomes the top label on the panel.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            {infographTemplate.map((f, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  placeholder="Field label (e.g. Born)"
+                  value={f.label}
+                  onChange={(e) => {
+                    const t = [...infographTemplate];
+                    t[i] = { ...t[i], label: e.target.value };
+                    setInfographTemplate(t);
+                  }}
+                />
+                <label className="flex items-center gap-1 text-xs text-slate-600 flex-shrink-0 cursor-pointer" title="Show progress bar">
+                  <input
+                    type="checkbox"
+                    checked={!!f.showBar}
+                    className="w-3.5 h-3.5"
+                    onChange={(e) => {
+                      const t = [...infographTemplate];
+                      t[i] = { ...t[i], showBar: e.target.checked };
+                      setInfographTemplate(t);
+                    }}
+                  />
+                  Bar
+                </label>
+                <label className="flex items-center gap-1 text-xs text-slate-600 flex-shrink-0 cursor-pointer" title="Accent — value becomes top label">
+                  <input
+                    type="checkbox"
+                    checked={!!f.accent}
+                    className="w-3.5 h-3.5"
+                    onChange={(e) => {
+                      const t = [...infographTemplate];
+                      t[i] = { ...t[i], accent: e.target.checked };
+                      setInfographTemplate(t);
+                    }}
+                  />
+                  ★
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setInfographTemplate(infographTemplate.filter((_, j) => j !== i))}
+                  className="text-red-400 hover:text-red-600 text-lg leading-none flex-shrink-0"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setInfographTemplate([...infographTemplate, { label: "" }])}
+            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+          >
+            + Add field
+          </button>
         </div>
       )}
 

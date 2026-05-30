@@ -151,6 +151,8 @@ export const challengeGames = sqliteTable("challenge_games", {
   // Map-type specific
   mapSvg:            text("map_svg"),        // path like "/maps/africa.svg"
   mapLabelMode:      text("map_label_mode"), // "country" | "capital" | "both"
+  // Infograph field template: JSON array of {label, accent?, showBar?} shared across all items
+  infographFields:   text("infograph_fields"),
   createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
