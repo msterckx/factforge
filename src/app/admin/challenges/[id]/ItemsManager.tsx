@@ -201,7 +201,8 @@ export default function ItemsManager({ gameId, gameType, initialItems, infograph
 
   function handleExport() {
     const data = items.map(({ position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, clueEn, clueNl, hint, achievement, infographData }) => ({
-      position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, clueEn, clueNl, hint, achievement, infographData,
+      position, name, imageUrl, descriptionEn, descriptionNl, dates, milestoneEn, milestoneNl, clueEn, clueNl, hint, achievement,
+      infographData: infographData ? (() => { try { return JSON.parse(infographData); } catch { return infographData; } })() : null,
     }));
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -244,10 +245,13 @@ export default function ItemsManager({ gameId, gameType, initialItems, infograph
       );
 
       for (const item of data) {
+        const infographData = item.infographData == null ? null
+          : typeof item.infographData === "string" ? item.infographData
+          : JSON.stringify(item.infographData);
         const res = await fetch(`/api/admin/challenges/${gameId}/items`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(item),
+          body: JSON.stringify({ ...item, infographData }),
         });
         if (!res.ok) throw new Error(`Failed to create item "${item.name}"`);
       }
