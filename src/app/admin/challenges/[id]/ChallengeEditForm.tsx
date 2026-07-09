@@ -152,6 +152,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
             <option value="quiz">Quiz</option>
             <option value="connections">Connections</option>
             <option value="map">Map</option>
+            <option value="map_quiz">Map Quiz</option>
           </select>
         </div>
         <div>
@@ -320,7 +321,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       )}
 
       {/* Map config */}
-      {gameType === "map" && (
+      {(gameType === "map" || gameType === "map_quiz") && (
         <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-emerald-800">Map Settings</p>
           <div className="grid grid-cols-2 gap-3">
@@ -382,7 +383,7 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       )}
 
       {/* Infograph field template */}
-      {(gameType === "matching" || gameType === "chronology" || gameType === "map") && (
+      {(gameType === "matching" || gameType === "chronology" || gameType === "map" || gameType === "map_quiz") && (
         <div className="border border-indigo-200 bg-indigo-50/40 rounded-xl p-4 space-y-3">
           <div>
             <p className="text-sm font-semibold text-indigo-800">Infograph field template</p>

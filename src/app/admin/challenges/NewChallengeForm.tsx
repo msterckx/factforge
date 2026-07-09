@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { GeneratedChallengeItem } from "@/lib/openai";
 
-type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "map";
+type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "map" | "map_quiz";
 
 interface CategoryOption { id: number; name: string; slug: string; subcategories: { id: number; name: string }[] }
 

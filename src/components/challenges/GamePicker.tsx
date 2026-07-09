@@ -6,7 +6,7 @@ import type { Dictionary } from "@/i18n/en";
 import { useCompletedChallenges, type CompletedMap } from "@/hooks/useCompletedChallenges";
 
 export type GameCategory = string;
-export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "map" | "other";
+export type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "map" | "map_quiz" | "other";
 
 export interface GameEntry {
   challengeId: string;
@@ -35,6 +35,7 @@ const gameTypeIcons: Record<GameType, string> = {
   quiz:        "❓",
   connections: "🔀",
   map:         "🗺️",
+  map_quiz:    "🗺️",
   other:       "🎮",
 };
 
@@ -228,6 +229,7 @@ export default function GamePicker({ games, dict, categoryNames = {} }: Props) {
     quiz:        dict.gameTypeQuiz,
     connections: dict.gameTypeConnections,
     map:         dict.gameTypeMap,
+    map_quiz:    dict.gameTypeMap,
     other:       "Other",
   };
 
