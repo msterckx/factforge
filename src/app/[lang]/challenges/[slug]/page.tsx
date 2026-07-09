@@ -19,6 +19,7 @@ import PuzzleGame from "@/components/challenges/PuzzleGame";
 import QuizChallenge from "@/components/challenges/QuizChallenge";
 import ConnectionsGame from "@/components/challenges/ConnectionsGame";
 import MapChallenge from "@/components/challenges/MapChallenge";
+import MapQuizChallenge from "@/components/challenges/MapQuizChallenge";
 import type { QuizQuestion } from "@/components/challenges/QuizChallenge";
 import StartChallengeButton from "./StartChallengeButton";
 import ClientOnly from "@/components/ClientOnly";
@@ -112,7 +113,7 @@ export default async function ChallengePage({ params }: Props) {
   const items = (game.gameType !== "quiz" && game.gameType !== "map") ? getChallengeItems(game.id) : [];
 
   // ── Map regions ───────────────────────────────────────────────────────────
-  const mapRegions = game.gameType === "map" ? getMapRegions(game.id) : [];
+  const mapRegions = (game.gameType === "map" || game.gameType === "map_quiz") ? getMapRegions(game.id) : [];
 
   return (
     <div className="max-w-[1408px] mx-auto">
@@ -175,6 +176,15 @@ export default async function ChallengePage({ params }: Props) {
       )}
       {game.gameType === "map" && (
         <MapChallenge
+          regions={mapRegions}
+          game={game}
+          dict={d}
+          challengeId={game.slug}
+          lang={lang}
+        />
+      )}
+      {game.gameType === "map_quiz" && (
+        <MapQuizChallenge
           regions={mapRegions}
           game={game}
           dict={d}
