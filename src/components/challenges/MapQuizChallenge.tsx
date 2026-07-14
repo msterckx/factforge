@@ -560,61 +560,57 @@ export default function MapQuizChallenge({ regions, game, dict, challengeId, lan
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col gap-4">
         {/* Map */}
-        <div className="flex-1 min-w-0">
-          <div className="relative rounded-2xl overflow-hidden border border-slate-700 bg-[#060e1f]">
-            {!geoReady && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-slate-400 text-sm animate-pulse">Loading map…</span>
-              </div>
-            )}
-            <svg
-              ref={svgRef}
-              viewBox={`0 0 ${VW} ${VH}`}
-              className="w-full h-auto block"
-              style={{ opacity: geoReady ? 1 : 0, transition: "opacity 0.4s ease" }}
-            />
-          </div>
-        </div>
-
-        {/* Answer panel */}
-        <div className="lg:w-64 xl:w-72 flex-shrink-0 flex flex-col gap-3">
-          {phase === "question" || phase === "revealed" ? (
-            <>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                Where is this?
-              </p>
-              <div className="flex flex-col gap-2">
-                {options.map((label, idx) => {
-                  const state = optionStates[idx];
-                  let cls = "bg-slate-800 hover:bg-slate-700 text-white";
-                  if (state === "correct") cls = "bg-emerald-600 text-white";
-                  if (state === "wrong")   cls = "bg-red-500 text-white";
-                  return (
-                    <button
-                      key={label}
-                      onClick={() => handleAnswer(label, idx)}
-                      disabled={phase !== "question"}
-                      className={`w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors text-left shadow-sm ${cls} disabled:cursor-default`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : null}
-
-          {gameOver && (
-            <button
-              onClick={restart}
-              className="mt-2 w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors"
-            >
-              {dict.playAgain}
-            </button>
+        <div className="relative rounded-2xl overflow-hidden border border-slate-700 bg-[#060e1f]">
+          {!geoReady && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-slate-400 text-sm animate-pulse">Loading map…</span>
+            </div>
           )}
+          <svg
+            ref={svgRef}
+            viewBox={`0 0 ${VW} ${VH}`}
+            className="w-full h-auto block"
+            style={{ opacity: geoReady ? 1 : 0, transition: "opacity 0.4s ease" }}
+          />
         </div>
+
+        {/* Answer panel — bottom, buttons side by side */}
+        {(phase === "question" || phase === "revealed") && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              Where is this?
+            </p>
+            <div className="flex gap-2">
+              {options.map((label, idx) => {
+                const state = optionStates[idx];
+                let cls = "bg-slate-800 hover:bg-slate-700 text-white";
+                if (state === "correct") cls = "bg-emerald-600 text-white";
+                if (state === "wrong")   cls = "bg-red-500 text-white";
+                return (
+                  <button
+                    key={label}
+                    onClick={() => handleAnswer(label, idx)}
+                    disabled={phase !== "question"}
+                    className={`flex-1 px-4 py-3 text-sm font-medium rounded-xl transition-colors text-center shadow-sm ${cls} disabled:cursor-default`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {gameOver && (
+          <button
+            onClick={restart}
+            className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            {dict.playAgain}
+          </button>
+        )}
       </div>
 
       {/* Info panel — shown after correct answer zoom */}
