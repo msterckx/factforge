@@ -1,25 +1,28 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * gen-map-video.js
- * Generates a HyperFrames HTML composition for a map quiz YouTube video.
+ * gen-map-video-carousel.js
+ * Map quiz video — carousel variant.
+ * Same question/answer reveal as gen-map-video.js, but after the answer is
+ * shown the map cuts away to a full-screen image slideshow of the location.
  *
  * Usage:
- *   node scripts/gen-map-video.js \
- *     --regions=path/to/regions.json \
+ *   node scripts/gen-map-video-carousel.js \
+ *     --regions=map-regions-27.json \
  *     --geojson=public/maps/south_america_parks_20260504.geojson \
- *     --output=videos/map-challenge/sa-parks/index.html \
+ *     --output=videos/map-challenge/sa-parks-carousel/index.html \
  *     --title="South American National Parks" \
  *     --bg=south_america
  *
  * Options:
  *   --regions     Path to exported regions JSON (required)
  *   --geojson     Path to parks GeoJSON with Point features (required)
- *   --output      Output HTML path (default: videos/map-video/index.html)
- *   --title       Video title shown on opening card (default: "National Parks Quiz")
- *   --bg          Background continent preset: south_america | africa | north_america (default: south_america)
+ *   --output      Output HTML path (default: videos/map-video-carousel/index.html)
+ *   --title       Video title (default: "National Parks Quiz")
+ *   --bg          Continent preset: south_america | africa | north_america (default: south_america)
  *   --tts-url     Gradio TTS API base URL (default: http://127.0.0.1:7860)
- *   --skip-audio  Skip audio generation (reuses existing WAV files if present)
+ *   --voice       Voice sample filename (default: celeste_48k_stereo.wav)
+ *   --skip-audio  Skip TTS generation (reuses existing WAV files if present)
  */
 
 const fs   = require('fs');
@@ -37,21 +40,21 @@ for (const arg of process.argv.slice(2)) {
 
 const regionsPath = args.regions || args.r;
 const geojsonPath = args.geojson || args.g;
-const outputPath  = args.output  || args.o || 'videos/map-video/index.html';
+const outputPath  = args.output  || args.o || 'videos/map-video-carousel/index.html';
 const videoTitle  = args.title   || 'National Parks Quiz';
 const bgPreset    = args.bg      || 'south_america';
 const ttsUrl      = (args['tts-url'] || 'http://127.0.0.1:7860').replace(/\/$/, '');
-const ttsVoice    = args.voice || 'celeste_48k_stereo.wav';
+const ttsVoice    = args.voice   || 'celeste_48k_stereo.wav';
 const skipAudio   = !!args['skip-audio'];
 const onlyArg     = args.only != null ? String(args.only) : null; // e.g. "0" or "0,2"
 const imagesDirArg = args['images-dir'] || null; // local dir of hi-res images
 
 if (!regionsPath || !geojsonPath) {
   console.error([
-    'Usage: node scripts/gen-map-video.js \\',
+    'Usage: node scripts/gen-map-video-carousel.js \\',
     '  --regions=regions.json \\',
     '  --geojson=public/maps/south_america_parks_20260504.geojson \\',
-    '  --output=videos/map-challenge/sa-parks/index.html \\',
+    '  --output=videos/map-challenge/sa-parks-carousel/index.html \\',
     '  --title="South American National Parks" \\',
     '  --bg=south_america \\',
     '  [--tts-url=http://127.0.0.1:7860] \\',
@@ -63,13 +66,6 @@ if (!regionsPath || !geojsonPath) {
 }
 
 // ── Image helpers ─────────────────────────────────────────────────────────────
-/**
- * Find local images for a region. Checks two layouts:
- *   1. Flat:  srcDir/Canaima_National_Park_1.jpg  (filename starts with regionKey)
- *   2. Sub:   srcDir/Canaima_National_Park/1.jpg  (subdirectory named regionKey)
- * Copies matched files into destDir/images/ and returns relative paths.
- * Returns [] if nothing found (caller falls back to database URLs).
- */
 function findLocalImages(regionKey, srcDir, destDir) {
   if (!srcDir) return [];
 
@@ -89,7 +85,6 @@ function findLocalImages(regionKey, srcDir, destDir) {
   if (matched.length === 0) {
     let subDir = path.join(srcDir, regionKey);
     if (!fs.existsSync(subDir)) {
-      // try case-insensitive folder match
       try {
         const entries = fs.readdirSync(srcDir, { withFileTypes: true });
         const found = entries.find(e => e.isDirectory() && e.name.toLowerCase() === regionKey.toLowerCase());
@@ -115,7 +110,6 @@ function findLocalImages(regionKey, srcDir, destDir) {
   });
 }
 
-/** Log which image source is being used for a scene. */
 function logImageSource(label, localCount, dbCount) {
   if (localCount > 0) {
     console.log(`  Images: ${label} — ${localCount} local file(s)`);
@@ -127,7 +121,6 @@ function logImageSource(label, localCount, dbCount) {
 }
 
 // ── Audio helpers ─────────────────────────────────────────────────────────────
-/** Extract first 1-2 sentences from infoText for a ~10-15 s narration. */
 function narrationText(infoText) {
   if (!infoText) return '';
   const m = infoText.match(/^([^.!?]+[.!?]+)(\s+[^.!?]+[.!?]+)?/);
@@ -135,9 +128,7 @@ function narrationText(infoText) {
   return infoText.slice(0, 150);
 }
 
-/** POST to local Gradio voice-clone API, stream SSE until complete, save WAV. */
 async function generateAudio(text, outPath, baseUrl) {
-  // 1. Submit job (38-parameter array; all defaults except text at position 3)
   const initRes = await fetch(`${baseUrl}/gradio_api/call/generate_or_split`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -152,12 +143,9 @@ async function generateAudio(text, outPath, baseUrl) {
       ],
     }),
   });
-  if (!initRes.ok) {
-    throw new Error(`TTS POST failed: ${initRes.status} ${await initRes.text()}`);
-  }
+  if (!initRes.ok) throw new Error(`TTS POST failed: ${initRes.status} ${await initRes.text()}`);
   const { event_id } = await initRes.json();
 
-  // 2. Stream SSE until event: complete
   const sseRes = await fetch(`${baseUrl}/gradio_api/call/generate_or_split/${event_id}`);
   if (!sseRes.ok) throw new Error(`TTS SSE failed: ${sseRes.status}`);
 
@@ -181,15 +169,13 @@ async function generateAudio(text, outPath, baseUrl) {
       } else if (trimmed.startsWith('data:') && currentEvent === 'complete') {
         try {
           const data = JSON.parse(trimmed.slice(5).trim());
-          // data[0] is the audio file object; try .url then .name (local path)
           const first = Array.isArray(data[0]) ? data[0][0] : data[0];
           audioUrl = first?.url || null;
-          // fallback: regex scan for any url field in the payload
           if (!audioUrl) {
             const m = JSON.stringify(data).match(/"url"\s*:\s*"([^"]+)"/);
             if (m) audioUrl = m[1];
           }
-        } catch { /* malformed data line — keep scanning */ }
+        } catch { /* keep scanning */ }
       }
     }
     if (audioUrl) break;
@@ -200,7 +186,6 @@ async function generateAudio(text, outPath, baseUrl) {
     throw new Error(`TTS: no audio URL found.\nSSE lines received:\n${preview}`);
   }
 
-  // 3. Download WAV
   const wavRes = await fetch(audioUrl);
   if (!wavRes.ok) throw new Error(`TTS WAV download failed: ${wavRes.status}`);
   const buf = Buffer.from(await wavRes.arrayBuffer());
@@ -211,19 +196,15 @@ async function generateAudio(text, outPath, baseUrl) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 (async () => {
 
-const outAbs      = path.resolve(outputPath);
+const outAbs        = path.resolve(outputPath);
 const imagesCopyDir = imagesDirArg ? path.join(path.dirname(outAbs), 'images') : null;
 
-// ── Load data ──────────────────────────────────────────────────────────────────
+// ── Load data ─────────────────────────────────────────────────────────────────
 const allRegions = JSON.parse(fs.readFileSync(path.resolve(regionsPath), 'utf-8'));
 const geojson    = JSON.parse(fs.readFileSync(path.resolve(geojsonPath), 'utf-8'));
 
-// Match enabled regions → GeoJSON features (trim stray whitespace from keys)
 const geoMap = new Map(
-  geojson.features.map(f => [
-    (f.id ?? f.properties?.regionKey ?? '').trim(),
-    f,
-  ])
+  geojson.features.map(f => [(f.id ?? f.properties?.regionKey ?? '').trim(), f])
 );
 
 const regions = allRegions
@@ -232,15 +213,15 @@ const regions = allRegions
   .filter(r => geoMap.has(r.regionKey));
 
 if (regions.length === 0) {
-  console.error('No enabled regions matched GeoJSON features. Check --regions and --geojson paths.');
+  console.error('No enabled regions matched GeoJSON features.');
   console.error('GeoJSON keys:', [...geoMap.keys()].join(', '));
   process.exit(1);
 }
 
-console.log(`Building video for ${regions.length} parks:`);
+console.log(`Building carousel video for ${regions.length} parks:`);
 regions.forEach(r => console.log(`  • ${r.labelEn} (${r.regionKey})`));
 
-// ── Build scene data ───────────────────────────────────────────────────────────
+// ── Build scenes ──────────────────────────────────────────────────────────────
 function parseInfograph(str) {
   if (!str) return null;
   try { return JSON.parse(str); } catch { return null; }
@@ -248,30 +229,19 @@ function parseInfograph(str) {
 
 function extractInfographFields(ig) {
   if (!ig) return {};
-  // New flexible format: ig.fields[] array
   if (Array.isArray(ig.fields)) {
     const m = {};
     for (const f of ig.fields) m[f.label.toLowerCase()] = f.value;
     return m;
   }
-  // Legacy format: direct properties
-  return {
-    area:        ig.area,
-    established: ig.established,
-    landscape:   ig.landscape,
-    wildlife:    ig.wildlife,
-  };
+  return { area: ig.area, established: ig.established };
 }
 
-// Generate wrong answer options: pick 2 others from the enabled pool,
-// varied by position so each scene gets a different pair.
 function getWrongOptions(regionKey, allEnabled, sceneIndex) {
   const others = allEnabled.filter(r => r.regionKey !== regionKey);
-  // Sort deterministically then offset by scene index
   const sorted = [...others].sort((a, b) => a.labelEn.localeCompare(b.labelEn));
   const a = sorted[sceneIndex % sorted.length];
   const b = sorted[(sceneIndex + Math.ceil(sorted.length / 2)) % sorted.length];
-  // If a===b (only 1 or 2 regions), fall back
   const pair = a.regionKey === b.regionKey ? [a, sorted[(sceneIndex + 1) % sorted.length]] : [a, b];
   return pair.map(r => r.labelEn);
 }
@@ -280,7 +250,6 @@ let scenes = regions.map((r, i) => {
   const geoFeature = geoMap.get(r.regionKey);
   const [lon, lat] = geoFeature.geometry.coordinates;
   const wrong = getWrongOptions(r.regionKey, regions, i);
-  // Rotate the correct answer to different option slots for visual variety
   const correctSlot = i % 3;
   const opts = [...wrong];
   opts.splice(correctSlot, 0, r.labelEn);
@@ -290,20 +259,18 @@ let scenes = regions.map((r, i) => {
 
   return {
     originalIndex: i, // stable file name even after --only filtering
-    regionKey:   r.regionKey,
-    label:       r.labelEn,
-    options:     opts,
+    regionKey:    r.regionKey,
+    label:        r.labelEn,
+    options:      opts,
     correctIndex: correctSlot,
-    infoText:    (r.infoTextEn || '').slice(0, 220),
-    country:     ig?.country    || '',
-    typeLabel:   ig?.typeLabel  || 'National Park',
-    area:        fields.area        || ig?.area        || '',
-    established: fields.established || ig?.established || '',
-    landscape:   fields.landscape   || ig?.landscape   || '',
-    wildlife:    fields.wildlife    || ig?.wildlife     || '',
+    infoText:     (r.infoTextEn || '').slice(0, 220),
+    country:      ig?.country   || '',
+    typeLabel:    ig?.typeLabel || 'National Park',
+    area:         fields.area        || ig?.area        || '',
+    established:  fields.established || ig?.established || '',
     images: (() => {
       const local  = findLocalImages(r.regionKey, imagesDirArg, imagesCopyDir);
-      const dbImgs = (ig?.images || []).filter(Boolean).slice(0, 3);
+      const dbImgs = (ig?.images || []).filter(Boolean).slice(0, 5);
       logImageSource(r.labelEn, local.length, dbImgs.length);
       return local.length > 0 ? local : dbImgs;
     })(),
@@ -316,7 +283,6 @@ let scenes = regions.map((r, i) => {
 if (onlyArg !== null) {
   const indices = onlyArg.split(',').map(s => {
     const n = parseInt(s.trim(), 10);
-    // accept numeric index or regionKey match
     return isNaN(n) ? scenes.findIndex(sc => sc.regionKey === s.trim()) : n;
   }).filter(n => n >= 0 && n < scenes.length);
   if (indices.length === 0) {
@@ -327,55 +293,46 @@ if (onlyArg !== null) {
   console.log(`Preview mode: showing scene(s) ${indices.join(', ')} only`);
 }
 
-// ── Background ISO sets ────────────────────────────────────────────────────────
+// ── Background presets ────────────────────────────────────────────────────────
 const BG_ISO = {
   south_america: ['BR','AR','CL','CO','VE','PE','BO','PY','UY','EC','GY','SR','FK','PA','CR','GF','BQ','CW','AW','TT','SX','BB','LC','VC','GD'],
   africa:        ['ZA','NA','BW','ZW','ZM','TZ','KE','UG','RW','BI','CD','AO','MZ','MG','MW','SO','ET','ER','DJ','SD','SS','CF','CG','GA','CM','NG','GH','CI','SN','GN','SL','LR','TG','BJ','NE','ML','BF','MR','GM','GW','TD','LY','DZ','MA','TN','EG','MU'],
   north_america: ['US','CA','MX','GT','BZ','HN','SV','NI','CR','PA','CU','HT','DO','JM','GL'],
 };
-
-// Bounding boxes [minLon, minLat, maxLon, maxLat] for each continent
-const BG_BOUNDS = {
-  south_america: [[-84, -56], [1380, 1040]], // SVG fitExtent: [topLeft, bottomRight] padding
-  africa:        [[-20, -35], [52,  38]],
-  north_america: [[-170, 5], [-50, 84]],
-};
-
-// fitExtent SVG coordinates (with padding) — we'll use these as MultiPoint corners
 const FIT_COORDS = {
   south_america: [[-84, 14], [-34, -57], [-84, -57], [-34, 14]],
   africa:        [[-20, 38], [52, -35],  [-20, -35], [52, 38]],
   north_america: [[-170, 84], [-50, 5],  [-170, 5],  [-50, 84]],
 };
 
-const bgIsoSet = (BG_ISO[bgPreset] || BG_ISO.south_america).join("','");
+const bgIsoSet  = (BG_ISO[bgPreset] || BG_ISO.south_america).join("','");
 const fitCoords = JSON.stringify(FIT_COORDS[bgPreset] || FIT_COORDS.south_america);
 
-// ── Timing constants (seconds) ─────────────────────────────────────────────────
-const SCENE_DUR      = 26;   // total per scene
-const OPENING        = 4;    // duration of opening title before first scene
-const T_QUESTION_IN  = 0.5;
-const T_QUESTION_OUT = 5.5;
-const T_REVEAL_IN    = 6.2;
-const T_REVEAL_OUT   = 9.8;
-const T_ZOOM_START   = 10.5; // narration also starts here
-const T_INFOGRAPH_IN = 14.5;
-const IMG_DUR        = 2.5;  // seconds per image in slideshow
-const T_INFOGRAPH_OUT= 22.0;
-const T_ZOOM_OUT     = 22.5;
-const TOTAL_DUR      = OPENING + scenes.length * SCENE_DUR + 2;
+// ── Timing constants ──────────────────────────────────────────────────────────
+const SCENE_DUR       = 30;    // extended to fit zoom + carousel
+const OPENING         = 4;
+const T_QUESTION_IN   = 0.5;
+const T_QUESTION_OUT  = 5.5;
+const T_REVEAL_IN     = 6.2;
+const T_REVEAL_OUT    = 9.8;
+const T_ZOOM_START    = 10.5;  // map zoom begins
+const T_ZOOM_LAND     = 14.5;  // zoom animation complete (4 s duration)
+const T_CAROUSEL_IN   = 15.5;  // carousel crossfades over zoomed map
+const T_CAROUSEL_OUT  = 27.5;  // carousel fades out
+const T_ZOOM_OUT      = 27.5;  // map begins zooming back out simultaneously
+const CAR_DUR         = T_CAROUSEL_OUT - T_CAROUSEL_IN; // 12 s for images
+const TOTAL_DUR       = OPENING + scenes.length * SCENE_DUR + 2;
 
-// ── Audio generation ───────────────────────────────────────────────────────────
-// audioPaths[i] = relative path "audio/scene-i.wav" if audio exists for scene i
+// ── Audio generation ──────────────────────────────────────────────────────────
 const audioPaths = new Map();
-const audioDir = path.join(path.dirname(outAbs), 'audio');
+const audioDir   = path.join(path.dirname(outAbs), 'audio');
 
 console.log(`\nAudio dir: ${audioDir}`);
 if (!skipAudio) {
   fs.mkdirSync(audioDir, { recursive: true });
   console.log(`Generating audio (TTS: ${ttsUrl}):`);
   for (let i = 0; i < scenes.length; i++) {
-    const idx      = scenes[i].originalIndex;
+    const idx       = scenes[i].originalIndex;
     const audioFile = path.join(audioDir, `scene-${idx}.wav`);
     if (fs.existsSync(audioFile)) {
       console.log(`  Scene ${i + 1}/${scenes.length}: ${scenes[i].label} — already exists`);
@@ -383,10 +340,7 @@ if (!skipAudio) {
       continue;
     }
     const text = narrationText(scenes[i].infoText);
-    if (!text) {
-      console.log(`  Scene ${i + 1}/${scenes.length}: ${scenes[i].label} — no infoText, skipping`);
-      continue;
-    }
+    if (!text) { console.log(`  Scene ${i + 1}/${scenes.length}: no infoText, skipping`); continue; }
     console.log(`  Scene ${i + 1}/${scenes.length}: ${scenes[i].label}`);
     console.log(`    "${text.slice(0, 80)}${text.length > 80 ? '…' : ''}"`);
     try {
@@ -397,10 +351,9 @@ if (!skipAudio) {
     }
   }
 } else {
-  // --skip-audio: pick up any existing WAV files keyed by originalIndex
   let found = 0, missing = 0;
   for (let i = 0; i < scenes.length; i++) {
-    const idx      = scenes[i].originalIndex;
+    const idx       = scenes[i].originalIndex;
     const audioFile = path.join(audioDir, `scene-${idx}.wav`);
     if (fs.existsSync(audioFile)) {
       audioPaths.set(i, `audio/scene-${idx}.wav`);
@@ -413,17 +366,16 @@ if (!skipAudio) {
   console.log(`Audio: ${found} found, ${missing} missing (--skip-audio)`);
 }
 
-// ── Generate HTML ──────────────────────────────────────────────────────────────
-const compositionId  = path.basename(path.dirname(outAbs));
-const scenesJson     = JSON.stringify(scenes);
-const geojsonEmbed   = JSON.stringify(geojson);
-const progressDots   = scenes.map((_, i) => `<div class="pd" id="pd-${i}"></div>`).join('\n    ');
+// ── Generate HTML ─────────────────────────────────────────────────────────────
+const compositionId = path.basename(path.dirname(outAbs));
+const scenesJson    = JSON.stringify(scenes);
+const geojsonEmbed  = JSON.stringify(geojson);
+const progressDots  = scenes.map((_, i) => `<div class="pd" id="pd-${i}"></div>`).join('\n    ');
 
-// Audio elements: direct children of #stage, timed to play as the map zooms in
 const audioElements = [...audioPaths.entries()]
   .map(([i, relPath]) => {
-    const audioStart = (OPENING + i * SCENE_DUR + T_ZOOM_START).toFixed(2);
-    const audioDur   = (SCENE_DUR - T_ZOOM_START - 0.5).toFixed(2); // max window
+    const audioStart = (OPENING + i * SCENE_DUR + T_CAROUSEL_IN).toFixed(2);
+    const audioDur   = (CAR_DUR - 0.5).toFixed(2);
     return `  <audio id="narration-${i}" data-start="${audioStart}" data-duration="${audioDur}" data-track-index="1" src="${relPath}"></audio>`;
   })
   .join('\n');
@@ -446,6 +398,42 @@ const html = `<!DOCTYPE html>
 
     #map-svg { position: absolute; top: 0; left: 0; }
 
+    /* ── Full-screen carousel ────────────────────────────────────────── */
+    #carousel {
+      position: absolute; inset: 0;
+      z-index: 10;
+      background: #000;
+      overflow: hidden; /* clips Ken Burns scale overflow */
+    }
+    .car-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      transform-origin: center center;
+      will-change: transform;
+    }
+    #car-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.78) 45%);
+      padding: 120px 96px 72px;
+      pointer-events: none;
+    }
+    #car-type {
+      font-size: 13px; color: #a7c957;
+      text-transform: uppercase; letter-spacing: 0.28em;
+      font-family: sans-serif; margin-bottom: 12px;
+    }
+    #car-name {
+      font-size: 58px; font-weight: normal;
+      color: #fff; letter-spacing: 0.04em;
+      text-shadow: 0 2px 24px rgba(0,0,0,0.8);
+      line-height: 1.1; margin-bottom: 10px;
+    }
+    #car-country {
+      font-size: 20px; color: rgba(255,255,255,0.62);
+      font-family: sans-serif; letter-spacing: 0.14em;
+    }
+
     /* ── Question card ───────────────────────────────────────────────── */
     #question-card {
       position: absolute;
@@ -456,6 +444,7 @@ const html = `<!DOCTYPE html>
       padding: 32px 52px 36px;
       text-align: center;
       min-width: 680px;
+      z-index: 5;
       pointer-events: none;
     }
     #q-text {
@@ -490,6 +479,7 @@ const html = `<!DOCTYPE html>
     #answer-reveal {
       position: absolute;
       bottom: 72px; left: 50%; transform: translateX(-50%);
+      z-index: 5;
       pointer-events: none;
     }
     #answer-badge {
@@ -505,60 +495,10 @@ const html = `<!DOCTYPE html>
       white-space: nowrap;
     }
 
-    /* ── Infograph panel ─────────────────────────────────────────────── */
-    #infograph-panel {
-      position: absolute;
-      top: 72px; right: 80px;
-      width: 540px;
-      border-radius: 20px;
-      overflow: hidden;
-      background: #0f1e2b;
-      border: 1px solid rgba(167, 201, 87, 0.2);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.75);
-      display: flex;
-      flex-direction: column;
-      pointer-events: none;
-    }
-    #infograph-image-wrap {
-      width: 100%; height: 330px; flex-shrink: 0;
-      overflow: hidden; background: #0a131c;
-    }
-    #infograph-img {
-      width: 100%; height: 100%;
-      object-fit: cover; object-position: center;
-      transition: opacity 0.5s;
-    }
-    #infograph-data { padding: 26px 30px 28px; color: white; }
-    .ig-tag {
-      font-size: 11px; color: #a7c957;
-      text-transform: uppercase; letter-spacing: 0.25em;
-      font-family: sans-serif; margin-bottom: 6px;
-    }
-    #ig-name {
-      font-size: 22px; font-weight: bold;
-      color: white; line-height: 1.2; margin-bottom: 16px;
-    }
-    .ig-field { margin-bottom: 10px; }
-    .ig-label {
-      font-size: 10px; color: rgba(255,255,255,0.4);
-      text-transform: uppercase; letter-spacing: 0.2em;
-      font-family: sans-serif; margin-bottom: 3px;
-    }
-    .ig-value {
-      font-size: 13px; color: rgba(255,255,255,0.82);
-      font-family: sans-serif; line-height: 1.4;
-    }
-    #ig-description {
-      margin-top: 14px; padding-top: 14px;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      font-size: 11.5px; color: rgba(255,255,255,0.48);
-      font-family: sans-serif; line-height: 1.65;
-    }
-
     /* ── Title card ──────────────────────────────────────────────────── */
     #title-card {
       position: absolute; bottom: 90px; left: 90px;
-      color: white; pointer-events: none;
+      color: white; z-index: 5; pointer-events: none;
     }
     #title-card h1 {
       font-size: 56px; font-weight: normal;
@@ -571,10 +511,10 @@ const html = `<!DOCTYPE html>
       text-transform: uppercase; font-family: sans-serif;
     }
 
-    /* ── Progress dots ───────────────────────────────────────────────── */
+    /* ── Progress dots — above carousel ─────────────────────────────── */
     #progress {
       position: absolute; top: 36px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 10px; pointer-events: none;
+      display: flex; gap: 10px; z-index: 20; pointer-events: none;
     }
     .pd {
       width: 9px; height: 9px; border-radius: 50%;
@@ -590,7 +530,7 @@ const html = `<!DOCTYPE html>
      data-width="1920"
      data-height="1080">
 
-  <!-- Map SVG -->
+  <!-- Map (zooms into location before carousel fades in) -->
   <svg id="map-svg" width="1920" height="1080" viewBox="0 0 1920 1080"
        class="clip" data-start="0" data-duration="${TOTAL_DUR}" data-track-index="0">
     <defs>
@@ -604,18 +544,30 @@ const html = `<!DOCTYPE html>
       </radialGradient>
     </defs>
     <rect width="1920" height="1080" fill="url(#oceanGrad)"/>
-    <!-- D3 renders continent land + park triangles into map-group -->
     <g id="map-group" style="opacity:0"></g>
-    <!-- Pulse ring (screen-space, always at screen center 960,540) -->
+    <!-- Pulse ring — fires as zoom lands on the location -->
     <g id="pulse-grp" opacity="0">
       <circle id="pulse-c" cx="960" cy="540" r="0.8"
               fill="none" stroke="#ff6b35" stroke-width="0.3"/>
     </g>
-    <!-- Active dot (screen-space, screen centre) -->
+    <!-- Active dot -->
     <circle id="active-dot" cx="960" cy="540" r="0.6" fill="#ff6b35" opacity="0"/>
-    <!-- Edge vignette -->
     <rect width="1920" height="1080" fill="url(#vigGrad)" pointer-events="none"/>
   </svg>
+
+  <!-- Full-screen image carousel (covers map during location reveal) -->
+  <div id="carousel" style="opacity:0">
+    <img id="car-img-0" class="car-img" src="" alt=""/>
+    <img id="car-img-1" class="car-img" src="" alt="" style="opacity:0"/>
+    <img id="car-img-2" class="car-img" src="" alt="" style="opacity:0"/>
+    <img id="car-img-3" class="car-img" src="" alt="" style="opacity:0"/>
+    <img id="car-img-4" class="car-img" src="" alt="" style="opacity:0"/>
+    <div id="car-label">
+      <div id="car-type"></div>
+      <div id="car-name"></div>
+      <div id="car-country"></div>
+    </div>
+  </div>
 
   <!-- Title card -->
   <div id="title-card" style="opacity:0">
@@ -623,7 +575,7 @@ const html = `<!DOCTYPE html>
     <p>Can you name these parks?</p>
   </div>
 
-  <!-- Progress dots -->
+  <!-- Progress dots (always above carousel) -->
   <div id="progress">
     ${progressDots}
   </div>
@@ -645,60 +597,24 @@ const html = `<!DOCTYPE html>
     </div>
   </div>
 
-  <!-- Infograph panel -->
-  <div id="infograph-panel" style="opacity:0">
-    <div id="infograph-image-wrap">
-      <img id="infograph-img" src="" alt=""/>
-    </div>
-    <div id="infograph-data">
-      <div class="ig-tag" id="ig-type-label"></div>
-      <h2 id="ig-name"></h2>
-      <div class="ig-field">
-        <div class="ig-label">Country</div>
-        <div class="ig-value" id="ig-country"></div>
-      </div>
-      <div class="ig-field">
-        <div class="ig-label">Area</div>
-        <div class="ig-value" id="ig-area"></div>
-      </div>
-      <div class="ig-field">
-        <div class="ig-label">Established</div>
-        <div class="ig-value" id="ig-established"></div>
-      </div>
-      <div class="ig-field">
-        <div class="ig-label">Landscape</div>
-        <div class="ig-value" id="ig-landscape"></div>
-      </div>
-      <div class="ig-field">
-        <div class="ig-label">Wildlife</div>
-        <div class="ig-value" id="ig-wildlife"></div>
-      </div>
-      <p id="ig-description"></p>
-    </div>
-  </div>
-
-  <!-- Narration audio: one per scene, timed to start as the map zooms in -->
+  <!-- Narration audio: starts as carousel fades in -->
 ${audioElements}
 
 </div>
 
-<!-- CDN dependencies -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
 <script>
 (async () => {
   const W = 1920, H = 1080;
-  const SCENES      = ${scenesJson};
-  const PARKS_GEO   = ${geojsonEmbed};
-  const SCENE_DUR   = ${SCENE_DUR};
-  const OPENING     = ${OPENING};
-  const TW = 14, TH = 20; // triangle marker half-width, height
+  const SCENES    = ${scenesJson};
+  const PARKS_GEO = ${geojsonEmbed};
+  const SCENE_DUR = ${SCENE_DUR};
+  const OPENING   = ${OPENING};
+  const TW = 14, TH = 20;
 
-  // ── Background ISO set ────────────────────────────────────────────────────
   const BG_ISO = new Set(['${bgIsoSet}']);
-
-  // ── Projection: fit continent into left ~70% of frame ────────────────────
   const FIT = {
     type: 'Feature',
     geometry: { type: 'MultiPoint', coordinates: ${fitCoords} },
@@ -707,7 +623,6 @@ ${audioElements}
   const projection = d3.geoMercator().fitExtent([[80, 40], [1340, H - 40]], FIT);
   const pathGen    = d3.geoPath().projection(projection);
 
-  // Projected screen positions for each park marker
   const markerPos = {};
   for (const f of PARKS_GEO.features) {
     const key = (f.id ?? f.properties?.regionKey ?? '').trim();
@@ -715,7 +630,7 @@ ${audioElements}
     if (pt) markerPos[key] = { x: pt[0], y: pt[1] };
   }
 
-  // ── Fetch Natural Earth background ────────────────────────────────────────
+  // Fetch Natural Earth background
   const NE_URL = 'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson';
   const neData = await fetch(NE_URL).then(r => r.json());
   const bgFeatures = neData.features.filter(f => {
@@ -723,23 +638,16 @@ ${audioElements}
     return BG_ISO.has(iso) && f.geometry;
   });
 
-  // ── Render background + markers into map-group ────────────────────────────
   const g = d3.select('#map-group');
-
-  // Graticule
   g.append('path')
     .datum(d3.geoGraticule()())
     .attr('fill', 'none').attr('stroke', '#0e2650').attr('stroke-width', 0.4)
     .attr('d', pathGen);
-
-  // Continent land
   for (const f of bgFeatures) {
     const d = pathGen(f);
     if (d) g.append('path').attr('d', d)
       .attr('fill', '#3a7a4a').attr('stroke', '#2d6038').attr('stroke-width', 0.4);
   }
-
-  // Park triangle markers (downward-pointing, same shape as web app)
   for (const f of PARKS_GEO.features) {
     const key = (f.id ?? f.properties?.regionKey ?? '').trim();
     const pos = markerPos[key];
@@ -753,17 +661,12 @@ ${audioElements}
       .attr('fill', '#c8d8b4').attr('stroke', '#6b7c52').attr('stroke-width', 1.5);
   }
 
-  // ── DOM helpers ────────────────────────────────────────────────────────────
   function setText(id, val) {
     const el = document.getElementById(id);
     if (el) el.textContent = val || '';
   }
-  function markerId(key) {
-    return 'mk-' + key.replace(/[^a-zA-Z0-9_-]/g, '_');
-  }
-  function getMarker(key) {
-    return document.getElementById(markerId(key));
-  }
+  function markerId(key) { return 'mk-' + key.replace(/[^a-zA-Z0-9_-]/g, '_'); }
+  function getMarker(key) { return document.getElementById(markerId(key)); }
   function setAllMarkersDefault() {
     document.querySelectorAll('.park-marker').forEach(el => {
       el.setAttribute('fill', '#c8d8b4');
@@ -772,12 +675,25 @@ ${audioElements}
     });
   }
 
-  // ── Zoom maths (viewBox approach — seek-safe, no transform matrix state) ───
-  // Shrink the SVG viewBox to a ZW×ZH window centred on the park marker.
-  // This avoids GSAP svgOrigin / transform accumulation across multiple scenes.
-  const ZOOM = 10;
-  const ZW   = W / ZOOM; // 192
-  const ZH   = H / ZOOM; // 108
+  // ── Ken Burns variants (deterministic, 4 directions) ──────────────────────
+  // Scale stays ≥1.05 so image edges never show through carousel bounds.
+  const KB = [
+    { from: { scale: 1.05, xPercent:  1.5, yPercent:  0.5 }, to: { scale: 1.10, xPercent: -1.5, yPercent: -1.0 } },
+    { from: { scale: 1.10, xPercent: -1.5, yPercent: -1.0 }, to: { scale: 1.05, xPercent:  1.5, yPercent:  0.5 } },
+    { from: { scale: 1.05, xPercent: -1.0, yPercent:  1.5 }, to: { scale: 1.10, xPercent:  1.0, yPercent: -1.5 } },
+    { from: { scale: 1.10, xPercent:  1.0, yPercent:  1.0 }, to: { scale: 1.05, xPercent: -1.5, yPercent: -0.5 } },
+  ];
+
+  // ── GSAP Timeline ──────────────────────────────────────────────────────────
+  const tl = gsap.timeline({ paused: true });
+
+  // Opening
+  tl.to('#map-group',  { opacity: 1, duration: 1.5, ease: 'power1.inOut' }, 0);
+  tl.to('#title-card', { opacity: 1, duration: 1.2, ease: 'power1.inOut' }, 0.6);
+  tl.to('#title-card', { opacity: 0, duration: 0.8, ease: 'power1.in'    }, 3.2);
+
+  // viewBox zoom helpers (same seek-safe approach as gen-map-video.js)
+  const ZOOM = 10, ZW = W / 10, ZH = H / 10;
   function viewBoxZoomed(key) {
     const pos = markerPos[key];
     if (!pos) return '0 0 1920 1080';
@@ -786,66 +702,52 @@ ${audioElements}
     return \`\${zX} \${zY} \${ZW} \${ZH}\`;
   }
 
-  // ── GSAP Timeline ──────────────────────────────────────────────────────────
-  const tl = gsap.timeline({ paused: true });
-
-  // Opening: map fades in, title appears then leaves
-  tl.to('#map-group',  { opacity: 1, duration: 1.5, ease: 'power1.inOut' }, 0);
-  tl.to('#title-card', { opacity: 1, duration: 1.2, ease: 'power1.inOut' }, 0.6);
-  tl.to('#title-card', { opacity: 0, duration: 0.8, ease: 'power1.in'    }, 3.2);
-
-  // ── Per-scene tweens ────────────────────────────────────────────────────────
   SCENES.forEach((scene, i) => {
-    const t  = OPENING + i * SCENE_DUR;
-    const vb = viewBoxZoomed(scene.regionKey);
-    const T_QI  = ${T_QUESTION_IN};
-    const T_QO  = ${T_QUESTION_OUT};
-    const T_RI  = ${T_REVEAL_IN};
-    const T_RO  = ${T_REVEAL_OUT};
-    const T_ZS  = ${T_ZOOM_START};
-    const T_IGI = ${T_INFOGRAPH_IN};
-    const T_IGO = ${T_INFOGRAPH_OUT};
-    const T_ZO  = ${T_ZOOM_OUT};
-    const IDUR  = ${IMG_DUR};
+    const t      = OPENING + i * SCENE_DUR;
+    const vb     = viewBoxZoomed(scene.regionKey);
+    const T_QI   = ${T_QUESTION_IN};
+    const T_QO   = ${T_QUESTION_OUT};
+    const T_RI   = ${T_REVEAL_IN};
+    const T_RO   = ${T_REVEAL_OUT};
+    const T_ZS   = ${T_ZOOM_START};
+    const T_ZL   = ${T_ZOOM_LAND};
+    const T_CI   = ${T_CAROUSEL_IN};
+    const T_CO   = ${T_CAROUSEL_OUT};
+    const T_ZO   = ${T_ZOOM_OUT};
+    const carDur = T_CO - T_CI;
 
-    // ─ Setup: populate DOM, reset markers, highlight active ─────────────────
+    const imgCount    = Math.min(scene.images.length, 5);
+    const imgInterval = imgCount > 1 ? carDur / imgCount : carDur;
+
+    // ─ Setup ─────────────────────────────────────────────────────────────────
     tl.call(() => {
-      // Options
       ['opt-0','opt-1','opt-2'].forEach((id, j) => {
         const el = document.getElementById(id);
         if (el) { el.textContent = scene.options[j] || ''; el.className = 'opt'; }
       });
-      // Answer badge
       setText('answer-name', scene.label);
-      // Infograph
-      setText('ig-type-label', scene.typeLabel || 'National Park');
-      setText('ig-name',        scene.label);
-      setText('ig-country',     scene.country);
-      setText('ig-area',        scene.area);
-      setText('ig-established', scene.established);
-      setText('ig-landscape',   scene.landscape);
-      setText('ig-wildlife',    scene.wildlife);
-      setText('ig-description', scene.infoText);
-      // First image
-      const imgEl = document.getElementById('infograph-img');
-      if (imgEl && scene.images.length > 0) imgEl.src = scene.images[0];
-      // Progress dots
+      setText('car-type',    scene.typeLabel || 'National Park');
+      setText('car-name',    scene.label);
+      setText('car-country', scene.country);
+      for (let j = 0; j < 5; j++) {
+        const img = document.getElementById('car-img-' + j);
+        if (!img) continue;
+        img.src = scene.images[j] || '';
+        gsap.set(img, { opacity: j === 0 ? 1 : 0 });
+      }
       document.querySelectorAll('.pd').forEach((d, j) => {
         d.style.background = j < i ? '#4ade80' : j === i ? '#fbbf24' : 'rgba(255,255,255,0.22)';
       });
-      // Markers: all default, active = amber
       setAllMarkersDefault();
       const mk = getMarker(scene.regionKey);
       if (mk) { mk.setAttribute('fill', '#fbbf24'); mk.setAttribute('stroke', '#d97706'); }
     }, [], t);
 
-    // ─ Question card in ──────────────────────────────────────────────────────
+    // ─ Question card in/out ───────────────────────────────────────────────────
     tl.to('#question-card', { opacity: 1, duration: 0.7, ease: 'power1.inOut', overwrite: 'auto' }, t + T_QI);
+    tl.to('#question-card', { opacity: 0, duration: 0.5, ease: 'power1.in',    overwrite: 'auto' }, t + T_QO);
 
-    // ─ Question card out ─────────────────────────────────────────────────────
-    tl.to('#question-card', { opacity: 0, duration: 0.5, ease: 'power1.in', overwrite: 'auto' }, t + T_QO);
-
-    // ─ Mark correct option, reveal answer ───────────────────────────────────
+    // ─ Answer reveal ─────────────────────────────────────────────────────────
     tl.call(() => {
       const el = document.getElementById('opt-' + scene.correctIndex);
       if (el) el.className = 'opt correct';
@@ -855,60 +757,63 @@ ${audioElements}
       const mk = getMarker(scene.regionKey);
       if (mk) { mk.setAttribute('fill', '#4ade80'); mk.setAttribute('stroke', '#15803d'); }
     }, [], t + T_RI);
-
-    // ─ Answer reveal out ─────────────────────────────────────────────────────
     tl.to('#answer-reveal', { opacity: 0, duration: 0.5, ease: 'power1.in', overwrite: 'auto' }, t + T_RO);
 
-    // ─ Zoom in (viewBox shrink — seek-safe, no transform accumulation) ────────
-    tl.to('#map-svg', {
-      attr: { viewBox: vb },
-      duration: 4, ease: 'power2.inOut',
-    }, t + T_ZS);
-    // Hide non-active markers so they don't clutter the zoomed view
+    // ─ Map zoom in (viewBox shrink, seek-safe) ────────────────────────────────
+    tl.to('#map-svg', { attr: { viewBox: vb }, duration: 4, ease: 'power2.inOut' }, t + T_ZS);
     tl.call(() => {
       document.querySelectorAll('.park-marker').forEach(el => {
         if (el.id !== markerId(scene.regionKey)) el.style.opacity = '0';
       });
-    }, [], t + T_ZS);
-    // Position pulse/dot at the park's SVG coordinates before zoom lands
-    tl.call(((pos) => () => {
-      ['pulse-c', 'active-dot'].forEach(id => {
+      const pos = markerPos[scene.regionKey];
+      ['pulse-c','active-dot'].forEach(id => {
         const el = document.getElementById(id);
         if (el && pos) { el.setAttribute('cx', pos.x); el.setAttribute('cy', pos.y); }
       });
-    })(markerPos[scene.regionKey]), [], t + T_ZS);
-    // Active dot appears as zoom lands
-    tl.to('#active-dot', { opacity: 1, duration: 0.3, ease: 'power2.out', overwrite: 'auto' }, t + T_ZS + 4.2);
-    // Pulse ring (SVG-space units — at 10× zoom r:0.8→5 = ~8px→50px on screen)
-    tl.set('#pulse-c', { attr: { r: 0.8 }, opacity: 0 }, t + T_ZS + 4.3);
-    tl.to('#pulse-grp', { opacity: 1, duration: 0.05 }, t + T_ZS + 4.3);
-    tl.to('#pulse-c', { attr: { r: 5 }, opacity: 0, duration: 1.5, ease: 'power1.out' }, t + T_ZS + 4.4);
+    }, [], t + T_ZS);
+    // Pulse fires as zoom lands
+    tl.to('#active-dot', { opacity: 1, duration: 0.3, ease: 'power2.out', overwrite: 'auto' }, t + T_ZL + 0.2);
+    tl.set('#pulse-c', { attr: { r: 0.8 }, opacity: 0 }, t + T_ZL + 0.3);
+    tl.to('#pulse-grp', { opacity: 1, duration: 0.05 }, t + T_ZL + 0.3);
+    tl.to('#pulse-c', { attr: { r: 5 }, opacity: 0, duration: 1.5, ease: 'power1.out' }, t + T_ZL + 0.4);
 
-    // ─ Infograph panel in ────────────────────────────────────────────────────
-    tl.to('#infograph-panel', { opacity: 1, duration: 0.7, ease: 'power2.out', overwrite: 'auto' }, t + T_IGI);
+    // ─ Carousel crossfades over the zoomed map ────────────────────────────────
+    tl.to('#carousel', { opacity: 1, duration: 0.9, ease: 'power1.inOut', overwrite: 'auto' }, t + T_CI);
 
-    // Image slideshow (up to 3 images)
-    for (let j = 0; j < Math.min(scene.images.length, 3); j++) {
-      const src = scene.images[j];
-      if (j === 0) continue; // already set in setup call
-      tl.call(((s) => () => {
-        const el = document.getElementById('infograph-img');
-        if (el) el.src = s;
-      })(src), [], t + T_IGI + j * IDUR);
+    // ─ Image crossfades + Ken Burns (seek-safe: all on main timeline) ──────────
+    for (let j = 0; j < imgCount; j++) {
+      const switchAt  = t + T_CI + j * imgInterval;
+      const switchEnd = j === imgCount - 1 ? t + T_CO : t + T_CI + (j + 1) * imgInterval;
+      const kbDur     = switchEnd - switchAt;
+      const kb        = KB[(i * 5 + j) % KB.length];
+
+      // Opacity crossfade (skip for image 0 — already set up in setup call)
+      if (j > 0) {
+        tl.to('#car-img-' + (j - 1), { opacity: 0, duration: 0.9, ease: 'power1.inOut', overwrite: 'auto' }, switchAt);
+        tl.to('#car-img-' + j,       { opacity: 1, duration: 0.9, ease: 'power1.inOut', overwrite: 'auto' }, switchAt);
+      }
+
+      // Ken Burns: slow zoom + drift for the duration this image is on screen
+      if (scene.images[j]) {
+        tl.fromTo('#car-img-' + j,
+          { scale: kb.from.scale, xPercent: kb.from.xPercent, yPercent: kb.from.yPercent },
+          { scale: kb.to.scale,   xPercent: kb.to.xPercent,   yPercent: kb.to.yPercent,
+            duration: kbDur, ease: 'none', overwrite: 'auto' },
+          switchAt
+        );
+      }
     }
 
-    // ─ Infograph out ─────────────────────────────────────────────────────────
-    tl.to('#infograph-panel', { opacity: 0, duration: 0.6, ease: 'power1.in', overwrite: 'auto' }, t + T_IGO);
-    tl.to('#active-dot', { opacity: 0, duration: 0.2, overwrite: 'auto' }, t + T_IGO);
-    tl.set('#pulse-c', { attr: { r: 0.8 } }, t + T_IGO + 0.1);
-
-    // ─ Zoom out (restore full viewBox) ───────────────────────────────────────
-    tl.to('#map-svg', {
-      attr: { viewBox: '0 0 1920 1080' },
-      duration: 2, ease: 'power2.inOut',
-    }, t + T_ZO);
-    // Restore all markers after zoom-out completes
-    tl.call(setAllMarkersDefault, [], t + T_ZO + 2);
+    // ─ Carousel out + map zooms back simultaneously ───────────────────────────
+    tl.to('#carousel',   { opacity: 0, duration: 0.9, ease: 'power1.in', overwrite: 'auto' }, t + T_CO);
+    tl.to('#active-dot', { opacity: 0, duration: 0.2, overwrite: 'auto' }, t + T_CO);
+    tl.set('#pulse-c',   { attr: { r: 0.8 } }, t + T_CO + 0.1);
+    tl.to('#map-svg', { attr: { viewBox: '0 0 1920 1080' }, duration: 2, ease: 'power2.inOut' }, t + T_ZO);
+    // Reset image transforms and opacity for next scene
+    for (let j = 0; j < 5; j++) {
+      tl.set('#car-img-' + j, { opacity: j === 0 ? 1 : 0, scale: 1, xPercent: 0, yPercent: 0 }, t + T_ZO + 2.1);
+    }
+    tl.call(setAllMarkersDefault, [], t + T_ZO + 2.1);
   });
 
   // Final: all progress dots green
@@ -916,10 +821,8 @@ ${audioElements}
     document.querySelectorAll('.pd').forEach(d => { d.style.background = '#4ade80'; });
   }, [], OPENING + SCENES.length * SCENE_DUR);
 
-  // Hold 2s at end
   tl.to({}, { duration: 2 }, OPENING + SCENES.length * SCENE_DUR);
 
-  // ── Register with HyperFrames runtime ─────────────────────────────────────
   window.__timelines = window.__timelines || {};
   window.__timelines['${compositionId}'] = tl;
 })();
@@ -931,11 +834,12 @@ ${audioElements}
 fs.mkdirSync(path.dirname(outAbs), { recursive: true });
 fs.writeFileSync(outAbs, html, 'utf-8');
 
-const mins  = Math.floor(TOTAL_DUR / 60);
-const secs  = Math.round(TOTAL_DUR % 60);
+const mins = Math.floor(TOTAL_DUR / 60);
+const secs = Math.round(TOTAL_DUR % 60);
 console.log(`\nWritten: ${outputPath}`);
 console.log(`Scenes:  ${scenes.length} × ${SCENE_DUR}s = ${scenes.length * SCENE_DUR}s + ${OPENING}s opening`);
 console.log(`Total:   ~${TOTAL_DUR}s (${mins}m ${secs}s)`);
+console.log(`Images:  up to 5 per scene, ${(CAR_DUR / 1).toFixed(1)}s carousel window`);
 if (audioPaths.size > 0) console.log(`Audio:   ${audioPaths.size}/${scenes.length} scenes`);
 console.log(`\nNext steps:`);
 console.log(`  npx hyperframes browser ensure`);
