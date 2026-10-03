@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { questionImagesDir, QUESTION_IMAGE_URL_PREFIX } from "@/lib/questionImages";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -40,8 +41,9 @@ export async function POST(request: NextRequest) {
     };
     const ext = extMap[contentType] || "jpg";
 
-    const dataDir = process.env.DATABASE_DIR || process.cwd();
-    const uploadDir = path.join(dataDir, "uploads", "questions");
+    // Saved under incoming/ until the question is saved; the question actions
+    // then give it its descriptive name (see placeQuestionImage).
+    const uploadDir = path.join(questionImagesDir(), "incoming");
     await mkdir(uploadDir, { recursive: true });
 
     const filename = `${uuidv4()}.${ext}`;
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await res.arrayBuffer());
     await writeFile(filePath, buffer);
 
-    const imagePath = `/uploads/questions/${filename}`;
+    const imagePath = `${QUESTION_IMAGE_URL_PREFIX}incoming/${filename}`;
     return NextResponse.json({ imagePath });
   } catch (error) {
     console.error("Image download error:", error);

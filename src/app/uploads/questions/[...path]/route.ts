@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
-
-const DATA_DIR = process.env.DATABASE_DIR || process.cwd();
-const UPLOAD_DIR = path.join(DATA_DIR, "uploads", "questions");
+import { resolveImageFile } from "@/lib/questionImages";
 
 const MIME_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -18,22 +16,14 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path: segments } = await params;
-  const filename = segments[segments.length - 1];
 
-  // Security: only allow simple filenames (no directory traversal)
-  if (!filename || filename.includes("..") || filename.includes("/")) {
+  // Descriptive names live in folders: <category>/<subcategory>/<answer>.<ext>.
+  // resolveImageFile refuses anything outside the question images folder.
+  const resolved = segments.length > 0 ? resolveImageFile(segments.join("/")) : null;
+  if (!resolved || !fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
     return new NextResponse("Not found", { status: 404 });
   }
-
-  const filePath = path.join(UPLOAD_DIR, filename);
-  const resolved = path.resolve(filePath);
-  if (!resolved.startsWith(path.resolve(UPLOAD_DIR))) {
-    return new NextResponse("Not found", { status: 404 });
-  }
-
-  if (!fs.existsSync(resolved)) {
-    return new NextResponse("Not found", { status: 404 });
-  }
+  const filename = path.basename(resolved);
 
   const ext = path.extname(filename).toLowerCase();
   const contentType = MIME_TYPES[ext] || "application/octet-stream";
@@ -42,7 +32,8 @@ export async function GET(
   return new NextResponse(fileBuffer, {
     headers: {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=31536000, immutable",
+      // Not immutable: a replaced image keeps its descriptive name (same URL).
+      "Cache-Control": "public, max-age=86400",
     },
   });
 }

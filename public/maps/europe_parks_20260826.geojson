@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "Bialowieza_National_Park",
+      "properties": { "regionKey": "Bialowieza_National_Park", "name": "Białowieża National Park" },
+      "geometry": { "type": "Point", "coordinates": [23.6, 52.7] }
+    },
+    {
+      "type": "Feature",
+      "id": "Cairngorms_National_Park",
+      "properties": { "regionKey": "Cairngorms_National_Park", "name": "Cairngorms National Park" },
+      "geometry": { "type": "Point", "coordinates": [-3.6, 57.1] }
+    },
+    {
+      "type": "Feature",
+      "id": "Jotunheimen_National_Park",
+      "properties": { "regionKey": "Jotunheimen_National_Park", "name": "Jotunheimen National Park" },
+      "geometry": { "type": "Point", "coordinates": [8.3, 61.6] }
+    },
+    {
+      "type": "Feature",
+      "id": "Plitvice_Lakes_National_Park",
+      "properties": { "regionKey": "Plitvice_Lakes_National_Park", "name": "Plitvice Lakes National Park" },
+      "geometry": { "type": "Point", "coordinates": [15.6, 44.9] }
+    },
+    {
+      "type": "Feature",
+      "id": "Sarek_National_Park",
+      "properties": { "regionKey": "Sarek_National_Park", "name": "Sarek National Park" },
+      "geometry": { "type": "Point", "coordinates": [17.5, 67.3] }
+    },
+    {
+      "type": "Feature",
+      "id": "Sierra_Nevada_National_Park",
+      "properties": { "regionKey": "Sierra_Nevada_National_Park", "name": "Sierra Nevada National Park" },
+      "geometry": { "type": "Point", "coordinates": [-3.3, 37.1] }
+    },
+    {
+      "type": "Feature",
+      "id": "Triglav_National_Park",
+      "properties": { "regionKey": "Triglav_National_Park", "name": "Triglav National Park" },
+      "geometry": { "type": "Point", "coordinates": [13.8, 46.4] }
+    },
+    {
+      "type": "Feature",
+      "id": "Vanoise_National_Park",
+      "properties": { "regionKey": "Vanoise_National_Park", "name": "Vanoise National Park" },
+      "geometry": { "type": "Point", "coordinates": [6.8, 45.4] }
+    }
+  ]
+}

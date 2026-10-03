@@ -10,6 +10,7 @@ const navItems = [
   { label: "Questions", href: "/admin/questions" },
   { label: "Generate Questions", href: "/admin/questions/generate" },
   { label: "Challenges", href: "/admin/challenges" },
+  { label: "Pipeline Commands", href: "/admin/pipeline" },
   { label: "Database", href: "/admin/database" },
 ];
 

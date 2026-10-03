@@ -8,6 +8,7 @@ import {
   parseInfographTemplate,
   serializeInfographTemplate,
 } from "./InfographAdminEditor";
+import { QUIZ_THEMES } from "@/lib/quizThemes";
 
 interface CategoryOption { id: number; name: string; slug: string; subcategories: { id: number; name: string }[] }
 interface MapOption { label: string; value: string }
@@ -26,6 +27,11 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
   const [dbCategories, setDbCategories] = useState<CategoryOption[]>([]);
   const [mapOptions, setMapOptions] = useState<MapOption[]>([]);
   const [mapSvg, setMapSvg] = useState(game.mapSvg ?? "");
+  const [mediaType, setMediaType] = useState(game.mediaType ?? "carousel");
+  const [themeKey, setThemeKey] = useState(game.themeKey ?? "default");
+  const [showInfograph, setShowInfograph] = useState(game.showInfograph);
+  const [revealDelayBuffer, setRevealDelayBuffer] = useState(game.revealDelayBuffer ?? 0.5);
+  const [liveRevealDelay, setLiveRevealDelay] = useState(game.liveRevealDelay ?? 0);
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<{ text: string; error: boolean } | null>(null);
   const [titleEn, setTitleEn] = useState(game.titleEn);
@@ -43,10 +49,10 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
   }, []);
 
   useEffect(() => {
-    if (gameType === "map") {
+    if (gameType === "map" || (gameType === "generic_quiz" && mediaType === "map")) {
       fetch("/api/admin/maps").then((r) => r.json()).then((d) => setMapOptions(d.maps ?? [])).catch(() => {});
     }
-  }, [gameType]);
+  }, [gameType, mediaType]);
 
   async function handleSvgUpload() {
     const file = svgFileRef.current?.files?.[0];
@@ -117,7 +123,12 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
       connectionsRightLabelNl: fd.get("connectionsRightLabelNl") || null,
       mapSvg:                  fd.get("mapSvg")       || null,
       mapLabelMode:            fd.get("mapLabelMode") || null,
+      showInfograph,
+      revealDelayBuffer,
+      liveRevealDelay,
       infographFields:         serializeInfographTemplate(infographTemplate),
+      mediaType:               gameType === "generic_quiz" ? mediaType : null,
+      themeKey:                gameType === "generic_quiz" ? themeKey  : null,
     };
     const res = await fetch(`/api/admin/challenges/${game.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
@@ -151,8 +162,10 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
             <option value="puzzle">Puzzle</option>
             <option value="quiz">Quiz</option>
             <option value="connections">Connections</option>
+            <option value="connections_quiz">Connections Quiz</option>
             <option value="map">Map</option>
             <option value="map_quiz">Map Quiz</option>
+            <option value="generic_quiz">Generic Quiz</option>
           </select>
         </div>
         <div>
@@ -320,8 +333,51 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
         </div>
       )}
 
+      {/* Generic quiz config */}
+      {gameType === "generic_quiz" && (
+        <div className="border border-teal-200 bg-teal-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-teal-800">Generic Quiz Settings</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Media</label>
+              <select
+                value={mediaType}
+                onChange={(e) => setMediaType(e.target.value as "map" | "carousel")}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="carousel">Image carousel — configured in Items below</option>
+                <option value="map">Interactive map — configured in Map Regions below</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Theme</label>
+              <select
+                value={themeKey}
+                onChange={(e) => setThemeKey(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                {Object.values(QUIZ_THEMES).map((t) => (
+                  <option key={t.key} value={t.key}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-slate-700 pt-1">
+            Live game: seconds to wait before options/countdown appear
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              value={liveRevealDelay}
+              onChange={(e) => setLiveRevealDelay(Number(e.target.value))}
+              className="w-20 px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+            />
+          </label>
+        </div>
+      )}
+
       {/* Map config */}
-      {(gameType === "map" || gameType === "map_quiz") && (
+      {(gameType === "map" || gameType === "map_quiz" || (gameType === "generic_quiz" && mediaType === "map")) && (
         <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-emerald-800">Map Settings</p>
           <div className="grid grid-cols-2 gap-3">
@@ -379,6 +435,46 @@ export default function ChallengeEditForm({ game }: { game: ChallengeGame }) {
               </span>
             )}
           </div>
+
+          {gameType === "map_quiz" && (
+            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={showInfograph}
+                onChange={(e) => setShowInfograph(e.target.checked)}
+                className="w-4 h-4"
+              />
+              Show infograph pop-up after a correct answer
+            </label>
+          )}
+
+          {(gameType === "map" || gameType === "map_quiz") && (
+            <label className="flex items-center gap-2 text-sm text-slate-700 pt-1">
+              Video: seconds after narration ends before options/countdown appear
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={revealDelayBuffer}
+                onChange={(e) => setRevealDelayBuffer(Number(e.target.value))}
+                className="w-20 px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              />
+            </label>
+          )}
+
+          {gameType === "map_quiz" && (
+            <label className="flex items-center gap-2 text-sm text-slate-700 pt-1">
+              Live game: seconds to wait before options/countdown appear
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={liveRevealDelay}
+                onChange={(e) => setLiveRevealDelay(Number(e.target.value))}
+                className="w-20 px-2 py-1 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              />
+            </label>
+          )}
         </div>
       )}
 

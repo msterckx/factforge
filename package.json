@@ -6,12 +6,13 @@
     "dev": "npx tsx src/db/setup.ts && next dev --turbopack",
     "db:setup": "npx tsx src/db/setup.ts",
     "build": "next build",
-    "start": "npx tsx src/db/setup.ts && next start -p ${PORT:-3000}",
+    "start": "next start -p ${PORT:-3000}",
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "npx tsx src/db/seed.ts"
+    "db:seed": "npx tsx src/db/seed.ts",
+    "content:publish": "npx tsx scripts/publish-content.ts"
   },
   "dependencies": {
     "@auth/core": "^0.41.0",

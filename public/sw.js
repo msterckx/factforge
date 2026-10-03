@@ -1,4 +1,4 @@
-const CACHE = 'got-v3';
+const CACHE = 'got-v5';
 
 // Cache Next.js static assets on first fetch
 self.addEventListener('install', () => self.skipWaiting());
@@ -34,23 +34,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Images and public assets — cache first, fall back to network
+  // Images and public assets — stale-while-revalidate: answer from the cache
+  // when possible, and refresh it in the background. Images keep descriptive
+  // names, so a replaced image comes back under the same URL.
   if (
     url.pathname.startsWith('/logos/') ||
     url.pathname.startsWith('/uploads/') ||
     url.pathname.startsWith('/api/images/')
   ) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((res) => {
-          if (res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, clone));
+      caches.open(CACHE).then((cache) =>
+        cache.match(request).then((cached) => {
+          const network = fetch(request)
+            .then((res) => {
+              if (res.ok) cache.put(request, res.clone());
+              return res;
+            })
+            .catch(() => cached);
+          if (cached) {
+            event.waitUntil(network);
+            return cached;
           }
-          return res;
-        });
-      })
+          return network;
+        })
+      )
     );
     return;
   }

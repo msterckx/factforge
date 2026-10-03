@@ -106,6 +106,9 @@ export interface Dictionary {
     connectionsScore: string;
     connectionsReveal: string;
     connectionsPlayAgain: string;
+    connectionsQuizPrompt: string;
+    mapQuizPrompt: string;
+    perfectScore: string;
     olympics: string;
     olympicsSubtitle: string;
     puzzleProgress: string;
@@ -250,6 +253,9 @@ export const en: Dictionary = {
     connectionsScore: "{correct} of {total} correct",
     connectionsReveal: "Reveal Answers",
     connectionsPlayAgain: "Play Again",
+    connectionsQuizPrompt: "What's the match?",
+    mapQuizPrompt: "Where is this?",
+    perfectScore: "Perfect score!",
     olympics: "The Olympics",
     olympicsSubtitle: "Reassemble the puzzle to reveal the Olympic champion",
     puzzleProgress: "Puzzle",

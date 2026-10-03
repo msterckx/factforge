@@ -22,6 +22,13 @@ export default auth((req) => {
     return NextResponse.next({ request: { headers: reqHeaders } });
   };
 
+  // Content is authored locally and published as a read-only snapshot, so the
+  // admin (pages and APIs) is off in production unless explicitly enabled.
+  const adminDisabled = process.env.NODE_ENV === "production" && process.env.ENABLE_ADMIN !== "true";
+  if (adminDisabled && (isAdminRoute || pathname.startsWith("/api/admin"))) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   // Admin auth logic (unchanged)
   if (isAdminRoute) {
     if (!isLoginPage && !isLoggedIn) {

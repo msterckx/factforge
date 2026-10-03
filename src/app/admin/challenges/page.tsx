@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getAllChallengeGames } from "@/data/challengeGame";
 import Link from "next/link";
 import NewChallengeForm from "./NewChallengeForm";
+import BuildPackageButton from "./BuildPackageButton";
 
 export default async function AdminChallengesPage() {
   const session = await auth();
@@ -68,6 +69,17 @@ export default async function AdminChallengesPage() {
           </tbody>
         </table>
       </div>
+
+      {games.some((g) => g.gameType === "map" || g.gameType === "map_quiz") && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">Website Packages</h2>
+          <p className="text-sm text-slate-400 mb-4">
+            Rebuild all map challenge packages at once. Each package is written to{" "}
+            <code className="bg-slate-100 px-1 rounded text-xs">public/challenges/[topic]/[slug]/index.html</code>.
+          </p>
+          <BuildPackageButton label="Rebuild All Map Packages" />
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 className="text-lg font-semibold text-slate-800 mb-4">Add New Challenge</h2>

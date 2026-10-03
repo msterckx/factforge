@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { GeneratedChallengeItem } from "@/lib/openai";
+import { QUIZ_THEMES } from "@/lib/quizThemes";
 
-type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "map" | "map_quiz";
+type GameType = "chronology" | "matching" | "puzzle" | "quiz" | "connections" | "map" | "map_quiz" | "generic_quiz";
 
 interface CategoryOption { id: number; name: string; slug: string; subcategories: { id: number; name: string }[] }
 
@@ -28,6 +29,8 @@ interface FormState {
   connectionsRightLabelNl: string;
   mapSvg: string;
   mapLabelMode: string;
+  mediaType: "map" | "carousel";
+  themeKey: string;
 }
 
 const empty: FormState = {
@@ -37,6 +40,7 @@ const empty: FormState = {
   connectionsLeftLabelEn: "", connectionsLeftLabelNl: "",
   connectionsRightLabelEn: "", connectionsRightLabelNl: "",
   mapSvg: "/maps/africa.svg", mapLabelMode: "country",
+  mediaType: "carousel", themeKey: "default",
 };
 
 export default function NewChallengeForm() {
@@ -103,6 +107,8 @@ export default function NewChallengeForm() {
         connectionsRightLabelNl: data.connectionsRightLabelNl ?? "",
         mapSvg: "/maps/africa.svg",
         mapLabelMode: "country",
+        mediaType: form.mediaType,
+        themeKey: form.themeKey,
       });
       setItems((data.items ?? []).map((item: GeneratedChallengeItem, i: number) => ({ ...item, position: i + 1 })));
     } catch {
@@ -135,6 +141,8 @@ export default function NewChallengeForm() {
         connectionsRightLabelNl: form.connectionsRightLabelNl || null,
         mapSvg:       form.mapSvg       || null,
         mapLabelMode: form.mapLabelMode || null,
+        mediaType:    form.gameType === "generic_quiz" ? form.mediaType : null,
+        themeKey:     form.gameType === "generic_quiz" ? form.themeKey  : null,
       }),
     });
     if (!gameRes.ok) {
@@ -209,6 +217,7 @@ export default function NewChallengeForm() {
               <option value="quiz">Quiz — questions from an existing category</option>
               <option value="connections">Connections — match items to their answers</option>
               <option value="map">Map — drag labels onto SVG map regions</option>
+              <option value="generic_quiz">Generic Quiz — 3-option quiz with map or image-carousel media</option>
             </select>
           </div>
           <div>
@@ -369,6 +378,41 @@ export default function NewChallengeForm() {
           </div>
           <p className="text-xs text-emerald-700">
             After creating, import region data via the <strong>Map Regions</strong> section on the challenge detail page.
+          </p>
+        </div>
+      )}
+
+      {/* ── Generic quiz config ───────────────────────────────────── */}
+      {form.gameType === "generic_quiz" && (
+        <div className="border border-teal-200 bg-teal-50 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-teal-800">Generic Quiz Settings</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Media</label>
+              <select
+                value={form.mediaType}
+                onChange={(e) => set("mediaType", e.target.value as "map" | "carousel")}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="carousel">Image carousel</option>
+                <option value="map">Interactive map</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Theme</label>
+              <select
+                value={form.themeKey}
+                onChange={(e) => set("themeKey", e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                {Object.values(QUIZ_THEMES).map((t) => (
+                  <option key={t.key} value={t.key}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="text-xs text-teal-700">
+            After creating, add {form.mediaType === "map" ? <>the map file and regions via <strong>Map Settings</strong> / <strong>Map Regions</strong></> : <><strong>Items</strong> (with answer/match and images)</>} on the challenge detail page.
           </p>
         </div>
       )}

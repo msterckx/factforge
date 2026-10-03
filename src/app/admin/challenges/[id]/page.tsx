@@ -8,6 +8,9 @@ import ChallengeEditForm from "./ChallengeEditForm";
 import ItemsManager from "./ItemsManager";
 import QuizQuestionSelector from "./QuizQuestionSelector";
 import MapRegionsManager from "./MapRegionsManager";
+import BuildPackageButton from "../BuildPackageButton";
+import YoutubeVideoCommand from "./YoutubeVideoCommand";
+import ConnectionsYoutubeVideoCommand from "./ConnectionsYoutubeVideoCommand";
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -20,8 +23,9 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
   if (!game) notFound();
 
   const items = db.select().from(challengeItems).where(eq(challengeItems.gameId, game.id)).orderBy(asc(challengeItems.position)).all();
-  const regions = game.gameType === "map"
-    ? db.select().from(mapRegions).where(eq(mapRegions.gameId, game.id)).orderBy(asc(mapRegions.regionKey)).all()
+  const isMapMedia = game.gameType === "map" || game.gameType === "map_quiz" || (game.gameType === "generic_quiz" && game.mediaType === "map");
+  const regions = isMapMedia
+    ? db.select().from(mapRegions).where(eq(mapRegions.gameId, game.id)).orderBy(asc(mapRegions.id)).all()
     : [];
 
   return (
@@ -40,13 +44,13 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
         <ChallengeEditForm game={game} />
       </div>
 
-      {game.gameType !== "quiz" && game.gameType !== "map" && (
+      {game.gameType !== "quiz" && !isMapMedia && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Items ({items.length})</h2>
           <ItemsManager gameId={game.id} gameType={game.gameType} initialItems={items} infographFields={game.infographFields} />
         </div>
       )}
-      {game.gameType === "map" && (
+      {isMapMedia && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-1">Map Regions ({regions.length})</h2>
           <p className="text-sm text-slate-400 mb-4">Import a CSV to define the clickable map regions and their labels.</p>
@@ -61,6 +65,36 @@ export default async function AdminChallengeDetailPage({ params }: Props) {
             gameId={game.id}
             initialSelectedIds={game.quizQuestionIds ? JSON.parse(game.quizQuestionIds) : null}
           />
+        </div>
+      )}
+
+      {(game.gameType === "map" || game.gameType === "map_quiz") && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">Website Package</h2>
+          <p className="text-sm text-slate-400 mb-4">
+            Generates <code className="bg-slate-100 px-1 rounded text-xs">public/challenges/{game.category}/{game.slug}/index.html</code> — a self-contained interactive challenge.
+          </p>
+          <BuildPackageButton slug={game.slug} />
+        </div>
+      )}
+
+      {(game.gameType === "map" || game.gameType === "map_quiz" || (game.gameType === "generic_quiz" && game.mediaType === "map")) && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-8">
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">YouTube Video</h2>
+          <p className="text-sm text-slate-400 mb-4">
+            Generates the command to build a HyperFrames video composition for this challenge. Nothing runs automatically — copy the command and run it yourself.
+          </p>
+          <YoutubeVideoCommand slug={game.slug} mapSvg={game.mapSvg} />
+        </div>
+      )}
+
+      {(game.gameType === "connections_quiz" || (game.gameType === "generic_quiz" && game.mediaType === "carousel")) && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-8">
+          <h2 className="text-lg font-semibold text-slate-800 mb-1">YouTube Video</h2>
+          <p className="text-sm text-slate-400 mb-4">
+            Generates the command to build a HyperFrames video composition for this challenge. Nothing runs automatically — copy the command and run it yourself.
+          </p>
+          <ConnectionsYoutubeVideoCommand slug={game.slug} />
         </div>
       )}
     </div>

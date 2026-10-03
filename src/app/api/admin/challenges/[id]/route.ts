@@ -26,7 +26,8 @@ export async function PATCH(req: Request, { params }: Params) {
                    "quizCategoryId","quizSubcategoryId","quizQuestionLimit","quizQuestionIds","startingLives",
                    "connectionsLeftLabelEn","connectionsLeftLabelNl",
                    "connectionsRightLabelEn","connectionsRightLabelNl",
-                   "mapSvg","mapLabelMode","infographFields"] as const;
+                   "mapSvg","mapLabelMode","infographFields","showInfograph","revealDelayBuffer","liveRevealDelay",
+                   "mediaType","themeKey"] as const;
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];
