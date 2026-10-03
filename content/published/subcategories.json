@@ -1,0 +1,254 @@
+[
+  {
+    "id": 2,
+    "name": "Countries",
+    "slug": "countries",
+    "category_id": 1,
+    "created_at": "2026-02-17 18:27:00"
+  },
+  {
+    "id": 3,
+    "name": "Cities",
+    "slug": "cities",
+    "category_id": 1,
+    "created_at": "2026-02-17 18:27:08"
+  },
+  {
+    "id": 4,
+    "name": "Continents & Regions",
+    "slug": "continents-regions",
+    "category_id": 1,
+    "created_at": "2026-02-17 18:27:19"
+  },
+  {
+    "id": 5,
+    "name": "Mountains & Deserts",
+    "slug": "mountains-deserts",
+    "category_id": 1,
+    "created_at": "2026-02-17 18:31:48"
+  },
+  {
+    "id": 6,
+    "name": "Ancient History",
+    "slug": "ancient-history",
+    "category_id": 2,
+    "created_at": "2026-02-17 18:32:27"
+  },
+  {
+    "id": 7,
+    "name": "Civilizations & Empires",
+    "slug": "civilizations-empires",
+    "category_id": 2,
+    "created_at": "2026-02-17 18:32:37"
+  },
+  {
+    "id": 8,
+    "name": "World Wars",
+    "slug": "world-wars",
+    "category_id": 2,
+    "created_at": "2026-02-17 18:32:43"
+  },
+  {
+    "id": 9,
+    "name": "Modern History",
+    "slug": "modern-history",
+    "category_id": 2,
+    "created_at": "2026-02-17 18:32:51"
+  },
+  {
+    "id": 10,
+    "name": "Economic History",
+    "slug": "economic-history",
+    "category_id": 2,
+    "created_at": "2026-02-17 18:32:59"
+  },
+  {
+    "id": 11,
+    "name": "Historical Milestones",
+    "slug": "historical-milestones",
+    "category_id": 2,
+    "created_at": "2026-02-17 18:33:08"
+  },
+  {
+    "id": 12,
+    "name": "Art Movements & Styles",
+    "slug": "art-movements-styles",
+    "category_id": 3,
+    "created_at": "2026-02-28 13:37:13"
+  },
+  {
+    "id": 13,
+    "name": "Famous Artists",
+    "slug": "famous-artists",
+    "category_id": 3,
+    "created_at": "2026-02-28 13:37:19"
+  },
+  {
+    "id": 14,
+    "name": "Famous Artworks",
+    "slug": "famous-artworks",
+    "category_id": 3,
+    "created_at": "2026-02-28 13:37:26"
+  },
+  {
+    "id": 15,
+    "name": "Art Techniques & Mediums",
+    "slug": "art-techniques-mediums",
+    "category_id": 3,
+    "created_at": "2026-02-28 13:37:33"
+  },
+  {
+    "id": 16,
+    "name": "Architecture",
+    "slug": "architecture",
+    "category_id": 3,
+    "created_at": "2026-02-28 13:38:04"
+  },
+  {
+    "id": 17,
+    "name": "Directors & Filmmakers",
+    "slug": "directors-filmmakers",
+    "category_id": 4,
+    "created_at": "2026-02-28 13:38:17"
+  },
+  {
+    "id": 18,
+    "name": "Actors & Actresses",
+    "slug": "actors-actresses",
+    "category_id": 4,
+    "created_at": "2026-02-28 13:38:22"
+  },
+  {
+    "id": 19,
+    "name": "Awards & Achievements",
+    "slug": "awards-achievements",
+    "category_id": 4,
+    "created_at": "2026-02-28 13:38:26"
+  },
+  {
+    "id": 20,
+    "name": "Films by Genre",
+    "slug": "films-by-genre",
+    "category_id": 4,
+    "created_at": "2026-02-28 13:38:31"
+  },
+  {
+    "id": 21,
+    "name": "TV Series",
+    "slug": "tv-series",
+    "category_id": 4,
+    "created_at": "2026-02-28 13:38:37"
+  },
+  {
+    "id": 22,
+    "name": "Film Music & Scores",
+    "slug": "film-music-scores",
+    "category_id": 4,
+    "created_at": "2026-02-28 13:38:44"
+  },
+  {
+    "id": 23,
+    "name": "Biology",
+    "slug": "biology",
+    "category_id": 6,
+    "created_at": "2026-02-28 13:38:56"
+  },
+  {
+    "id": 24,
+    "name": "Chemistry",
+    "slug": "chemistry",
+    "category_id": 6,
+    "created_at": "2026-02-28 13:38:59"
+  },
+  {
+    "id": 25,
+    "name": "Physics",
+    "slug": "physics",
+    "category_id": 6,
+    "created_at": "2026-02-28 13:39:03"
+  },
+  {
+    "id": 26,
+    "name": "Astronomy & Space",
+    "slug": "astronomy-space",
+    "category_id": 6,
+    "created_at": "2026-02-28 13:39:08"
+  },
+  {
+    "id": 27,
+    "name": "Earth Science",
+    "slug": "earth-science",
+    "category_id": 6,
+    "created_at": "2026-02-28 13:39:14"
+  },
+  {
+    "id": 29,
+    "name": "Capitals",
+    "slug": "capitals",
+    "category_id": 1,
+    "created_at": "2026-03-23 16:05:57"
+  },
+  {
+    "id": 30,
+    "name": "Rivers",
+    "slug": "rivers",
+    "category_id": 1,
+    "created_at": "2026-03-23 16:29:58"
+  },
+  {
+    "id": 31,
+    "name": "Famous Painters",
+    "slug": "famous-painters",
+    "category_id": 3,
+    "created_at": "2026-03-25 12:37:47"
+  },
+  {
+    "id": 32,
+    "name": "Impressionism & Post-impressionism",
+    "slug": "impressionism-post-impressionism",
+    "category_id": 3,
+    "created_at": "2026-03-25 13:08:33"
+  },
+  {
+    "id": 33,
+    "name": "Mountains",
+    "slug": "mountains",
+    "category_id": 1,
+    "created_at": "2026-04-04 08:48:18"
+  },
+  {
+    "id": 34,
+    "name": "Deserts",
+    "slug": "deserts",
+    "category_id": 1,
+    "created_at": "2026-04-04 08:48:23"
+  },
+  {
+    "id": 35,
+    "name": "Lakes",
+    "slug": "lakes",
+    "category_id": 1,
+    "created_at": "2026-04-04 08:51:59"
+  },
+  {
+    "id": 36,
+    "name": "Netflix",
+    "slug": "netflix",
+    "category_id": 4,
+    "created_at": "2026-04-04 13:24:19"
+  },
+  {
+    "id": 37,
+    "name": "HBO",
+    "slug": "hbo",
+    "category_id": 4,
+    "created_at": "2026-04-05 17:49:57"
+  },
+  {
+    "id": 38,
+    "name": "parks",
+    "slug": "parks",
+    "category_id": 7,
+    "created_at": "2026-04-12 16:18:33"
+  }
+]

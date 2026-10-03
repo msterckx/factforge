@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const categories = sqliteTable("categories", {
@@ -128,7 +128,7 @@ export const questionTranslations = sqliteTable(
 export const challengeGames = sqliteTable("challenge_games", {
   id:          integer("id").primaryKey({ autoIncrement: true }),
   slug:        text("slug").notNull().unique(),
-  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz", "matching", "connections", "map", "map_quiz"] }).notNull(),
+  gameType:    text("game_type", { enum: ["chronology", "puzzle", "quiz", "matching", "connections", "map", "map_quiz", "connections_quiz", "generic_quiz"] }).notNull(),
   icon:        text("icon").notNull().default("🎮"),
   category:    text("category").notNull().default("other"),
   titleEn:     text("title_en").notNull(),
@@ -151,8 +151,15 @@ export const challengeGames = sqliteTable("challenge_games", {
   // Map-type specific
   mapSvg:            text("map_svg"),        // path like "/maps/africa.svg"
   mapLabelMode:      text("map_label_mode"), // "country" | "capital" | "both"
+  showInfograph:     integer("show_infograph", { mode: "boolean" }).notNull().default(true), // map_quiz: show info pop-up after correct answer
+  revealDelayBuffer: real("reveal_delay_buffer").notNull().default(0.5), // seconds after narration ends before options/countdown appear (video gen only)
+  liveRevealDelay:   real("live_reveal_delay").notNull().default(0), // map_quiz: seconds to wait before options/countdown appear in the live game (lets narration audio played elsewhere finish)
   // Infograph field template: JSON array of {label, accent?, showBar?} shared across all items
   infographFields:   text("infograph_fields"),
+  // generic_quiz: which media panel drives the 3-option quiz engine
+  mediaType:         text("media_type", { enum: ["map", "carousel"] }),
+  // generic_quiz: visual preset key (see src/lib/quizThemes.ts); null = default look
+  themeKey:          text("theme_key"),
   createdAt:         text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
@@ -168,6 +175,10 @@ export const mapRegions = sqliteTable("map_regions", {
   infoImageNl: text("info_image_nl"),         // image URL shown after correct drop (NL)
   infoTextEn:  text("info_text_en"),          // extra info text shown after correct drop (EN)
   infoTextNl:  text("info_text_nl"),          // extra info text shown after correct drop (NL)
+  questionTextEn: text("question_text_en"),   // narration script for the video generator (EN)
+  questionTextNl: text("question_text_nl"),   // narration script for the video generator (NL)
+  questionAudioUrlEn: text("question_audio_url_en"), // narration WAV URL (EN), served via /api/audio
+  answerAudioUrlEn:   text("answer_audio_url_en"),   // "It's <answer>" WAV URL (EN), served via /api/audio
   infographData: text("infograph_data"),       // JSON: { countryIso2, country, area, areaBarPct, established, landscape, wildlife, images[] }
   enabled:     integer("enabled", { mode: "boolean" }).notNull().default(true),
   createdAt:  text("created_at").notNull().default(sql`(datetime('now'))`),
@@ -193,6 +204,11 @@ export const challengeItems = sqliteTable("challenge_items", {
   achievement:   text("achievement"),     // e.g. "9 Olympic gold medals"
   // Infograph data (matching game) — JSON: { born, died, origin, originCountryId, role, period, ghostText, caption, images[] }
   infographData: text("infograph_data"),
+  // Connections-quiz narration fields (video generator only — not used by the live game)
+  questionTextEn:     text("question_text_en"),   // narration script for the video generator (EN)
+  questionTextNl:     text("question_text_nl"),   // narration script for the video generator (NL)
+  questionAudioUrlEn: text("question_audio_url_en"), // narration WAV URL (EN), served via /api/audio
+  answerAudioUrlEn:   text("answer_audio_url_en"),   // "It's <answer>" WAV URL (EN), served via /api/audio
   createdAt:     text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 

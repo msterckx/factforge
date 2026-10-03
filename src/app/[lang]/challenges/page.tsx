@@ -3,6 +3,7 @@ import { isValidLang, getDictionary, type Lang } from "@/i18n";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
+import { runtimeDb } from "@/db/runtime";
 import { challengeScores } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAllChallengeGames } from "@/data/challengeGame";
@@ -31,7 +32,7 @@ export default async function ChallengesPage({ params }: Props) {
   const session = await auth();
   const scores: ScoreMap = {};
   if (session?.user?.email) {
-    const rows = db
+    const rows = runtimeDb
       .select()
       .from(challengeScores)
       .where(eq(challengeScores.userEmail, session.user.email))

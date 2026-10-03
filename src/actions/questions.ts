@@ -1,10 +1,11 @@
 "use server";
 
 import { db } from "@/db";
-import { questions, categories } from "@/db/schema";
+import { questions, categories, subcategories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { saveUploadedImage, deleteImage } from "@/lib/uploads";
+import { placeQuestionImage } from "@/lib/questionImages";
 import { z } from "zod/v4";
 
 const questionSchema = z.object({
@@ -14,6 +15,21 @@ const questionSchema = z.object({
   subcategoryId: z.coerce.number().int().positive().nullable().optional(),
   difficulty: z.enum(["easy", "intermediate", "difficult"]),
 });
+
+/** Gives a question's image its descriptive name: <category>/<subcategory>/<answer>.<ext>. */
+function placeImageFor(imagePath: string | null, data: { categoryId: number; subcategoryId?: number | null; answer: string }): string | null {
+  if (!imagePath) return imagePath;
+  const category = db.select({ slug: categories.slug }).from(categories).where(eq(categories.id, data.categoryId)).get();
+  if (!category) return imagePath;
+  const subcategory = data.subcategoryId
+    ? db.select({ name: subcategories.name }).from(subcategories).where(eq(subcategories.id, data.subcategoryId)).get()
+    : undefined;
+  return placeQuestionImage(imagePath, {
+    categorySlug: category.slug,
+    subcategoryName: subcategory?.name ?? null,
+    answer: data.answer,
+  });
+}
 
 export async function createQuestion(formData: FormData) {
   const rawSubcategoryId = formData.get("subcategoryId");
@@ -42,6 +58,7 @@ export async function createQuestion(formData: FormData) {
   } else if (searchedImagePath) {
     imagePath = searchedImagePath;
   }
+  imagePath = placeImageFor(imagePath, parsed.data);
 
   db.insert(questions)
     .values({
@@ -119,6 +136,8 @@ export async function updateQuestion(id: number, formData: FormData) {
     }
     imagePath = searchedImagePath;
   }
+  // Also renames a kept image when the question's category, subcategory or answer changed
+  imagePath = placeImageFor(imagePath, parsed.data);
 
   db.update(questions)
     .set({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import type { MapRegion } from "@/data/challengeGame";
 import InfographAdminEditor, {
@@ -23,6 +23,10 @@ type EditState = {
   infoImageEn: string;
   infoTextEn: string;
   infoTextNl: string; // auto-translated; empty = not yet translated
+  questionTextEn: string;
+  questionTextNl: string; // auto-translated; empty = not yet translated
+  questionAudioUrlEn: string; // set by the video generator; empty = not yet generated
+  answerAudioUrlEn: string;   // set by the video generator; empty = not yet generated
   infograph: InfographAdminState;
 };
 
@@ -32,12 +36,16 @@ type AddState = {
   infoImageEn: string;
   infoTextEn: string;
   infoTextNl: string;
+  questionTextEn: string;
+  questionTextNl: string;
   infograph: InfographAdminState;
 };
 
 const EMPTY_ADD: AddState = {
   regionKey: "", labelEn: "", labelNl: "", capitalEn: "", capitalNl: "",
-  infoImageEn: "", infoTextEn: "", infoTextNl: "", infograph: { ...EMPTY_INFOGRAPH_ADMIN, fields: [] },
+  infoImageEn: "", infoTextEn: "", infoTextNl: "",
+  questionTextEn: "", questionTextNl: "",
+  infograph: { ...EMPTY_INFOGRAPH_ADMIN, fields: [] },
 };
 
 export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Props) {
@@ -54,6 +62,8 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
   const [savingId, setSavingId]       = useState<number | null>(null);
   const [translatingEdit, setTranslatingEdit] = useState(false);
   const [translatingAdd, setTranslatingAdd]   = useState(false);
+  const [translatingQuestionEdit, setTranslatingQuestionEdit] = useState(false);
+  const [translatingQuestionAdd, setTranslatingQuestionAdd]   = useState(false);
   const [jsonImporting, setJsonImporting]     = useState(false);
 
   const enabledCount = regions.filter((r) => r.enabled).length;
@@ -103,8 +113,8 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
 
   /* ── JSON Export ─────────────────────────────────────────────────── */
   function handleJsonExport() {
-    const data = regions.map(({ regionKey, labelEn, labelNl, capitalEn, capitalNl, infoImageEn, infoTextEn, infoTextNl, infographData, enabled }) => ({
-      regionKey, labelEn, labelNl, capitalEn, capitalNl, infoImageEn, infoTextEn, infoTextNl, infographData, enabled,
+    const data = regions.map(({ regionKey, labelEn, labelNl, capitalEn, capitalNl, infoImageEn, infoTextEn, infoTextNl, questionTextEn, questionTextNl, infographData, enabled }) => ({
+      regionKey, labelEn, labelNl, capitalEn, capitalNl, infoImageEn, infoTextEn, infoTextNl, questionTextEn, questionTextNl, infographData, enabled,
     }));
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url  = URL.createObjectURL(blob);
@@ -238,6 +248,10 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
         infoImageNl:   null, // always fall back to EN image
         infoTextEn:    editing.infoTextEn  || null,
         infoTextNl:    editing.infoTextNl  || null,
+        questionTextEn: editing.questionTextEn || null,
+        questionTextNl: editing.questionTextNl || null,
+        questionAudioUrlEn: editing.questionAudioUrlEn || null,
+        answerAudioUrlEn:   editing.answerAudioUrlEn   || null,
         infographData: serializeInfographAdmin(editing.infograph),
       }),
     });
@@ -272,6 +286,8 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
         infoImageNl:   null,
         infoTextEn:    addForm.infoTextEn  || null,
         infoTextNl:    addForm.infoTextNl  || null,
+        questionTextEn: addForm.questionTextEn || null,
+        questionTextNl: addForm.questionTextNl || null,
         infographData: serializeInfographAdmin(addForm.infograph),
       }),
     });
@@ -394,8 +410,8 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
               const isEdit = editing?.id === r.id;
               const rowCls = `border-b border-slate-100 last:border-0 ${r.enabled ? (i % 2 === 0 ? "bg-white" : "bg-slate-50/50") : "bg-slate-100/70 opacity-60"}`;
               return (
-                <>
-                  <tr key={r.id} className={rowCls}>
+                <Fragment key={r.id}>
+                  <tr className={rowCls}>
                     {/* Enabled toggle */}
                     <td className={tdCls}>
                       <button
@@ -433,6 +449,10 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                               infoImageEn: r.infoImageEn ?? "",
                               infoTextEn: r.infoTextEn ?? "",
                               infoTextNl: r.infoTextNl ?? "",
+                              questionTextEn: r.questionTextEn ?? "",
+                              questionTextNl: r.questionTextNl ?? "",
+                              questionAudioUrlEn: r.questionAudioUrlEn ?? "",
+                              answerAudioUrlEn: r.answerAudioUrlEn ?? "",
                               infograph: parseInfographAdmin(r.infographData),
                             })}
                             className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded mr-1"
@@ -497,6 +517,76 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                             )}
                           </div>
 
+                          {/* Question text (narration) */}
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Question (narration for video)</label>
+                            <textarea
+                              className={textareaCls}
+                              placeholder="e.g. Where would you find ancient tepui mountains rising above the Gran Sabana?"
+                              value={editing.questionTextEn}
+                              onChange={(e) => setEditing({ ...editing, questionTextEn: e.target.value, questionTextNl: "" })}
+                            />
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <button
+                              disabled={!editing.questionTextEn.trim() || translatingQuestionEdit}
+                              onClick={async () => {
+                                setTranslatingQuestionEdit(true);
+                                const nl = await translateToNl(editing.questionTextEn);
+                                if (nl) setEditing((prev) => prev ? { ...prev, questionTextNl: nl } : prev);
+                                setTranslatingQuestionEdit(false);
+                              }}
+                              className="flex-shrink-0 px-3 py-1 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg disabled:opacity-40 transition-colors"
+                            >
+                              {translatingQuestionEdit ? "Translating…" : "Translate to NL"}
+                            </button>
+                            {editing.questionTextNl && (
+                              <p className="text-xs text-slate-500 italic leading-relaxed">{editing.questionTextNl}</p>
+                            )}
+                          </div>
+
+                          {/* Narration audio (generated by the video-gen scripts, read-only here) */}
+                          <div>
+                            <label className="block text-xs text-slate-500 mb-1">Narration audio</label>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-slate-500 w-16 flex-shrink-0">Question</span>
+                                {editing.questionAudioUrlEn ? (
+                                  <>
+                                    <audio controls src={editing.questionAudioUrlEn} className="h-8" />
+                                    <button
+                                      onClick={() => setEditing({ ...editing, questionAudioUrlEn: "" })}
+                                      className="px-2 py-0.5 text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 rounded"
+                                    >
+                                      Clear
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-slate-400 italic">Not generated yet</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-slate-500 w-16 flex-shrink-0">Answer</span>
+                                {editing.answerAudioUrlEn ? (
+                                  <>
+                                    <audio controls src={editing.answerAudioUrlEn} className="h-8" />
+                                    <button
+                                      onClick={() => setEditing({ ...editing, answerAudioUrlEn: "" })}
+                                      className="px-2 py-0.5 text-xs font-medium bg-red-50 hover:bg-red-100 text-red-600 rounded"
+                                    >
+                                      Clear
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-slate-400 italic">Not generated yet</span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1">
+                              Generated by the video-gen scripts from the question/answer text above. Clear + Save to force regeneration next run.
+                            </p>
+                          </div>
+
                           {/* Image preview */}
                           {editing.infoImageEn && (
                             <div>
@@ -519,7 +609,7 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
 
@@ -570,6 +660,29 @@ export default function MapRegionsManager({ gameId, initialRegions, mapSvg }: Pr
                         </button>
                         {addForm.infoTextNl && (
                           <p className="text-xs text-slate-500 italic leading-relaxed">{addForm.infoTextNl}</p>
+                        )}
+                      </div>
+
+                      {/* Question text (narration) */}
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Question (narration for video)</label>
+                        <textarea className={textareaCls} placeholder="e.g. Where would you find…" value={addForm.questionTextEn} onChange={(e) => setAddForm({ ...addForm, questionTextEn: e.target.value, questionTextNl: "" })} />
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <button
+                          disabled={!addForm.questionTextEn.trim() || translatingQuestionAdd}
+                          onClick={async () => {
+                            setTranslatingQuestionAdd(true);
+                            const nl = await translateToNl(addForm.questionTextEn);
+                            if (nl) setAddForm((prev) => ({ ...prev, questionTextNl: nl }));
+                            setTranslatingQuestionAdd(false);
+                          }}
+                          className="flex-shrink-0 px-3 py-1 text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg disabled:opacity-40 transition-colors"
+                        >
+                          {translatingQuestionAdd ? "Translating…" : "Translate to NL"}
+                        </button>
+                        {addForm.questionTextNl && (
+                          <p className="text-xs text-slate-500 italic leading-relaxed">{addForm.questionTextNl}</p>
                         )}
                       </div>
 

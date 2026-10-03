@@ -21,7 +21,7 @@ export async function POST(req: Request) {
           quizCategoryId, quizSubcategoryId, quizQuestionLimit,
           connectionsLeftLabelEn, connectionsLeftLabelNl,
           connectionsRightLabelEn, connectionsRightLabelNl,
-          mapSvg, mapLabelMode } = body;
+          mapSvg, mapLabelMode, mediaType, themeKey } = body;
 
   if (!slug || !gameType || !titleEn || !titleNl) {
     return NextResponse.json({ error: "slug, gameType, titleEn, titleNl are required" }, { status: 400 });
@@ -42,6 +42,8 @@ export async function POST(req: Request) {
       connectionsRightLabelNl: connectionsRightLabelNl ?? null,
       mapSvg:       mapSvg       ?? null,
       mapLabelMode: mapLabelMode ?? null,
+      mediaType:    mediaType    ?? null,
+      themeKey:     themeKey     ?? null,
     })
     .returning()
     .all();

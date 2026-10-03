@@ -20,18 +20,45 @@ interface Props {
   infographFields?: string | null;
 }
 
+// connections_quiz: infographData holds just a bare JSON array of *additional*
+// carousel image URLs (image_url stays the primary/live-game image) — a much
+// lighter shape than InfographAdminEditor's {fields, images, ...} object.
+function parseExtraImages(raw: string | null | undefined): string {
+  if (!raw) return "";
+  try {
+    const parsed = JSON.parse(raw);
+    // Bare array (connections_quiz/generic_quiz convention), or — for items
+    // converted from matching/chronology — the richer {born, died, ...,
+    // images[]} object. Recognizing both here matters: on save this always
+    // re-serializes as a bare array, so failing to read the object shape
+    // would silently wipe its images (and the rest of the object) to null.
+    if (Array.isArray(parsed)) return parsed.join("\n");
+    if (Array.isArray(parsed?.images)) return parsed.images.join("\n");
+    return "";
+  } catch { return ""; }
+}
+function serializeExtraImages(text: string): string | null {
+  const arr = text.split("\n").map((s) => s.trim()).filter(Boolean);
+  return arr.length ? JSON.stringify(arr) : null;
+}
+
 function ItemRow({ gameId, item, gameType, template, onDeleted }: { gameId: number; item: ChallengeItem; gameType: string; template: InfographTemplateField[]; onDeleted: () => void }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [vals, setVals] = useState({ ...item });
   const [igraph, setIgraph] = useState<InfographAdminState>(() => applyInfographTemplate(parseInfographAdmin(item.infographData), template));
+  const [extraImages, setExtraImages] = useState(() => parseExtraImages(item.infographData));
 
   async function save() {
     setSaving(true);
+    const infographData =
+      gameType === "matching" || gameType === "chronology" ? serializeInfographAdmin(igraph) :
+      (gameType === "connections_quiz" || gameType === "generic_quiz") ? serializeExtraImages(extraImages) :
+      undefined;
     await fetch(`/api/admin/challenges/${gameId}/items/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfographAdmin(igraph) : undefined }),
+      body: JSON.stringify({ ...vals, infographData }),
     });
     setSaving(false);
     setEditing(false);
@@ -53,6 +80,11 @@ function ItemRow({ gameId, item, gameType, template, onDeleted }: { gameId: numb
           {gameType === "puzzle" && <div className="text-slate-400 text-xs">{item.hint}</div>}
           {(gameType === "matching" || gameType === "chronology") && item.infographData && (
             <div className="text-indigo-400 text-xs">infograph ✓</div>
+          )}
+          {(gameType === "connections_quiz" || gameType === "generic_quiz") && (
+            <div className={item.questionTextEn ? "text-indigo-400 text-xs" : "text-slate-300 text-xs"}>
+              {item.questionTextEn ? "🎙 narration ✓" : "🎙 narration missing"}
+            </div>
           )}
         </td>
         <td className="px-3 py-2 max-w-xs">
@@ -94,8 +126,22 @@ function ItemRow({ gameId, item, gameType, template, onDeleted }: { gameId: numb
           {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
           {gameType === "matching" && field("Clue EN", "clueEn", "Matching clue (English)", true)}
           {gameType === "matching" && field("Clue NL", "clueNl", "Matching clue (Dutch)", true)}
-          {gameType === "connections" && field("Answer / Match (EN)", "clueEn", "e.g. Leonardo da Vinci", true)}
-          {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
+          {(gameType === "connections" || gameType === "connections_quiz" || gameType === "generic_quiz") && field("Answer / Match (EN)", "clueEn", "e.g. Leonardo da Vinci", true)}
+          {(gameType === "connections" || gameType === "connections_quiz" || gameType === "generic_quiz") && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
+          {(gameType === "connections_quiz" || gameType === "generic_quiz") && field("Question (narration for video, EN)", "questionTextEn", "e.g. This 2007 piece features a diamond-encrusted skull — who created it?", true)}
+          {(gameType === "connections_quiz" || gameType === "generic_quiz") && field("Question (narration for video, NL)", "questionTextNl", "", true)}
+          {(gameType === "connections_quiz" || gameType === "generic_quiz") && (
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-slate-600 mb-0.5">Additional images (carousel, one URL per line)</label>
+              <textarea
+                rows={3}
+                value={extraImages}
+                onChange={(e) => setExtraImages(e.target.value)}
+                placeholder={"https://…\nhttps://…"}
+                className="w-full border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-amber-400 resize-y"
+              />
+            </div>
+          )}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
           {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} template={template.length ? template : undefined} />}
@@ -116,15 +162,20 @@ function ItemRow({ gameId, item, gameType, template, onDeleted }: { gameId: numb
 function NewItemRow({ gameId, gameType, template, onCreated }: { gameId: number; gameType: string; template: InfographTemplateField[]; onCreated: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [vals, setVals] = useState({ position: 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "", dates: "", milestoneEn: "", milestoneNl: "", clueEn: "", clueNl: "", hint: "", achievement: "" });
+  const [vals, setVals] = useState({ position: 1, name: "", imageUrl: "", descriptionEn: "", descriptionNl: "", dates: "", milestoneEn: "", milestoneNl: "", clueEn: "", clueNl: "", hint: "", achievement: "", questionTextEn: "", questionTextNl: "" });
   const [igraph, setIgraph] = useState<InfographAdminState>(() => applyInfographTemplate({ ...EMPTY_INFOGRAPH_ADMIN, fields: [] }, template));
+  const [extraImages, setExtraImages] = useState("");
 
   async function save() {
     setSaving(true);
+    const infographData =
+      gameType === "matching" || gameType === "chronology" ? serializeInfographAdmin(igraph) :
+      (gameType === "connections_quiz" || gameType === "generic_quiz") ? serializeExtraImages(extraImages) :
+      undefined;
     await fetch(`/api/admin/challenges/${gameId}/items`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...vals, infographData: (gameType === "matching" || gameType === "chronology") ? serializeInfographAdmin(igraph) : undefined }),
+      body: JSON.stringify({ ...vals, infographData }),
     });
     setSaving(false);
     setOpen(false);
@@ -168,8 +219,22 @@ function NewItemRow({ gameId, gameType, template, onCreated }: { gameId: number;
           {gameType === "chronology" && field("Milestone NL", "milestoneNl", "Central milestone (Dutch)", true)}
           {gameType === "matching" && field("Clue EN", "clueEn", "Matching clue (English)", true)}
           {gameType === "matching" && field("Clue NL", "clueNl", "Matching clue (Dutch)", true)}
-          {gameType === "connections" && field("Answer / Match (EN)", "clueEn", "e.g. Leonardo da Vinci", true)}
-          {gameType === "connections" && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
+          {(gameType === "connections" || gameType === "connections_quiz" || gameType === "generic_quiz") && field("Answer / Match (EN)", "clueEn", "e.g. Leonardo da Vinci", true)}
+          {(gameType === "connections" || gameType === "connections_quiz" || gameType === "generic_quiz") && field("Answer / Match (NL)", "clueNl", "Dutch translation of answer", true)}
+          {(gameType === "connections_quiz" || gameType === "generic_quiz") && field("Question (narration for video, EN)", "questionTextEn", "e.g. This 2007 piece features a diamond-encrusted skull — who created it?", true)}
+          {(gameType === "connections_quiz" || gameType === "generic_quiz") && field("Question (narration for video, NL)", "questionTextNl", "", true)}
+          {(gameType === "connections_quiz" || gameType === "generic_quiz") && (
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-slate-600 mb-0.5">Additional images (carousel, one URL per line)</label>
+              <textarea
+                rows={3}
+                value={extraImages}
+                onChange={(e) => setExtraImages(e.target.value)}
+                placeholder={"https://…\nhttps://…"}
+                className="w-full border border-slate-300 rounded px-2 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-amber-400 resize-y"
+              />
+            </div>
+          )}
           {gameType === "puzzle" && field("Hint", "hint", "e.g. Athletics · Jamaica")}
           {gameType === "puzzle" && field("Achievement", "achievement", "e.g. 9 gold medals", true)}
           {(gameType === "matching" || gameType === "chronology") && <InfographAdminEditor value={igraph} onChange={setIgraph} template={template.length ? template : undefined} />}

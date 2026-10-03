@@ -56,9 +56,18 @@ export default async function RootLayout({
       <body className={`${inter.className} ${playfair.variable} ${spectral.variable} antialiased bg-[#FCF5F6] text-slate-900`}>
         {children}
         <Script id="sw-register" strategy="afterInteractive">{`
-          if ('serviceWorker' in navigator) {
+          // Production only — the service worker caches /_next/static/* chunks
+          // forever (correct for content-hashed prod builds), which would
+          // otherwise pin stale Turbopack dev chunks across restarts.
+          if (${process.env.NODE_ENV === "production"} && 'serviceWorker' in navigator) {
             window.addEventListener('load', function() {
               navigator.serviceWorker.register('/sw.js');
+            });
+          } else if ('serviceWorker' in navigator) {
+            // Dev: unregister any service worker left over from a prior
+            // production build/run on this same origin.
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(r) { r.unregister(); });
             });
           }
         `}</Script>

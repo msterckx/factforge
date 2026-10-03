@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { isValidLang, getDictionary, type Lang } from "@/i18n";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import fs from "fs";
+import path from "path";
 import {
   getChallengeGameBySlug,
   getChallengeItems,
@@ -20,9 +22,12 @@ import QuizChallenge from "@/components/challenges/QuizChallenge";
 import ConnectionsGame from "@/components/challenges/ConnectionsGame";
 import MapChallenge from "@/components/challenges/MapChallenge";
 import MapQuizChallenge from "@/components/challenges/MapQuizChallenge";
+import ConnectionsQuizChallenge from "@/components/challenges/ConnectionsQuizChallenge";
+import GenericQuizChallenge from "@/components/challenges/GenericQuizChallenge";
 import type { QuizQuestion } from "@/components/challenges/QuizChallenge";
 import StartChallengeButton from "./StartChallengeButton";
 import ClientOnly from "@/components/ClientOnly";
+import PackageFrame from "./PackageFrame";
 
 interface Props {
   params: Promise<{ lang: string; slug: string }>;
@@ -109,11 +114,18 @@ export default async function ChallengePage({ params }: Props) {
     quizQuestions = game.quizQuestionLimit ? shuffled.slice(0, game.quizQuestionLimit) : shuffled;
   }
 
+  // ── generic_quiz picks its data source per-game via mediaType ────────────
+  const isGenericMapQuiz = game.gameType === "generic_quiz" && game.mediaType === "map";
+
   // ── Chronology / matching / puzzle / connections items ───────────────────
-  const items = (game.gameType !== "quiz" && game.gameType !== "map") ? getChallengeItems(game.id) : [];
+  const items = (game.gameType !== "quiz" && game.gameType !== "map" && !isGenericMapQuiz) ? getChallengeItems(game.id) : [];
 
   // ── Map regions ───────────────────────────────────────────────────────────
-  const mapRegions = (game.gameType === "map" || game.gameType === "map_quiz") ? getMapRegions(game.id) : [];
+  const mapRegions = (game.gameType === "map" || game.gameType === "map_quiz" || isGenericMapQuiz) ? getMapRegions(game.id) : [];
+
+  // ── Built static package (self-contained HTML) ────────────────────────────
+  const packagePath = path.join(process.cwd(), "public", "challenges", game.category, game.slug, "index.html");
+  const packageUrl = fs.existsSync(packagePath) ? `/challenges/${game.category}/${game.slug}/index.html` : null;
 
   return (
     <div className="max-w-[1408px] mx-auto">
@@ -129,6 +141,9 @@ export default async function ChallengePage({ params }: Props) {
       <StartChallengeButton label={d.startChallenge} />
 
       <div id="challenge-game">
+      {packageUrl ? (
+        <PackageFrame src={packageUrl} title={title} />
+      ) : (
       <ClientOnly>
       {game.gameType === "chronology" && (
         <ChronologyGame
@@ -174,6 +189,14 @@ export default async function ChallengePage({ params }: Props) {
             : (game.connectionsRightLabelEn || undefined)}
         />
       )}
+      {game.gameType === "connections_quiz" && (
+        <ConnectionsQuizChallenge
+          items={mapToConnectionItems(items, lang)}
+          game={game}
+          dict={d}
+          challengeId={game.slug}
+        />
+      )}
       {game.gameType === "map" && (
         <MapChallenge
           regions={mapRegions}
@@ -192,10 +215,21 @@ export default async function ChallengePage({ params }: Props) {
           lang={lang}
         />
       )}
+      {game.gameType === "generic_quiz" && (
+        <GenericQuizChallenge
+          game={game}
+          dict={d}
+          challengeId={game.slug}
+          lang={lang}
+          regions={mapRegions}
+          items={items}
+        />
+      )}
       {game.gameType === "quiz" && quizQuestions.length === 0 && (
         <p className="text-slate-400 text-center py-12">{dict.category.noQuestions}</p>
       )}
       </ClientOnly>
+      )}
       </div>
     </div>
   );

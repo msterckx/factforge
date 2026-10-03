@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "id": "Attack_on_Pearl_Harbor", "properties": { "regionKey": "Attack_on_Pearl_Harbor", "name": "Attack on Pearl Harbor" }, "geometry": { "type": "Point", "coordinates": [-157.98, 21.35] } },
+    { "type": "Feature", "id": "Battle_of_Midway", "properties": { "regionKey": "Battle_of_Midway", "name": "Battle of Midway" }, "geometry": { "type": "Point", "coordinates": [-177.37, 28.21] } },
+    { "type": "Feature", "id": "Guadalcanal_Campaign", "properties": { "regionKey": "Guadalcanal_Campaign", "name": "Guadalcanal Campaign" }, "geometry": { "type": "Point", "coordinates": [160.15, -9.61] } },
+    { "type": "Feature", "id": "Battle_of_Leyte_Gulf", "properties": { "regionKey": "Battle_of_Leyte_Gulf", "name": "Battle of Leyte Gulf" }, "geometry": { "type": "Point", "coordinates": [124.9, 10.8] } },
+    { "type": "Feature", "id": "Battle_of_Iwo_Jima", "properties": { "regionKey": "Battle_of_Iwo_Jima", "name": "Battle of Iwo Jima" }, "geometry": { "type": "Point", "coordinates": [141.32, 24.78] } },
+    { "type": "Feature", "id": "Battle_of_Okinawa", "properties": { "regionKey": "Battle_of_Okinawa", "name": "Battle of Okinawa" }, "geometry": { "type": "Point", "coordinates": [127.98, 26.5] } },
+    { "type": "Feature", "id": "Bombing_of_Hiroshima", "properties": { "regionKey": "Bombing_of_Hiroshima", "name": "Bombing of Hiroshima" }, "geometry": { "type": "Point", "coordinates": [132.46, 34.39] } },
+    { "type": "Feature", "id": "Bombing_of_Nagasaki", "properties": { "regionKey": "Bombing_of_Nagasaki", "name": "Bombing of Nagasaki" }, "geometry": { "type": "Point", "coordinates": [129.88, 32.75] } }
+  ]
+}

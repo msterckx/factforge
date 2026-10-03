@@ -11,6 +11,9 @@
 # testing
 /coverage
 
+# cached third-party datasets (re-downloaded on first use)
+/scripts/lib/.cache
+
 # next.js
 /.next/
 /out/
@@ -50,3 +53,35 @@ gameoftrivia.db-wal
 # uploaded images
 public/uploads/questions/*
 !public/uploads/questions/.gitkeep
+
+# local dev AUDIO_DIR (production uses its own path instead — see .env.local)
+local-data/*
+!local-data/.gitkeep
+
+# generated web images (derived from content/ by the package generator)
+public/challenges/**/images/
+
+# local DB restore — never commit
+restore/
+
+# Runtime data written by the live site (scores) — never part of published content
+runtime.db
+runtime.db-shm
+runtime.db-wal
+
+# Full-quality challenge videos (masters). The site serves the 720p web versions
+# from VIDEO_DIR (local-data/web-videos, /var/data/videos on the server).
+public/videos/
+
+# Any env file (incl. stray copies like ".env (2).local") — they hold secrets
+.env*
+!.env.example
+
+# Generated media and tooling output — far too large for git; the site's
+# videos are served from VIDEO_DIR, content from content/published
+/renders/
+/videos/
+public/challenges/
+scripts/weights/
+scripts/__pycache__/
+*.db.bak

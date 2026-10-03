@@ -1,16 +1,20 @@
 import { writeFile, unlink, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { questionImagesDir, relativeImagePath, resolveImageFile, QUESTION_IMAGE_URL_PREFIX } from "@/lib/questionImages";
 
-const DATA_DIR = process.env.DATABASE_DIR || process.cwd();
-const UPLOAD_DIR = path.join(DATA_DIR, "uploads", "questions");
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 export function getUploadDir(): string {
-  return UPLOAD_DIR;
+  return questionImagesDir();
 }
 
+/**
+ * Saves a new image under incoming/<uuid>.<ext>; the question actions then
+ * move it to its descriptive name with placeQuestionImage() once the
+ * question's category and answer are known.
+ */
 export async function saveUploadedImage(file: File): Promise<string> {
   if (!ALLOWED_TYPES.includes(file.type)) {
     throw new Error("Invalid file type. Allowed: jpg, png, gif, webp.");
@@ -21,27 +25,23 @@ export async function saveUploadedImage(file: File): Promise<string> {
   }
 
   const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const filename = `${uuidv4()}.${ext}`;
+  const rel = `incoming/${uuidv4()}.${ext}`;
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
+  await mkdir(path.join(questionImagesDir(), "incoming"), { recursive: true });
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const filePath = path.join(UPLOAD_DIR, filename);
-  await writeFile(filePath, buffer);
+  await writeFile(path.join(questionImagesDir(), rel), buffer);
 
-  return `/uploads/questions/${filename}`;
+  return QUESTION_IMAGE_URL_PREFIX + rel;
 }
 
 export async function deleteImage(imagePath: string): Promise<void> {
-  if (!imagePath) return;
+  const rel = relativeImagePath(imagePath);
+  if (!rel) return;
 
-  // Extract filename from path like /uploads/questions/uuid.jpg
-  const filename = path.basename(imagePath);
-  const fullPath = path.join(UPLOAD_DIR, filename);
-
-  // Security: ensure path is within uploads directory
-  const resolved = path.resolve(fullPath);
-  if (!resolved.startsWith(path.resolve(UPLOAD_DIR))) {
+  // Security: resolveImageFile refuses paths outside the images folder
+  const resolved = resolveImageFile(rel);
+  if (!resolved) {
     throw new Error("Invalid image path.");
   }
 

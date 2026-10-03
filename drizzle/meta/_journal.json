@@ -169,6 +169,55 @@
       "when": 1748534400000,
       "tag": "0023_infograph_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1784124081380,
+      "tag": "0024_map_quiz_show_infograph",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1784924400000,
+      "tag": "0025_map_region_question_text",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785265499000,
+      "tag": "0026_map_region_audio_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1785339264000,
+      "tag": "0027_map_video_reveal_delay",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1785340000000,
+      "tag": "0028_map_quiz_live_reveal_delay",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1785350000000,
+      "tag": "0029_connections_narration",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1785400000000,
+      "tag": "0030_generic_quiz_media_theme",
+      "breakpoints": true
     }
   ]
 }

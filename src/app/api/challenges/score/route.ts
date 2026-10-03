@@ -1,4 +1,4 @@
-import { db } from "@/db";
+import { runtimeDb } from "@/db/runtime";
 import { challengeScores } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     maxScore: number;
   };
 
-  db.insert(challengeScores).values({
+  runtimeDb.insert(challengeScores).values({
     userEmail: session.user.email,
     challengeId,
     score,
@@ -33,7 +33,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const scores = db
+  const scores = runtimeDb
     .select()
     .from(challengeScores)
     .where(eq(challengeScores.userEmail, session.user.email))

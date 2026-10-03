@@ -1,0 +1,22 @@
+# Run on a machine with an NVIDIA GPU (CUDA). CPU works too, just much slower.
+#
+#   python3 -m venv .venv && source .venv/bin/activate
+#   ./scripts/install-upscale-deps.sh
+#
+# Don't `pip install -r` this file directly — basicsr==1.4.2's sdist has a
+# broken setup.py that fails to build on Python 3.12+ (see
+# install-upscale-deps.sh for why and the patch). Run that script instead;
+# it patches and installs basicsr, then installs everything below.
+#
+# torch/torchvision are left unpinned so pip can resolve a build matching
+# whatever Python is on this machine. torchvision >= 0.17 removed
+# torchvision.transforms.functional_tensor, which basicsr/realesrgan still
+# import — the compat shim at the top of upscale-images.py patches that back
+# in at runtime, so any recent torchvision works.
+numpy
+opencv-python-headless>=4.8.0
+facexlib==0.3.0
+realesrgan==0.3.0
+Pillow>=10.0.0
+torch
+torchvision

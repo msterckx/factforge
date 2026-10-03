@@ -1,0 +1,236 @@
+[
+  {
+    "id": 1,
+    "subcategory_id": 2,
+    "language": "nl",
+    "name": "Landen",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:16",
+    "updated_at": "2026-03-01 10:07:16"
+  },
+  {
+    "id": 2,
+    "subcategory_id": 3,
+    "language": "nl",
+    "name": "Steden & Hoofdsteden",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:16",
+    "updated_at": "2026-03-01 10:07:16"
+  },
+  {
+    "id": 3,
+    "subcategory_id": 4,
+    "language": "nl",
+    "name": "Continenten & Regio's",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:17",
+    "updated_at": "2026-03-01 10:07:17"
+  },
+  {
+    "id": 4,
+    "subcategory_id": 5,
+    "language": "nl",
+    "name": "Bergen, Rivieren en Woestijnen",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:18",
+    "updated_at": "2026-03-01 10:07:18"
+  },
+  {
+    "id": 5,
+    "subcategory_id": 6,
+    "language": "nl",
+    "name": "Oude Geschiedenis",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:18",
+    "updated_at": "2026-03-01 10:07:18"
+  },
+  {
+    "id": 6,
+    "subcategory_id": 7,
+    "language": "nl",
+    "name": "Beschavingen & Rijken",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:19",
+    "updated_at": "2026-03-01 10:07:19"
+  },
+  {
+    "id": 7,
+    "subcategory_id": 8,
+    "language": "nl",
+    "name": "Oorlogen & Conflicten",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:19",
+    "updated_at": "2026-03-01 10:07:19"
+  },
+  {
+    "id": 8,
+    "subcategory_id": 9,
+    "language": "nl",
+    "name": "Moderne Geschiedenis",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:20",
+    "updated_at": "2026-03-01 10:07:20"
+  },
+  {
+    "id": 9,
+    "subcategory_id": 10,
+    "language": "nl",
+    "name": "Economische Geschiedenis",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:20",
+    "updated_at": "2026-03-01 10:07:20"
+  },
+  {
+    "id": 10,
+    "subcategory_id": 11,
+    "language": "nl",
+    "name": "Historische mijlpalen",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:21",
+    "updated_at": "2026-03-01 10:07:21"
+  },
+  {
+    "id": 11,
+    "subcategory_id": 12,
+    "language": "nl",
+    "name": "Kunststromingen & Stijlen",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:22",
+    "updated_at": "2026-03-01 10:07:22"
+  },
+  {
+    "id": 12,
+    "subcategory_id": 13,
+    "language": "nl",
+    "name": "Beroemde Kunstenaars",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:22",
+    "updated_at": "2026-03-01 10:07:22"
+  },
+  {
+    "id": 13,
+    "subcategory_id": 14,
+    "language": "nl",
+    "name": "Beroemde Kunstwerken",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:23",
+    "updated_at": "2026-03-01 10:07:23"
+  },
+  {
+    "id": 14,
+    "subcategory_id": 15,
+    "language": "nl",
+    "name": "Kunsttechnieken en -media",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:24",
+    "updated_at": "2026-03-01 10:07:24"
+  },
+  {
+    "id": 15,
+    "subcategory_id": 16,
+    "language": "nl",
+    "name": "Architectuur",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:24",
+    "updated_at": "2026-03-01 10:07:24"
+  },
+  {
+    "id": 16,
+    "subcategory_id": 17,
+    "language": "nl",
+    "name": "Regisseurs & Filmmakers",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:25",
+    "updated_at": "2026-03-01 10:07:25"
+  },
+  {
+    "id": 17,
+    "subcategory_id": 18,
+    "language": "nl",
+    "name": "Acteurs & Actrices",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:26",
+    "updated_at": "2026-03-01 10:07:26"
+  },
+  {
+    "id": 18,
+    "subcategory_id": 19,
+    "language": "nl",
+    "name": "Prijzen & Prestaties",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:26",
+    "updated_at": "2026-03-01 10:07:26"
+  },
+  {
+    "id": 19,
+    "subcategory_id": 20,
+    "language": "nl",
+    "name": "Films per genre",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:27",
+    "updated_at": "2026-03-01 10:07:27"
+  },
+  {
+    "id": 20,
+    "subcategory_id": 21,
+    "language": "nl",
+    "name": "Tv-serie",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:27",
+    "updated_at": "2026-03-01 10:07:27"
+  },
+  {
+    "id": 21,
+    "subcategory_id": 22,
+    "language": "nl",
+    "name": "Filmmuziek en Partituren",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:28",
+    "updated_at": "2026-03-01 10:07:28"
+  },
+  {
+    "id": 22,
+    "subcategory_id": 23,
+    "language": "nl",
+    "name": "Biologie",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:28",
+    "updated_at": "2026-03-01 10:07:28"
+  },
+  {
+    "id": 23,
+    "subcategory_id": 24,
+    "language": "nl",
+    "name": "Scheikunde",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:29",
+    "updated_at": "2026-03-01 10:07:29"
+  },
+  {
+    "id": 24,
+    "subcategory_id": 25,
+    "language": "nl",
+    "name": "Natuurkunde",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:30",
+    "updated_at": "2026-03-01 10:07:30"
+  },
+  {
+    "id": 25,
+    "subcategory_id": 26,
+    "language": "nl",
+    "name": "Astronomie & Ruimte",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:30",
+    "updated_at": "2026-03-01 10:07:30"
+  },
+  {
+    "id": 26,
+    "subcategory_id": 27,
+    "language": "nl",
+    "name": "Aardwetenschappen",
+    "is_auto_translated": 1,
+    "created_at": "2026-03-01 10:07:31",
+    "updated_at": "2026-03-01 10:07:31"
+  }
+]
