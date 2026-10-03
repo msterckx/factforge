@@ -175,7 +175,11 @@ console.log(`DB mode: ${game.slug} (${game.title_en})`);
 
 if (args['folder-images']) {
   for (const it of rawItems) {
-    const f = folderImages(it.imageUrls[0] || '');
+    // The folder holding image_url, or else the one holding the carousel images
+    // (e.g. a main image kept one level up, with <name>/<name>.webp alongside
+    // the numbered ones).
+    const candidates = [...new Set(it.imageUrls.map(u => folderImages(u)))];
+    const f = candidates.find(c => !c.error) || candidates[0] || { error: 'no images' };
     if (f.error) {
       console.warn(`  ⚠ ${it.name}: ${f.error} — using DB images`);
       continue;

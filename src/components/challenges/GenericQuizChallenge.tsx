@@ -54,6 +54,20 @@ const CAROUSEL_PILOTS: Record<string, { opening: string; items: Record<string, V
       "211": { question: "/api/videos/worldfair-architecture/connections-biosphere-question.mp4",                   reveal: "/api/videos/worldfair-architecture/connections-biosphere-reveal.mp4",                   questionHoldMs: 9700,  revealHoldMs: 12700 }, // Biosphere
     },
   },
+  "renaissance-paintings": {
+    opening: "/api/videos/renaissance-paintings/connections-opening-renaissance-paintings.mp4",
+    items: {
+      "178": { question: "/api/videos/renaissance-paintings/connections-178-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-178-reveal.mp4", questionHoldMs: 9100,  revealHoldMs: 12700 }, // The Mona Lisa
+      "179": { question: "/api/videos/renaissance-paintings/connections-179-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-179-reveal.mp4", questionHoldMs: 10400, revealHoldMs: 12700 }, // The Birth of Venus
+      "180": { question: "/api/videos/renaissance-paintings/connections-180-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-180-reveal.mp4", questionHoldMs: 10800, revealHoldMs: 12700 }, // The School of Athens
+      "181": { question: "/api/videos/renaissance-paintings/connections-181-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-181-reveal.mp4", questionHoldMs: 8600,  revealHoldMs: 12700 }, // The Creation of Adam
+      "182": { question: "/api/videos/renaissance-paintings/connections-182-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-182-reveal.mp4", questionHoldMs: 9800,  revealHoldMs: 12700 }, // The Arnolfini Portrait
+      "183": { question: "/api/videos/renaissance-paintings/connections-183-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-183-reveal.mp4", questionHoldMs: 9200,  revealHoldMs: 12700 }, // David
+      "184": { question: "/api/videos/renaissance-paintings/connections-184-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-184-reveal.mp4", questionHoldMs: 8600,  revealHoldMs: 12700 }, // Venus of Urbino
+      "186": { question: "/api/videos/renaissance-paintings/connections-186-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-186-reveal.mp4", questionHoldMs: 10300, revealHoldMs: 12700 }, // The Garden of Earthly Delights
+      "187": { question: "/api/videos/renaissance-paintings/connections-187-question.mp4", reveal: "/api/videos/renaissance-paintings/connections-187-reveal.mp4", questionHoldMs: 8700,  revealHoldMs: 12700 }, // The Ambassadors
+    },
+  },
   "top-7-nazis-world-war-2": {
     opening: "/api/videos/top-7-nazis-world-war-2/connections-opening-top-7-nazis-world-war-2.mp4",
     items: {
