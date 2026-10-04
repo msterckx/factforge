@@ -39,6 +39,9 @@
  *   --fit         "cover" (default) crops images to fill the 16:9 frame;
  *                 "contain" shows the whole image, with the left/right (or
  *                 top/bottom) filled by a blurred, darkened copy of it.
+ *   --motion      "normal" (default) or "subtle": how far the slow zoom/pan
+ *                 goes. Subtle zooms 1.03× instead of up to 1.10×, so less of
+ *                 each image is cropped away (web variant only).
  *   --image-focus Vertical crop anchor when an image is taller than 16:9, as a
  *                 percentage from the top: 0 keeps the top (portraits — heads stay
  *                 in frame), 50 = centred (default), 100 keeps the bottom.
@@ -145,6 +148,13 @@ let videoTag     = args.tag     || 'Artwork';
 // How images that aren't 16:9 fill the frame: "cover" crops to fill (default),
 // "contain" shows the whole image over a blurred, darkened copy of itself.
 const imageFit = args.fit === 'contain' ? 'contain' : 'cover';
+// Ken Burns strength for the web clips. Every bit of zoom crops on top of the
+// unavoidable aspect-ratio crop, so "subtle" keeps a gentle movement with far
+// less zoom. Pans stay within the zoom's margin so no edge ever shows
+// (pan% ≤ (scale-1)/2 at the lowest scale).
+const motion = args.motion === 'subtle'
+  ? { questionEnd: 1.03, leadEnd: 1.03, kbLow: 1.02, kbHigh: 1.05, pan: 0.8 }
+  : { questionEnd: 1.08, leadEnd: 1.06, kbLow: 1.05, kbHigh: 1.10, pan: 1.5 };
 const imageFocusArg = Number(args['image-focus'] ?? 50);
 const imageFocus = Number.isFinite(imageFocusArg) ? Math.min(100, Math.max(0, imageFocusArg)) : 50;
 const revealDelayBuffer = game.reveal_delay_buffer ?? 0.5;
@@ -184,6 +194,7 @@ if (args['folder-images']) {
       console.warn(`  ⚠ ${it.name}: ${f.error} — using DB images`);
       continue;
     }
+    for (const w of f.warnings || []) console.warn(`  ⚠ ${it.name}: ${w}`);
     it.imageUrls = [f.question, ...f.carousel];
     it.carouselUrls = f.carousel;
     console.log(`  Folder images: ${it.name} — ${f.folder} (question + ${f.carousel.length} carousel)`);
@@ -936,7 +947,7 @@ async function writeSceneSegmentsWeb(scene, i) {
     gsap.set(img, { opacity: j === 0 ? 1 : 0 });
   }
   if (scene.images[0]) {
-    tl.fromTo('#car-img-0', { scale: 1 }, { scale: 1.08, duration: ${qDuration}, ease: 'none' }, 0);
+    tl.fromTo('#car-img-0', { scale: 1 }, { scale: ${motion.questionEnd}, duration: ${qDuration}, ease: 'none' }, 0);
   }`;
 
   const qHtml = webPageShell({ compositionId: qId, totalDur: qDuration, audioElements: qAudioElements, innerScript: qInnerScript, showLabel: false });
@@ -974,19 +985,20 @@ async function writeSceneSegmentsWeb(scene, i) {
   }
   if (scene.images[0]) {
     if (leadHold > 0) {
-      tl.fromTo('#car-img-0', { scale: 1.0 }, { scale: 1.06, duration: imgCount > 1 ? carStart + leadHold + 0.9 : ${rDuration}, ease: 'none' }, 0);
+      tl.fromTo('#car-img-0', { scale: 1.0 }, { scale: ${motion.leadEnd}, duration: imgCount > 1 ? carStart + leadHold + 0.9 : ${rDuration}, ease: 'none' }, 0);
     } else {
-      tl.fromTo('#car-img-0', { scale: 1.08 }, { scale: 1.08, duration: ${rDuration}, ease: 'none' }, 0);
+      tl.fromTo('#car-img-0', { scale: ${motion.questionEnd} }, { scale: ${motion.questionEnd}, duration: ${rDuration}, ease: 'none' }, 0);
     }
   }
 
   tl.call(() => { setText('car-name', scene.name); setText('car-artist', scene.match); }, [], 0);
   tl.to('#car-label', { opacity: 1, duration: 0.5, ease: 'power1.inOut', overwrite: 'auto' }, 0);
 
+  const lo = ${motion.kbLow}, hi = ${motion.kbHigh}, p = ${motion.pan}, k = p / 1.5;
   const KB = [
-    { from: { scale: 1.05, xPercent:  1.5, yPercent:  0.5 }, to: { scale: 1.10, xPercent: -1.5, yPercent: -1.0 } },
-    { from: { scale: 1.10, xPercent: -1.5, yPercent: -1.0 }, to: { scale: 1.05, xPercent:  1.5, yPercent:  0.5 } },
-    { from: { scale: 1.05, xPercent: -1.0, yPercent:  1.5 }, to: { scale: 1.10, xPercent:  1.0, yPercent: -1.5 } },
+    { from: { scale: lo, xPercent:  p,     yPercent:  0.5 * k }, to: { scale: hi, xPercent: -p,     yPercent: -1.0 * k } },
+    { from: { scale: hi, xPercent: -p,     yPercent: -1.0 * k }, to: { scale: lo, xPercent:  p,     yPercent:  0.5 * k } },
+    { from: { scale: lo, xPercent: -1.0 * k, yPercent:  p     }, to: { scale: hi, xPercent:  1.0 * k, yPercent: -p     } },
   ];
   for (let j = 1; j < imgCount; j++) {
     const switchAt = carStart + leadHold + (j - 1) * imgInterval;
