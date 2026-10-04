@@ -43,15 +43,15 @@ const CAROUSEL_PILOTS: Record<string, { opening: string; items: Record<string, V
   "worldfair-architecture": {
     opening: "/api/videos/worldfair-architecture/connections-opening-worldfair-architecture.mp4",
     items: {
-      "202": { question: "/api/videos/worldfair-architecture/connections-unisphere-question.mp4",                  reveal: "/api/videos/worldfair-architecture/connections-unisphere-reveal.mp4",                  questionHoldMs: 9600,  revealHoldMs: 12700 }, // Unisphere
-      "203": { question: "/api/videos/worldfair-architecture/connections-atomium-question.mp4",                    reveal: "/api/videos/worldfair-architecture/connections-atomium-reveal.mp4",                    questionHoldMs: 10800, revealHoldMs: 12700 }, // Atomium
-      "204": { question: "/api/videos/worldfair-architecture/connections-eiffel-tower-question.mp4",                reveal: "/api/videos/worldfair-architecture/connections-eiffel-tower-reveal.mp4",                questionHoldMs: 9500,  revealHoldMs: 12700 }, // Eiffel tower
-      "205": { question: "/api/videos/worldfair-architecture/connections-grand-palais-question.mp4",                reveal: "/api/videos/worldfair-architecture/connections-grand-palais-reveal.mp4",                questionHoldMs: 7900,  revealHoldMs: 12700 }, // Grand Palais
-      "206": { question: "/api/videos/worldfair-architecture/connections-habitat-question.mp4",                     reveal: "/api/videos/worldfair-architecture/connections-habitat-reveal.mp4",                     questionHoldMs: 8900,  revealHoldMs: 12700 }, // Habitat
-      "207": { question: "/api/videos/worldfair-architecture/connections-magic-fountain-of-montju-question.mp4",    reveal: "/api/videos/worldfair-architecture/connections-magic-fountain-of-montju-reveal.mp4",    questionHoldMs: 9900,  revealHoldMs: 12700 }, // Magic Fountain of Montjuic
-      "208": { question: "/api/videos/worldfair-architecture/connections-palace-of-fine-arts-question.mp4",         reveal: "/api/videos/worldfair-architecture/connections-palace-of-fine-arts-reveal.mp4",         questionHoldMs: 8700,  revealHoldMs: 12700 }, // Palace of Fine Arts
-      "210": { question: "/api/videos/worldfair-architecture/connections-space-needle-question.mp4",                reveal: "/api/videos/worldfair-architecture/connections-space-needle-reveal.mp4",                questionHoldMs: 8600,  revealHoldMs: 12700 }, // Space Needle
-      "211": { question: "/api/videos/worldfair-architecture/connections-biosphere-question.mp4",                   reveal: "/api/videos/worldfair-architecture/connections-biosphere-reveal.mp4",                   questionHoldMs: 9700,  revealHoldMs: 12700 }, // Biosphere
+      "202": { question: "/api/videos/worldfair-architecture/connections-202-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-202-reveal.mp4", questionHoldMs: 9600,  revealHoldMs: 12700 }, // Unisphere
+      "203": { question: "/api/videos/worldfair-architecture/connections-203-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-203-reveal.mp4", questionHoldMs: 10900, revealHoldMs: 12700 }, // Atomium
+      "204": { question: "/api/videos/worldfair-architecture/connections-204-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-204-reveal.mp4", questionHoldMs: 9500,  revealHoldMs: 12700 }, // Eiffel tower
+      "205": { question: "/api/videos/worldfair-architecture/connections-205-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-205-reveal.mp4", questionHoldMs: 7900,  revealHoldMs: 12700 }, // Grand Palais
+      "206": { question: "/api/videos/worldfair-architecture/connections-206-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-206-reveal.mp4", questionHoldMs: 8900,  revealHoldMs: 12700 }, // Habitat
+      "207": { question: "/api/videos/worldfair-architecture/connections-207-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-207-reveal.mp4", questionHoldMs: 9900,  revealHoldMs: 12700 }, // Magic Fountain of Montjuic
+      "208": { question: "/api/videos/worldfair-architecture/connections-208-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-208-reveal.mp4", questionHoldMs: 8700,  revealHoldMs: 12700 }, // Palace of Fine Arts
+      "210": { question: "/api/videos/worldfair-architecture/connections-210-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-210-reveal.mp4", questionHoldMs: 8600,  revealHoldMs: 12700 }, // Space Needle
+      "211": { question: "/api/videos/worldfair-architecture/connections-211-question.mp4", reveal: "/api/videos/worldfair-architecture/connections-211-reveal.mp4", questionHoldMs: 9800,  revealHoldMs: 12700 }, // Biosphere
     },
   },
   "renaissance-paintings": {
