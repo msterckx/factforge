@@ -68,23 +68,43 @@ async function readWebImage(ref) {
 function folderImages(ref) {
   const rel = apiImagePath(ref);
   if (!rel) return { error: `not an /api/images reference: ${ref}` };
-  const folderRel = path.posix.dirname(rel);
+  let folderRel = path.posix.dirname(rel);
+  let dir = path.resolve(WEB_IMAGES_DIR, folderRel);
+  if (!fs.existsSync(dir)) {
+    // A folder renamed between "_" and "-" (cloud_gate → cloud-gate) still counts.
+    const parent = path.posix.dirname(folderRel);
+    const want = path.posix.basename(folderRel).toLowerCase().replace(/_/g, '-');
+    const parentDir = path.resolve(WEB_IMAGES_DIR, parent);
+    const alt = fs.existsSync(parentDir)
+      ? fs.readdirSync(parentDir).find(d => d.toLowerCase().replace(/_/g, '-') === want && fs.statSync(path.join(parentDir, d)).isDirectory())
+      : undefined;
+    if (alt) { folderRel = `${parent}/${alt}`; dir = path.resolve(WEB_IMAGES_DIR, folderRel); }
+  }
   const base = path.posix.basename(folderRel);
-  const dir = path.resolve(WEB_IMAGES_DIR, folderRel);
   if (!dir.startsWith(WEB_IMAGES_DIR + path.sep) || !fs.existsSync(dir)) {
     return { error: `folder not in local mirror: ${folderRel}` };
   }
-  const esc = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const files = fs.readdirSync(dir);
-  const question = files.find(f => new RegExp(`^${esc}\\.(webp|jpe?g|png)$`, 'i').test(f));
-  const numbered = files
-    .map(f => ({ f, m: new RegExp(`^${esc}-(\\d+)\\.(webp|jpe?g|png)$`, 'i').exec(f) }))
+  // "-" and "_" count as the same (cloud-gate.webp in cloud_gate/ still
+  // matches), so a mix of both in one folder doesn't break the convention.
+  const norm = name => name.toLowerCase().replace(/_/g, '-');
+  const stemOf = f => f.replace(/\.(webp|jpe?g|png)$/i, '');
+  const isImage = f => /\.(webp|jpe?g|png)$/i.test(f);
+  const nBase = norm(base);
+  const files = fs.readdirSync(dir).filter(isImage);
+  const question = files.find(f => norm(stemOf(f)) === nBase);
+  const numberedRe = new RegExp(`^${nBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`);
+  const numberedAll = files
+    .map(f => ({ f, m: numberedRe.exec(norm(stemOf(f))) }))
     .filter(x => x.m)
-    .sort((a, b) => Number(a.m[1]) - Number(b.m[1]))
-    .map(x => x.f);
+    .sort((a, b) => Number(a.m[1]) - Number(b.m[1]) || a.f.localeCompare(b.f));
+  const numbered = numberedAll.map(x => x.f);
+  const counts = {};
+  for (const x of numberedAll) counts[x.m[1]] = (counts[x.m[1]] || 0) + 1;
+  const warnings = Object.entries(counts).filter(([, c]) => c > 1)
+    .map(([n]) => `two files numbered ${n} in ${folderRel}: ${numberedAll.filter(x => x.m[1] === n).map(x => x.f).join(', ')}`);
   if (!question) return { error: `no ${base}.webp question image in ${folderRel}`, folder: folderRel };
   const toRef = f => `/api/images/${folderRel}/${f}`;
-  return { question: toRef(question), carousel: numbered.map(toRef), folder: folderRel };
+  return { question: toRef(question), carousel: numbered.map(toRef), folder: folderRel, warnings };
 }
 
 module.exports = { WEB_IMAGES_DIR, apiImagePath, localWebImagePath, readWebImage, folderImages };

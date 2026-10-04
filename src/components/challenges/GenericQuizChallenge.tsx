@@ -27,17 +27,17 @@ interface Props {
 // (ffprobe), so McqQuizEngine holds long enough for it to finish.
 const CAROUSEL_PILOTS: Record<string, { opening: string; items: Record<string, VideoMediaUrls & { questionHoldMs: number; revealHoldMs: number }> }> = {
   "contemporary-art": {
-    opening: "/api/videos/contemporary-art/connections-opening-contemporary-art.v2.mp4",
+    opening: "/api/videos/contemporary-art/connections-opening-contemporary-art.mp4",
     items: {
-      "193": { question: "/api/videos/contemporary-art/connections-193-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-193-reveal.v2.mp4", questionHoldMs: 10500, revealHoldMs: 12700 }, // The Physical Impossibility of Death in the Mind of Someone Living
-      "194": { question: "/api/videos/contemporary-art/connections-194-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-194-reveal.v2.mp4", questionHoldMs: 8500,  revealHoldMs: 12700 }, // Balloon Dog
-      "195": { question: "/api/videos/contemporary-art/connections-195-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-195-reveal.v2.mp4", questionHoldMs: 10100, revealHoldMs: 12700 }, // Obliteration Room
-      "196": { question: "/api/videos/contemporary-art/connections-196-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-196-reveal.v2.mp4", questionHoldMs: 10200, revealHoldMs: 9700 },  // 727
-      "197": { question: "/api/videos/contemporary-art/connections-197-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-197-reveal.v2.mp4", questionHoldMs: 8600,  revealHoldMs: 12700 }, // Untitled (Cowboy)
-      "198": { question: "/api/videos/contemporary-art/connections-198-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-198-reveal.v2.mp4", questionHoldMs: 7900,  revealHoldMs: 12700 }, // Companion
-      "199": { question: "/api/videos/contemporary-art/connections-199-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-199-reveal.v2.mp4", questionHoldMs: 11100, revealHoldMs: 12700 }, // Sunflower Seeds
-      "200": { question: "/api/videos/contemporary-art/connections-200-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-200-reveal.v2.mp4", questionHoldMs: 9700,  revealHoldMs: 12700 }, // Comedian
-      "201": { question: "/api/videos/contemporary-art/connections-201-question.v2.mp4", reveal: "/api/videos/contemporary-art/connections-201-reveal.v2.mp4", questionHoldMs: 9200,  revealHoldMs: 12700 }, // Cloud Gate
+      "193": { question: "/api/videos/contemporary-art/connections-193-question.mp4", reveal: "/api/videos/contemporary-art/connections-193-reveal.mp4", questionHoldMs: 10500, revealHoldMs: 12700 }, // The Physical Impossibility of Death in the Mind of Someone Living
+      "194": { question: "/api/videos/contemporary-art/connections-194-question.mp4", reveal: "/api/videos/contemporary-art/connections-194-reveal.mp4", questionHoldMs: 8500,  revealHoldMs: 12700 }, // Balloon Dog
+      "195": { question: "/api/videos/contemporary-art/connections-195-question.mp4", reveal: "/api/videos/contemporary-art/connections-195-reveal.mp4", questionHoldMs: 10100, revealHoldMs: 12700 }, // Obliteration Room
+      "196": { question: "/api/videos/contemporary-art/connections-196-question.mp4", reveal: "/api/videos/contemporary-art/connections-196-reveal.mp4", questionHoldMs: 10300, revealHoldMs: 12700 }, // 727
+      "197": { question: "/api/videos/contemporary-art/connections-197-question.mp4", reveal: "/api/videos/contemporary-art/connections-197-reveal.mp4", questionHoldMs: 8600,  revealHoldMs: 12700 }, // Untitled (Cowboy)
+      "198": { question: "/api/videos/contemporary-art/connections-198-question.mp4", reveal: "/api/videos/contemporary-art/connections-198-reveal.mp4", questionHoldMs: 8000,  revealHoldMs: 12700 }, // Companion
+      "199": { question: "/api/videos/contemporary-art/connections-199-question.mp4", reveal: "/api/videos/contemporary-art/connections-199-reveal.mp4", questionHoldMs: 11100, revealHoldMs: 12700 }, // Sunflower Seeds
+      "200": { question: "/api/videos/contemporary-art/connections-200-question.mp4", reveal: "/api/videos/contemporary-art/connections-200-reveal.mp4", questionHoldMs: 9800,  revealHoldMs: 12700 }, // Comedian
+      "201": { question: "/api/videos/contemporary-art/connections-201-question.mp4", reveal: "/api/videos/contemporary-art/connections-201-reveal.mp4", questionHoldMs: 9200,  revealHoldMs: 12700 }, // Cloud Gate
     },
   },
   "worldfair-architecture": {
