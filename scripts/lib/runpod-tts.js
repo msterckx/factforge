@@ -135,6 +135,7 @@ async function s3GetObject({ endpoint, bucket, region, accessKeyId, secretAccess
 
 // ── Post-processing ──────────────────────────────────────────────────────────
 const LEAD_IN_SECONDS = 0.5;
+const PRE_ROLL_SECONDS = 0.06; // original quiet kept before the first sound
 
 /**
  * RunPod's voice-clone output has an inconsistent amount of dead air (roughly
@@ -152,11 +153,13 @@ function normalizeLeadIn(filePath) {
   try {
     execFileSync('ffmpeg', [
       '-nostdin', '-y', '-i', filePath,
-      // -50dB (not -35dB) so silenceremove stops at the first quiet trace of
-      // the actual onset instead of trimming into it; a 40ms fade-in then
-      // smooths whatever hard digital edge is still left right at the cut,
-      // so even a still-abrupt cut doesn't sound like a click/chop.
-      '-af', `silenceremove=start_periods=1:start_duration=0:start_threshold=-50dB,afade=t=in:st=0:d=0.04,adelay=${Math.round(LEAD_IN_SECONDS * 1000)}:all=1`,
+      // Trim the dead air but keep PRE_ROLL of the original quiet lead-up in
+      // front of the first sound (start_silence), and fade in over that
+      // pre-roll only. Fading over the onset itself swallowed short initial
+      // consonants — "Can you…" came out as "…an you". The added delay is
+      // shortened by the same pre-roll, so speech still starts at exactly
+      // LEAD_IN_SECONDS in every clip.
+      '-af', `silenceremove=start_periods=1:start_duration=0:start_threshold=-50dB:start_silence=${PRE_ROLL_SECONDS},afade=t=in:st=0:d=${PRE_ROLL_SECONDS / 2},adelay=${Math.round((LEAD_IN_SECONDS - PRE_ROLL_SECONDS) * 1000)}:all=1`,
       tmpPath,
     ], { stdio: ['ignore', 'ignore', 'pipe'] });
     fs.renameSync(tmpPath, filePath);
