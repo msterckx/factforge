@@ -496,7 +496,14 @@ function pageShell({ compositionId, totalDur, audioElements, innerScript }) {
     html, body {
       width: 1920px; height: 1080px;
       overflow: hidden;
-      background: rgb(${videoTheme.panelBgRgb});
+      /* Same texture as #answer-panel, laid exactly behind it (right 580px,
+         dot grid aligned to the panel's), so the right column already looks
+         like the panel while the question is being read, before it fades in. */
+      background:
+        radial-gradient(circle at 2px 2px, rgba(255,255,255,0.07) 1.3px, transparent 1.8px) 1340px 0 / 24px 24px,
+        radial-gradient(ellipse 130% 55% at 100% 0%, ${rgba(videoTheme.panelAccent, 0.22)}, transparent 72%) right top / 580px 1080px no-repeat,
+        linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.22) 100%) right top / 580px 1080px no-repeat,
+        rgb(${videoTheme.panelBgRgb});
       font-family: Georgia, 'Times New Roman', serif;
     }
 
@@ -552,7 +559,15 @@ function pageShell({ compositionId, totalDur, audioElements, innerScript }) {
       position: absolute;
       top: 0; right: 0;
       width: 580px; height: 1080px;
-      background: rgba(${videoTheme.panelBgRgb}, 0.94);
+      /* Dark panel with depth: a fine dot grid, a soft glow in the theme's
+         accent colour from the top-right, and a gentle top-to-bottom shade,
+         over the theme's panel colour. Dots (not lines) stay clean in
+         compressed video. */
+      background:
+        radial-gradient(circle at 2px 2px, rgba(255,255,255,0.07) 1.3px, transparent 1.8px) 0 0 / 24px 24px,
+        radial-gradient(ellipse 130% 55% at 100% 0%, ${rgba(videoTheme.panelAccent, 0.22)}, transparent 72%),
+        linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.22) 100%),
+        rgba(${videoTheme.panelBgRgb}, 0.94);
       border-left: 1.5px solid ${rgba(videoTheme.panelAccent, 0.3)};
       z-index: 6;
       display: flex;

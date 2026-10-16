@@ -30,6 +30,8 @@
  *   --output      Output base directory (DB mode default: videos/map-challenge/<slug>)
  *   --title       Video title (DB mode default: game title)
  *   --tagline     Opening title-card subtitle (default: "Can you name these parks?")
+ *   --tag         Caption label above each name in the reveal when a region has no
+ *                 type of its own (default: "National Park")
  *   --bg          Continent preset: south_america | africa | north_america (DB mode: auto-detected)
  *   --voice       Voice sample filename for RunPod TTS (default: celeste_48k_stereo.wav)
  *   --skip-audio  Skip TTS generation (reuses existing WAV files if present)
@@ -38,6 +40,7 @@
  *                 exists for it (in this video's own audio/ dir, or in the
  *                 durable audio store) — costs a fresh synthesis. Use with
  *                 --only to refresh one scene's clips.
+ *   --force-audio-kind  question | answer — limit --force-audio to that kind
  *   --refresh-audio  Re-sync this video's own audio/ cache from the durable
  *                 audio store even if a local WAV already exists — cheap (a
  *                 file copy, no synthesis), unlike --force-audio. Each
@@ -89,6 +92,10 @@ const ttsVoice    = args.voice   || 'celeste_48k_stereo.wav';
 const skipAudio   = !!args['skip-audio'];
 const audioOnly   = !!args['audio-only'];
 const forceAudio  = !!args['force-audio'];
+// --force-audio-kind=answer (or question) limits --force-audio to that clip
+// kind, keeping the other narration as it is.
+const forceAudioKinds = typeof args['force-audio-kind'] === 'string'
+  ? args['force-audio-kind'].split(',').map(k => k.trim()) : null;
 const refreshAudio = !!args['refresh-audio'];
 const onlyArg     = args.only != null ? String(args.only) : null; // e.g. "0", "Manu_National_Park", "opening"
 const imagesDirArg = args['images-dir'] || null; // local dir of hi-res images
@@ -353,7 +360,13 @@ let scenes = regions.map((r, i) => {
     questionAudioUrlEn: r.questionAudioUrlEn || '',
     answerAudioUrlEn:   r.answerAudioUrlEn   || '',
     country:      ig?.country   || '',
-    typeLabel:    ig?.typeLabel || 'National Park',
+    // Caption label above the name: the region's own type (typeLabel, or an
+    // infograph field labelled "…Type", e.g. WW2's "Event Type: Carrier battle"),
+    // else the game-wide --tag, else the park default.
+    typeLabel:    ig?.typeLabel
+                  || (Array.isArray(ig?.fields) ? ig.fields.find(f => /type$/i.test(f?.label || ''))?.value : '')
+                  || (typeof args.tag === 'string' ? args.tag : '')
+                  || 'National Park',
     area:         fields.area        || ig?.area        || '',
     established:  fields.established || ig?.established || '',
     images: (() => {
@@ -446,7 +459,7 @@ const T_ZOOM_START    = 1.0;   // map zoom begins; narration audio starts here t
 const T_ZOOM_LAND     = 5.0;   // zoom animation complete (4 s duration)
 const T_CAROUSEL_IN   = 5.6;   // carousel crossfades over zoomed map (left column only)
 const T_REVEAL        = 9.0;   // progress bar finishes depleting → correct answer highlights
-const POST_REVEAL_HOLD = 2.0;  // seconds to keep the reveal on screen before cutting away
+const POST_REVEAL_HOLD = 3.0;  // seconds to keep the reveal on screen before cutting away (the last photo is the reveal payoff)
 // Carousel/zoom/panel all cut away together, timed off the reveal itself (which
 // already shifts later with narration length) rather than a fixed absolute time —
 // so the carousel finishes exactly POST_REVEAL_HOLD after the answer is given,
@@ -485,12 +498,13 @@ if (!skipAudio) {
       const audioFile = path.join(audioDir, clip.file);
       const label = `Scene ${i + 1}/${scenes.length} (${scene.label}) ${clip.kind}`;
       const hadLocal = fs.existsSync(audioFile);
-      if (!forceAudio && !refreshAudio && hadLocal) {
+      const forceThis = forceAudio && (!forceAudioKinds || forceAudioKinds.includes(clip.kind));
+      if (!forceThis && !refreshAudio && hadLocal) {
         console.log(`  ${label} — already exists`);
         clip.map.set(i, `audio/${clip.file}`);
         continue;
       }
-      if (!forceAudio && gameSlug && clip.dbUrl && audioStore.ensureLocalCopy(gameSlug, scene.regionKey, clip.kind, audioFile, { overwrite: refreshAudio })) {
+      if (!forceThis && gameSlug && clip.dbUrl && audioStore.ensureLocalCopy(gameSlug, scene.regionKey, clip.kind, audioFile, { overwrite: refreshAudio })) {
         console.log(`  ${label} — ${hadLocal ? '↻ refreshed from' : 'reused from'} audio store`);
         clip.map.set(i, `audio/${clip.file}`);
         continue;
@@ -636,7 +650,13 @@ function pageShell({ compositionId, totalDur, audioElements, innerScript }) {
       position: absolute;
       top: 0; right: 0;
       width: 580px; height: 1080px;
-      background: rgba(15, 30, 43, 0.94);
+      /* Same textured dark panel as the connections videos: fine dot grid,
+         a soft accent glow from the top-right, a gentle top-to-bottom shade. */
+      background:
+        radial-gradient(circle at 2px 2px, rgba(255,255,255,0.07) 1.3px, transparent 1.8px) 0 0 / 24px 24px,
+        radial-gradient(ellipse 130% 55% at 100% 0%, rgba(167, 201, 87, 0.16), transparent 72%),
+        linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.22) 100%),
+        rgba(15, 30, 43, 0.94);
       border-left: 1.5px solid rgba(167, 201, 87, 0.3);
       z-index: 6;
       display: flex;
@@ -652,6 +672,15 @@ function pageShell({ compositionId, totalDur, audioElements, innerScript }) {
       text-transform: uppercase;
       font-family: sans-serif;
       margin-bottom: 24px;
+    }
+    /* A full question reads as a sentence, styled like the connections videos */
+    #q-text.q-full {
+      color: rgba(255,255,255,0.85);
+      font-size: 24px;
+      letter-spacing: normal;
+      text-transform: none;
+      font-family: Georgia, serif;
+      line-height: 1.4;
     }
     #progress-bar-track {
       width: 100%; height: 8px;
@@ -917,7 +946,11 @@ function writeSceneSegment(scene, i) {
   const T_PO   = ${T_PANEL_OUT};
   const carDur = ${carDur.toFixed(3)};
   const imgCount = ${imgCount};
-  const imgInterval = imgCount > 1 ? carDur / imgCount : carDur;
+  // All photos but the last are spread over the question + countdown; the last
+  // one is held back as the payoff and only appears with the answer, so a
+  // telling photo (e.g. the Iwo Jima flag raising) never gives it away early.
+  const preCount = imgCount > 1 ? imgCount - 1 : 1;
+  const preInterval = ((T_RV + shift) - T_CI) / preCount;
 
   // ─ Setup — static for this segment's whole duration, so it just runs once
   //   immediately rather than as a tl.call() at position 0 (a one-shot
@@ -931,6 +964,12 @@ function writeSceneSegment(scene, i) {
     const el = document.getElementById(id);
     if (el) { el.textContent = scene.options[j] || ''; el.className = 'opt'; }
   });
+  // The region's own question (e.g. "Which decisive naval battle…") replaces
+  // the generic "Where is this national park?" label when it has one.
+  if (scene.questionText) {
+    const q = document.getElementById('q-text');
+    if (q) { q.textContent = scene.questionText; q.classList.add('q-full'); }
+  }
   for (let j = 0; j < 5; j++) {
     const img = document.getElementById('car-img-' + j);
     if (!img) continue;
@@ -979,8 +1018,9 @@ function writeSceneSegment(scene, i) {
     { from: { scale: 1.10, xPercent:  1.0, yPercent:  1.0 }, to: { scale: 1.05, xPercent: -1.5, yPercent: -0.5 } },
   ];
   for (let j = 0; j < imgCount; j++) {
-    const switchAt  = T_CI + j * imgInterval;
-    const switchEnd = j === imgCount - 1 ? T_CO + shift : T_CI + (j + 1) * imgInterval;
+    const isPayoff  = imgCount > 1 && j === imgCount - 1;
+    const switchAt  = isPayoff ? T_RV + shift : T_CI + j * preInterval;
+    const switchEnd = (imgCount === 1 || isPayoff) ? T_CO + shift : T_CI + (j + 1) * preInterval;
     const kbDur     = switchEnd - switchAt;
     const kb        = KB[j % KB.length];
 
@@ -1392,7 +1432,15 @@ if (variant === 'web') {
   for (let i = 0; i < scenes.length; i++) await writeSceneSegmentsWeb(scenes[i], i);
 } else {
   if (writeOpening) writeOpeningSegment();
-  scenes.forEach((scene, i) => writeSceneSegment(scene, i));
+  for (let i = 0; i < scenes.length; i++) {
+    // Images that didn't come from --images-dir are DB references (often
+    // site-relative /api/images/… paths the renderer can't resolve): copy them
+    // into the segment's own images/ folder first, like the web variant does.
+    if (scenes[i].images.some(src => src && !src.startsWith('images/'))) {
+      scenes[i].images = await ensureWebRevealImages(scenes[i], path.join(segmentsRoot, segmentDirName(scenes[i])));
+    }
+    writeSceneSegment(scenes[i], i);
+  }
 }
 
 console.log(`\nDone: ${scenes.length} scene segment(s)${variant === 'full' && writeOpening ? ' + opening' : ''} written.`);

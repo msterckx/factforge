@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Game of Trivia — intro</title>
+  <!--
+    Fixed 4-second branded intro for the YouTube videos. Rendered once:
+      npx hyperframes render video-assets/intro/game-of-trivia-intro --fps=30
+    and prepended to every final video by scripts/concat-video-segments.js.
+    Silent on purpose — concat adds a matching silent track.
+  -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=block">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0a131c; }
+    #stage {
+      width: 1920px; height: 1080px; position: relative; overflow: hidden;
+      background: radial-gradient(ellipse at 50% 42%, #16263a 0%, #0a131c 62%);
+      font-family: 'Oswald', sans-serif; color: #fff;
+    }
+    #lockup {
+      position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 54px;
+    }
+    /* The GOT mark: white bold condensed letters in a white-bordered black square */
+    #mark {
+      position: relative; width: 250px; height: 250px; background: #000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #mark-border { position: absolute; inset: 14px; }
+    #mark-border rect { fill: none; stroke: #fff; stroke-width: 7; }
+    #mark-text {
+      font-weight: 700; font-size: 104px; line-height: 1; letter-spacing: 3px;
+    }
+    #title-wrap { overflow: hidden; padding: 0 12px; }
+    #title {
+      font-weight: 700; font-size: 104px; line-height: 1.05; letter-spacing: 14px;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    #quiz { display: flex; align-items: center; gap: 28px; margin-top: -18px; }
+    #quiz .rule { width: 120px; height: 3px; background: rgba(255,255,255,0.55); transform-origin: center; }
+    #quiz-text {
+      font-weight: 500; font-size: 40px; letter-spacing: 22px; padding-left: 22px;
+      color: rgba(255,255,255,0.85);
+    }
+  </style>
+</head>
+<body>
+<div id="stage"
+     data-composition-id="game-of-trivia-intro"
+     data-start="0"
+     data-duration="4"
+     data-width="1920"
+     data-height="1080">
+
+  <div id="lockup">
+    <div id="mark">
+      <svg id="mark-border" viewBox="0 0 222 222" preserveAspectRatio="none">
+        <rect x="3.5" y="3.5" width="215" height="215" pathLength="1000"/>
+      </svg>
+      <div id="mark-text">GOT</div>
+    </div>
+    <div id="title-wrap"><div id="title">Game of Trivia</div></div>
+    <div id="quiz">
+      <div class="rule"></div>
+      <div id="quiz-text">QUIZ</div>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(() => {
+  const tl = gsap.timeline({ paused: true });
+  const rect = document.querySelector('#mark-border rect');
+
+  // Initial state (also what frame 0 shows)
+  gsap.set('#mark', { opacity: 0, scale: 0.86 });
+  gsap.set(rect, { attr: { 'stroke-dasharray': 1000, 'stroke-dashoffset': 1000 } });
+  gsap.set('#mark-text', { opacity: 0, y: 14 });
+  gsap.set('#title', { yPercent: 110 });
+  gsap.set('#quiz-text', { opacity: 0 });
+  gsap.set('#quiz .rule', { scaleX: 0 });
+
+  // 0.15–0.75  square appears and its white border draws itself
+  tl.to('#mark', { opacity: 1, scale: 1, duration: 0.6, ease: 'power3.out' }, 0.15);
+  tl.to(rect, { attr: { 'stroke-dashoffset': 0 }, duration: 0.75, ease: 'power2.inOut' }, 0.25);
+  // 0.6–1.1   GOT rises into the square
+  tl.fromTo('#mark-text', { opacity: 0, y: 14 }, { opacity: 1, y: -4, duration: 0.5, ease: 'power3.out' }, 0.6);
+  // 1.15–1.85 title slides up out of its mask
+  tl.to('#title', { yPercent: 0, duration: 0.7, ease: 'power4.out' }, 1.15);
+  // 1.7–2.3   QUIZ line: rules grow, label fades in
+  tl.to('#quiz .rule', { scaleX: 1, duration: 0.55, ease: 'power2.out' }, 1.7);
+  tl.to('#quiz-text', { opacity: 1, duration: 0.5, ease: 'power1.out' }, 1.8);
+  // slow settle while it holds
+  tl.fromTo('#lockup', { scale: 1 }, { scale: 1.03, duration: 4, ease: 'none' }, 0);
+  // 3.35–3.95 fade to the background the game's title card starts on
+  tl.to('#lockup', { opacity: 0, duration: 0.6, ease: 'power1.in' }, 3.35);
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines['game-of-trivia-intro'] = tl;
+})();
+</script>
+</body>
+</html>

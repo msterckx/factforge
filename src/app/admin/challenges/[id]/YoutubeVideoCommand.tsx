@@ -56,44 +56,40 @@ export default function YoutubeVideoCommand({ slug, mapSvg }: Props) {
   // scripts rely on. The old restore/remote_db/ copy is a stale snapshot
   // that predates those columns entirely.
   const dbPath = "gameoftrivia.db";
-  const imagesDir = `local-data/challenges/${slug}`;
   const videoDir = `videos/map-challenge/${slug}`;
-
-  const upscaleCommand = [
-    "node scripts/upscale-images-runpod.js",
-    `  --db=${dbPath}`,
-    `  --game=${slug}`,
-  ].join(" \\\n");
 
   const videoCommand = [
     "node scripts/gen-map-video.js",
     `  --db=${dbPath}`,
     `  --game=${slug}`,
-    `  --images-dir=${imagesDir}`,
   ].join(" \\\n");
 
+  // Only the YouTube ("full") segments — the web variant's -question/-reveal
+  // folders live alongside them but aren't part of the final video.
   const renderCommand = (dir: string) => [
     "npx hyperframes browser ensure",
     `for d in ${dir}/segments/*/; do`,
+    `  case "$d" in *-question/|*-reveal/) continue;; esac`,
     `  npx hyperframes render "$d" --fps=30`,
     "done",
   ].join("\n");
 
   const concatCommand = (dir: string) => `node scripts/concat-video-segments.js --dir=${dir}`;
+  const packageCommand = `node scripts/gen-youtube-package.js --game=${slug}`;
 
   return (
     <div className="space-y-6">
-      <Step n={1} title="Upscale the source images (RunPod, 4x)">
-        <CommandBlock label="upscale-images-runpod.js" command={upscaleCommand} />
+      <Step n={1} title="Prepare the images">
         <p className="text-xs text-slate-400">
-          Reads source photo URLs from each region&apos;s infograph data, upscales them via RunPod, and writes 4x PNGs to <code className="bg-slate-100 px-1 rounded">{imagesDir}/&lt;region&gt;/images/</code> — the exact layout the video generator below looks for via <code className="bg-slate-100 px-1 rounded">--images-dir</code>. Needs <code className="bg-slate-100 px-1 rounded">RUNPOD_API_KEY</code>, <code className="bg-slate-100 px-1 rounded">RUNPOD_UPSCALE_ENDPOINT_ID</code> and the <code className="bg-slate-100 px-1 rounded">RUNPOD_S3_*</code> vars in <code className="bg-slate-100 px-1 rounded">.env.local</code>.
+          Each region uses the images listed in its infograph data, taken as-is from <code className="bg-slate-100 px-1 rounded">local-data/web-images/challenges/…</code> — no upscaling step.
+          Replace a file under the same name and no DB change is needed. 16:9, ideally 1600×900.
         </p>
       </Step>
 
       <Step n={2} title="Generate the video segments + narration">
         <CommandBlock label="gen-map-video.js" command={videoCommand} />
         <p className="text-xs text-slate-400">
-          Reads regions and map data directly from <code className="bg-slate-100 px-1 rounded">{dbPath}</code> — no export step needed — and writes one independent HyperFrames composition per park (plus one for the opening) under <code className="bg-slate-100 px-1 rounded">segments/</code>, so a single park can be regenerated without touching the rest (pass e.g. <code className="bg-slate-100 px-1 rounded">--only={"<region_key>"}</code>). After the reveal, it cuts away to a full-screen slideshow of the location&apos;s extra photos — a park with only one photo just holds on it. Generates narration audio via RunPod TTS (<code className="bg-slate-100 px-1 rounded">RUNPOD_API_KEY</code>, <code className="bg-slate-100 px-1 rounded">RUNPOD_ENDPOINT_ID</code>, <code className="bg-slate-100 px-1 rounded">RUNPOD_S3_*</code> in <code className="bg-slate-100 px-1 rounded">.env.local</code>), cached so re-runs skip unchanged lines — add <code className="bg-slate-100 px-1 rounded">--skip-audio</code> to reuse existing WAVs as-is, or <code className="bg-slate-100 px-1 rounded">--force-audio</code> to force regeneration.
+          Reads regions and map data directly from <code className="bg-slate-100 px-1 rounded">{dbPath}</code> — no export step needed — and writes one independent HyperFrames composition per region (plus one for the opening; set its subtitle with <code className="bg-slate-100 px-1 rounded">--tagline=&quot;…&quot;</code>) under <code className="bg-slate-100 px-1 rounded">segments/</code>, so a single park can be regenerated without touching the rest (pass e.g. <code className="bg-slate-100 px-1 rounded">--only={"<region_key>"}</code>). After the reveal, it cuts away to a full-screen slideshow of the location&apos;s extra photos — a park with only one photo just holds on it. Generates narration audio via RunPod TTS (<code className="bg-slate-100 px-1 rounded">RUNPOD_API_KEY</code>, <code className="bg-slate-100 px-1 rounded">RUNPOD_ENDPOINT_ID</code>, <code className="bg-slate-100 px-1 rounded">RUNPOD_S3_*</code> in <code className="bg-slate-100 px-1 rounded">.env.local</code>), cached so re-runs skip unchanged lines — add <code className="bg-slate-100 px-1 rounded">--skip-audio</code> to reuse existing WAVs as-is, or <code className="bg-slate-100 px-1 rounded">--force-audio</code> to force regeneration.
         </p>
       </Step>
 
@@ -106,6 +102,16 @@ export default function YoutubeVideoCommand({ slug, mapSvg }: Props) {
 
       <Step n={4} title="Stitch the rendered segments into the final video">
         <CommandBlock label={`${videoDir}/`} command={concatCommand(videoDir)} />
+        <p className="text-xs text-slate-400">
+          Adds the category intro in front and the outro at the end (render those once with <code className="bg-slate-100 px-1 rounded">node scripts/build-intros.js --render</code> and <code className="bg-slate-100 px-1 rounded">npx hyperframes render video-assets/outro/game-of-trivia-outro --fps=30</code>).
+        </p>
+      </Step>
+
+      <Step n={5} title="YouTube thumbnail & description">
+        <CommandBlock label="gen-youtube-package.js" command={packageCommand} />
+        <p className="text-xs text-slate-400">
+          Writes <code className="bg-slate-100 px-1 rounded">thumbnail.jpg</code> and <code className="bg-slate-100 px-1 rounded">description.txt</code> (title, description, chapters) to <code className="bg-slate-100 px-1 rounded">local-data/youtube/{slug}/</code>.
+        </p>
       </Step>
 
       <p className="text-xs text-slate-400">

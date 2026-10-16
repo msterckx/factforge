@@ -43,35 +43,23 @@ function buildSteps(
   const refreshImagesFlag = refreshImages ? " --refresh-images" : "";
   const refreshAudioFlag = refreshAudio ? " --refresh-audio" : "";
 
+  const imagesRoot = "local-data/web-images/challenges/<category>/<game>/";
   const steps: Step[] = [
     {
-      title: "Upscale source photos",
+      title: "Prepare images",
       note: (
         <>
-          4× AI-upscales every image_url (+ extra carousel photos) for this {fam === "map" ? "region" : "item"}, writing to{" "}
-          <code className="bg-slate-100 px-1 rounded text-xs">local-data/challenges/{slug}/&lt;id&gt;/images/</code> — the layout{" "}
-          <code className="bg-slate-100 px-1 rounded text-xs">--images-dir</code> below expects.
+          Videos use your images in <code className="bg-slate-100 px-1 rounded text-xs">{imagesRoot}</code> directly — no upscaled copies.{" "}
+          {fam === "map"
+            ? "Each region uses the image list in its infograph data; replacing a file under the same name needs no DB change."
+            : <>Per {"item"} folder: <code className="bg-slate-100 px-1 rounded text-xs">&lt;folder&gt;.webp</code> is the question image, <code className="bg-slate-100 px-1 rounded text-xs">&lt;folder&gt;-1.webp</code>, <code className="bg-slate-100 px-1 rounded text-xs">-2</code>, … the carousel.</>}
         </>
       ),
-      rows: [{ cmd: `node scripts/upscale-images-runpod.js --db=${db} --game=${slug}${only}` }],
+      rows: [],
       hint: (
         <>
-          Add <code className="bg-slate-100 px-1 rounded">--only=&lt;id&gt;</code> to limit to one item/region, or{" "}
-          <code className="bg-slate-100 px-1 rounded">--force</code> to re-upscale files that already exist.
-        </>
-      ),
-    },
-    {
-      title: "Clean stale image cache",
-      note: "upscale-images-runpod.js never deletes — run this after an image_url changes in the DB, so the generator below doesn't pick up a leftover file.",
-      rows: [
-        { tag: "preview", cmd: `node scripts/clean-images-cache.js --db=${db} --game=${slug}${only} --dry-run` },
-        { tag: "apply", cmd: `node scripts/clean-images-cache.js --db=${db} --game=${slug}${only}` },
-      ],
-      hint: (
-        <>
-          Add <code className="bg-slate-100 px-1 rounded">--only=&lt;id&gt;</code> for one item, or{" "}
-          <code className="bg-slate-100 px-1 rounded">--all</code> to wipe a unit&apos;s cache entirely before a from-scratch re-upscale.
+          16:9, ideally 1600×900 (at least 1200×675) — then nothing gets cropped except the gentle zoom. Keep anything that gives the answer away
+          out of the question image. <code className="bg-slate-100 px-1 rounded">-</code> and <code className="bg-slate-100 px-1 rounded">_</code> in names count as the same.
         </>
       ),
     },
@@ -95,14 +83,22 @@ function buildSteps(
     },
     {
       title: "Generate video segments",
-      note: `One independent HTML composition per ${fam === "map" ? "region" : "item"} (plus a shared opening card) — regenerate any single segment without touching the rest. After the answer reveal, a full-screen carousel cycles through any extra photos for that ${fam === "map" ? "region" : "item"}; one with only a single photo just holds on it.`,
-      rows: [{ cmd: `node scripts/${genScript} --db=${db} --game=${slug} --images-dir=local-data/challenges/${slug}${only}${refreshImagesFlag}${refreshAudioFlag}` }],
+      note: `One independent HTML composition per ${fam === "map" ? "region" : "item"} (plus a shared opening card) — regenerate any single segment without touching the rest. The YouTube version bakes in the question, 3 options and countdown; the web version is a question + reveal clip pair per ${fam === "map" ? "region" : "item"}.`,
+      rows: fam === "map"
+        ? [
+            { tag: "YouTube", cmd: `node scripts/${genScript} --db=${db} --game=${slug}${only}${refreshImagesFlag}${refreshAudioFlag}` },
+            { tag: "web clips", cmd: `node scripts/${genScript} --db=${db} --game=${slug} --variant=web${only}${refreshImagesFlag}${refreshAudioFlag}` },
+          ]
+        : [
+            { tag: "YouTube", cmd: `node scripts/${genScript} --db=${db} --game=${slug} --folder-images${only}${refreshImagesFlag}${refreshAudioFlag}` },
+            { tag: "web clips", cmd: `node scripts/${genScript} --db=${db} --game=${slug} --variant=web --folder-images --motion=subtle${only}${refreshImagesFlag}${refreshAudioFlag}` },
+          ],
       hint: (
         <>
-          Writes to <code className="bg-slate-100 px-1 rounded">{outBase}/segments/</code>. Narration audio is generated via RunPod TTS
-          and cached — reruns with <code className="bg-slate-100 px-1 rounded">--only=&lt;id&gt;</code> are cheap. A regenerated segment only
-          ever fills in what&apos;s missing from its own image/audio cache — check &quot;Refresh images&quot; / &quot;Refresh audio&quot; above to
-          pick up newer source images or narration instead of silently keeping the old ones.
+          Writes to <code className="bg-slate-100 px-1 rounded">{outBase}/segments/</code>. Narration is cached, so reruns with{" "}
+          <code className="bg-slate-100 px-1 rounded">--only=&lt;id&gt;</code> are cheap. Check &quot;Refresh images&quot; above after replacing images.
+          Useful extras: <code className="bg-slate-100 px-1 rounded">--tagline=&quot;…&quot;</code> (opening card),{" "}
+          <code className="bg-slate-100 px-1 rounded">--tag=&quot;…&quot;</code> (caption label){fam === "map" ? null : <>, <code className="bg-slate-100 px-1 rounded">--fit=contain</code> (show portraits whole)</>}.
         </>
       ),
     },
@@ -121,9 +117,38 @@ function buildSteps(
       ),
     },
     {
-      title: "Concatenate into the final video",
-      note: "Stitches every rendered segment (in folder order) into one MP4, normalizing audio tracks first.",
-      rows: [{ cmd: `node scripts/concat-video-segments.js --dir=${outBase}` }],
+      title: "Concatenate into the final YouTube video",
+      note: "Stitches every rendered segment (in folder order) into one MP4, with the category intro (\"HISTORY QUIZ\", …) in front and the \"Thank you for playing\" outro at the end.",
+      rows: [
+        { tag: "once", cmd: `node scripts/build-intros.js --render && npx hyperframes render video-assets/outro/game-of-trivia-outro --fps=30` },
+        { tag: "video", cmd: `node scripts/concat-video-segments.js --dir=${outBase}` },
+      ],
+      hint: (
+        <>
+          The intros and outro only need rendering once (and again after changing their design).{" "}
+          <code className="bg-slate-100 px-1 rounded">--no-intro</code> / <code className="bg-slate-100 px-1 rounded">--no-outro</code> leave them out.
+        </>
+      ),
+    },
+    {
+      title: "YouTube thumbnail & description",
+      note: "Writes thumbnail.jpg (1280×720) and description.txt (title, description, chapters, link, hashtags) to local-data/youtube/" + slug + "/ — build the final video first, the chapters are timed from it.",
+      rows: [{ cmd: `node scripts/gen-youtube-package.js --game=${slug}` }],
+      hint: (
+        <>
+          <code className="bg-slate-100 px-1 rounded">--images=id1,id2,id3</code> picks the collage images;{" "}
+          <code className="bg-slate-100 px-1 rounded">--title=&quot;…&quot;</code> overrides the quiz title.
+        </>
+      ),
+    },
+    {
+      title: "Publish the web clips",
+      note: "Copy the rendered question/reveal clips into public/videos/" + slug + "/, then encode 720p web versions and upload them to the server — always before pushing code that refers to them.",
+      rows: [
+        { tag: "encode", cmd: `node scripts/encode-web-videos.js --game=${slug}` },
+        { tag: "upload", cmd: `scripts/upload-web-videos.sh --go ${slug}` },
+      ],
+      hint: <>Without <code className="bg-slate-100 px-1 rounded">--go</code> the upload is a dry run that only lists what would be copied.</>,
     },
   ];
 

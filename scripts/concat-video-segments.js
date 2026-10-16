@@ -20,6 +20,15 @@
  *   --dir      Base video directory (the one passed to gen-map-video.js / gen-connections-video.js --output) — required
  *   --output   Output MP4 path (default: renders/<dir-basename>_final_<timestamp>.mp4)
  *   --renders  Directory HyperFrames writes rendered MP4s to (default: renders)
+ *   --no-intro Leave out the "Game of Trivia" intro that is otherwise
+ *              prepended to every video. Each quiz category has its own intro
+ *              ("HISTORY QUIZ", "SCIENCE QUIZ", …), picked by the game's
+ *              category in gameoftrivia.db; build and render them once with:
+ *                node scripts/build-intros.js --render
+ *   --intro    Category whose intro to use instead (e.g. --intro=history)
+ *   --no-outro Leave out the "Thank you for playing" outro appended to every
+ *              video. Rendered once from video-assets/outro/game-of-trivia-outro:
+ *                npx hyperframes render video-assets/outro/game-of-trivia-outro --fps=30
  */
 
 const fs   = require('fs');
@@ -137,6 +146,46 @@ function withSilentAudio(inputFile, tmpDir, sampleRate) {
     outFile,
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
   return outFile;
+}
+
+// ── Branded intro, prepended to every video ──────────────────────────────────
+// One variant per quiz category (scripts/build-intros.js), picked by the game's
+// category. Rendered once (same --fps, so it stream-copies like any segment);
+// silent, so the audio normalization below gives it a matching silent track.
+if (!args['no-intro']) {
+  const { introIdFor } = require('./build-intros');
+  let category = typeof args.intro === 'string' ? args.intro : null;
+  if (!category) {
+    const Database = require('better-sqlite3');
+    const db = new Database(path.resolve('gameoftrivia.db'), { readonly: true });
+    const row = db.prepare('SELECT category FROM challenge_games WHERE slug = ?').get(path.basename(baseDir));
+    db.close();
+    category = row?.category || 'other';
+  }
+  const introId = introIdFor(category);
+  const introRender = latestRenderFor(introId);
+  if (!introRender) {
+    console.error(`\nThe "${category}" intro hasn't been rendered yet. Build and render the intros once with:`);
+    console.error(`  node scripts/build-intros.js --render --only=${category}`);
+    console.error(`(or pass --no-intro to build the video without it)`);
+    process.exit(1);
+  }
+  resolved.unshift({ id: introId, render: introRender });
+  console.log(`  ✓ intro (${category}) → ${path.basename(introRender)}`);
+}
+
+// ── Fixed outro, appended to every video ─────────────────────────────────────
+const OUTRO_ID = 'game-of-trivia-outro';
+if (!args['no-outro']) {
+  const outroRender = latestRenderFor(OUTRO_ID);
+  if (!outroRender) {
+    console.error(`\nThe outro hasn't been rendered yet. Render it once with:`);
+    console.error(`  npx hyperframes render video-assets/outro/${OUTRO_ID} --fps=30`);
+    console.error(`(or pass --no-outro to build the video without it)`);
+    process.exit(1);
+  }
+  resolved.push({ id: OUTRO_ID, render: outroRender });
+  console.log(`  ✓ outro → ${path.basename(outroRender)}`);
 }
 
 const audioFlags = resolved.map(({ render }) => hasAudioStream(render));
